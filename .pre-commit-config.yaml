@@ -1,0 +1,48 @@
+# Pre-commit configuration focusing on clean Python with Ruff
+# Install hooks with: pre-commit install
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: check-added-large-files
+        args: ["--maxkb=50000"]
+        exclude: "^data/.*\\.geojson$"
+      - id: check-merge-conflict
+      - id: check-yaml
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.6.9
+    hooks:
+      - id: ruff
+        args: ["--fix"]
+      - id: ruff-format
+
+  - repo: https://github.com/codespell-project/codespell
+    rev: v2.2.6
+    hooks:
+      - id: codespell
+        additional_dependencies: ["tomli"]
+        args: ["-L", "nd,teh,clas,ot"]
+
+  - repo: https://github.com/kynan/nbstripout
+    rev: 0.7.1
+    hooks:
+      - id: nbstripout
+        files: "\\.ipynb$"
+        args: ["--keep-output"]
+
+  - repo: local
+    hooks:
+      - id: note-geojson-lfs
+        name: Note large GeoJSON in data/, consider Git LFS
+        entry: bash
+        language: system
+        pass_filenames: false
+        always_run: true
+        args: ["-c", "if ls data/*.geojson >/dev/null 2>&1; then echo 'Note: GeoJSON files detected in data/. Consider Git LFS if large.'; fi"]
+
+default_language_version:
+  python: python3.11
