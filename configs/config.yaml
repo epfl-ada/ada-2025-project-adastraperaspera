@@ -1,0 +1,22 @@
+# Plaque alignment configuration (aligner.py)
+paths:
+  base_dir: "."
+  keypoints_csv: "src/data/Xenium_V1_FFPE_TgCRND8_17_9_months/image_keypoints.csv"
+  plaque_geojson: "src/data/Xenium_V1_FFPE_TgCRND8_17_9_months/qupath_plaque_polygons.geojson"
+  out_xenium_format: "src/data/Xenium_V1_FFPE_TgCRND8_17_9_months/plaque_polygons.csv"
+  logs_dir: "logs"
+
+params:
+  xenium_pixel_size_um: 0.2125
+  ransac:
+    min_samples: 3
+    residual_threshold_px: 2.0
+    max_trials: 5000
+  upgrade_to_affine_rmse_px: 1.5
+  selections:
+    decimals: 3
+    top_n: null
+
+logging:
+  level: "INFO"
+  timezone: "Europe/Zurich"

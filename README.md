@@ -1,9 +1,34 @@
+# Team ADAstraPerAspera: Milestone P2
 
-## ADA 2025 Project Template
+## Introduction
 
-Clean, consistent code is a major grading factor in ADA. This repository is configured with pre-commit hooks and Ruff so that style, quality, and formatting are enforced automatically on every commit.
+The goal of this project is to build upon the “proximal vs. distal” analysis in Xenium’s application note and inspect the continuous change in gene expression levels and cell type proportions as we move away from the nearest amyloid-beta plaque.
 
-### Quickstart
+## Developer Best Practices
+- [ ] I remember that code quality in ADA *IS GRADED!*
+- [ ] I don't use `print()`; instead I always use the logger from `src/utils/logging_utils.py`, for example:
+
+    ```python
+    from src.utils.logging_utils import logger
+    logger.info("Hello, world!")
+    ```
+
+- [ ] I always install (`pre-commit install`) pre-commit hooks and never skip them when committing.
+- [ ] I always leave plenty of comments in the code.
+- [ ] Every public class, method, file, and function has a docstring.
+- [ ] I always use type annotations in function signatures, for example:
+
+    ```python
+    def add(a: int, b: int) -> int:
+        return a + b
+    ```
+
+- [ ] Whenever I commit code, I also add unit and integration tests for any new functionality.
+- [ ] I never run `git add .`; instead, I always run `git status` to see what files have changed and then add them one by one.
+- [ ] I never commit secrets, API keys, or irrelevant files such as duplicates, caches, boilerplate, etc.
+
+
+## Quickstart
 
 ```bash
 # clone project
@@ -25,84 +50,106 @@ pre-commit install
 pre-commit run --all-files
 ```
 
-### What are pre-commit hooks?
+## Testing
 
-Pre-commit hooks are scripts that run automatically before each commit. They prevent common mistakes (style violations, stray whitespace, large files, and more) from entering the repository. This keeps the codebase clean and consistent for collaborators and graders.
-
-### Hooks in this repo
-
-- Ruff: lint, auto-fix, and format Python according to `ruff.toml`.
-- Base safety checks: large-file checks, merge-conflict detection, YAML validation, end-of-file newline, and trailing whitespace.
-- Codespell: catches common spelling mistakes in text and code.
-- nbstripout: strips notebook outputs so `.ipynb` files remain lightweight and diff-friendly.
-- GeoJSON note: commits will print a reminder to consider Git LFS for large `data/*.geojson` files.
-
-You can run Ruff directly as well:
+We provide unit and integration tests for our codebase.
+To run tests locally, use the following command:
 
 ```bash
-ruff check --fix .
-ruff format .
+export PYTHONPATH="$PWD/src"
+# activate venv (see Quickstart), then:
+pytest -q
+
+# with coverage report
+pytest --cov=src --cov-report=term-missing
 ```
 
-### How to work with the hooks
+Notes:
+- Tests automatically add `src` to `PYTHONPATH` via `tests/conftest.py`.
+- GeoJSON I/O uses the `pyogrio` engine by default via GeoPandas.
+- Ensure dependencies from `pip_requirements.txt` are installed (includes PyYAML for config parsing).
 
-- Normal development: just commit as usual; fixes will run automatically.
-- Run on demand: `pre-commit run --all-files` to validate the whole repo.
-- Rarely bypass hooks: `git commit -m "msg" --no-verify` (not recommended; marks will reflect code quality).
+## Project structure (orientation)
 
-### GeoJSON data context
+```
+.
+├── configs
+│   └── config.yaml                                # Config used by the plaque-alignment CLI.
+├── src
+│   ├── data
+│   │   └── Xenium_V1_FFPE_TgCRND8_17_9_months
+│   │       ├── Xenium_V1_FFPE_TgCRND8_17_9_months_if_image.qpdata   # QuPath project: 11 negative rects + 9 positive polygons + classifier outputs (IF space).
+│   │       ├── image_keypoints.csv                # 26 matched control points (morphology↔IF).
+│   │       ├── plaque_polygons.csv                # 1,938 plaque polygons transformed into morphology coords (post-alignment).
+│   │       └── qupath_plaque_polygons.geojson     # Predicted plaque polygons exported from QuPath in IF-image coords (pre-alignment).
+│   ├── scripts
+│   │   └── plaque_alignment
+│   │       ├── app.py                             # Fits a similarity or an affine transform, computes RMSE, transforms polygons.
+│   │       ├── cli.py                             # Entry point for CLI.
+│   │       ├── config.py                          # YAML config loader.
+│   │       └── utils.py                           # I/O, geometry helpers.
+│   └── utils
+│       └── logging_utils.py                       # Shared logger setup.
+├── tests                                           # Unit and integration tests.
+├── results.ipynb                                   # Notebook to showcase the results.
+├── ruff.toml                                       # Ruff config.
+├── .pre-commit-config.yaml                         # Git hooks to auto-run Ruff/formatting on commits.
+├── pip_requirements.txt                            # Python dependencies.
+└── README.md                                       # Project overview and detailed notes.
 
-This repo contains `data/Xenium_V1_FFPE_TgCRND8_17_9_months_plaque_polygons.geojson`, added from QuPath, based on slice:1 channel only and a Random Trees classifier (see your recent commit). This can be a large artifact. The hooks will remind you to consider Git LFS for such files. If the file must live in the repo for grading, keep it in `data/` and document its provenance and size here.
+```
 
-### Alignment keypoints CSV (OME-TIFF registration)
+## Data Preprocessing
 
-`data/Xenium_V1_FFPE_TgCRND8_17_9_months_if_image_keypoints_point.csv` provides matched 2D control points relating two images:
+### Plaque classification from Xenium IF image
 
+- In Xenium Alzheimer Disease experiment, the amyloid beta plaques were stained with antibodies and later visualized with immunofluorescence.
+- As a result, 10X Genomics company provides `Xenium_V1_FFPE_TgCRND8_17_9_months_if_image.ome.tif` file with the IF data.
+- This file contains two channels called `slice:1` and `slice:3`.
+- `slice:1` contains coarse, unevenly spaced groups of bright pixels that represent the amyloid beta plaques.
+- `slice:3` contains small and much more evenly spaced bright pixels that represent the nuclei of the cells.
+- To identify the plaques, we restricted the analysis only to the `slice:1` channel.
+- Next, we labeled the data.
+- We produced 11 data points carrying rectangles around plaque-free regions (negative samples).
+- Similarly, we labeled 9 data points with hand-drawn polygons around plaques (positive samples).
+- We then used the object classifier from QuPath to use the provided training data for training.
+- We selected the default implementation of the Random trees based classifier due to the limited amount of training data.
+- We then used the classifier to identify the plaques in the `slice:1` channel.
+- The resulting objects (along with the ground truth labels used to train the classifier) are stored in `src/data/Xenium_V1_FFPE_TgCRND8_17_9_months/Xenium_V1_FFPE_TgCRND8_17_9_months_if_image.qpdata`
+- Only the predicted plaque polygons are exported to `src/data/Xenium_V1_FFPE_TgCRND8_17_9_months/qupath_plaque_polygons.geojson`
+- However, these coordinates are mismatched from the morphology coordinate space.
+- And morphology coordinate space is also used to identify the cell locations.
+- Thus, as is, we cannot use the obtained plaque polygons for further analysis.
+- In the following section, we describe how we aligned the IF image to the morphology image.
+
+### Aligning the IF image to the morphology image
+
+- To align IF image to the morphology space, we produced 26 keypoint pairs around important anatomical landmarks that constitute a map between the two images.
+- In other words, each pair contains closely visually aligned points on the IF image and the morphology image.
+- These keypoints are stored in `src/data/Xenium_V1_FFPE_TgCRND8_17_9_months/image_keypoints.csv`
+- To reiterate, this file provides matched 2D control points relating two images:
 - `Xenium_V1_FFPE_TgCRND8_17_9_months_if_image.ome.tif`
 - `morphology_focus.ome.tif`
+The CSV columns of this file are:
+- `fixedX`, `fixedY`: coordinates in the fixed/reference image, which is the morphology image in our case.
+- `alignmentX`, `alignmentY`: coordinates in the other image to be aligned, which is the IF image in our case.
+- We would now like to learn a transformation function that would map the keypoints from the IF image as closely as possible on average to their corresponding counterparts in the morphology image.
+- Namely, these key points were used to train a SimilarityTransform (RANSAC) model (which proved to perform better than an AffineTransform), resulting in a root mean squared error of 15.213 pixels or 15.213 * 0.2125 µm = 3.231 µm, which is considered acceptable for our purposes.
+- To repeat this analysis, run the following simple command below:
 
-The CSV columns are:
-
-- `fixedX`, `fixedY`: coordinates in the fixed/reference image
-- `alignmentX`, `alignmentY`: coordinates in the other image to be aligned
-
-Convention used here: the morphology-focus image is treated as the fixed/reference image, and the Xenium IF image is the one being aligned. You can use these keypoints to estimate a transform (e.g., similarity/affine) with your preferred library.
-
-Example (Python):
-
-```python
-import pandas as pd
-
-keypoints = pd.read_csv(
-    "data/Xenium_V1_FFPE_TgCRND8_17_9_months_if_image_keypoints_point.csv"
-)
-fixed_points = keypoints[["fixedX", "fixedY"]].to_numpy()
-moving_points = keypoints[["alignmentX", "alignmentY"]].to_numpy()
-# Fit a transform with skimage, OpenCV, or similar
+```bash
+export PYTHONPATH="$PWD/src"
+python -m scripts.plaque_alignment.cli --config configs/config.yaml
 ```
 
-### Project structure (orientation)
+- Now that we have a mapping from the IF coordinate space into the morphology coordinate space, we can transform the plaque polygons into the morphology coordinate space.
+- As a result, we obtained 1938 exterior polygons around the plaques.
+- The transformed plaque polygons which are stored in `src/data/Xenium_V1_FFPE_TgCRND8_17_9_months/plaque_polygons.csv`
+- Importing these transformed polygons into the Xenium Explorer reveals close visual alignment with the morphogy image, as expected.
 
-```
-├── data/                       # Project data files
-├── src/                        # Source code
-│   ├── data/
-│   ├── models/
-│   ├── utils/
-│   └── scripts/
-├── tests/                      # Tests
-├── results.ipynb               # Results notebook
-├── ruff.toml                   # Ruff configuration (lint + format)
-├── .pre-commit-config.yaml     # Git hooks configuration
-├── pip_requirements.txt        # Python dependencies (incl. dev tools)
-└── README.md
-```
-
-### Notes on Ruff configuration
+### Ruff Configuration
 
 - Targets Python 3.11, line length 100, import sorting enabled.
 - Enforces naming, bugbear, pyupgrade, comprehensions, pytest style, and annotations.
 - Docstring style: Google; missing-docstring rules are relaxed for pragmatism.
 - Tests and small scripts are less strict (see `ruff.toml`).
-
-Keeping code clean and consistent is part of your grade—use the hooks locally and push code that passes them.

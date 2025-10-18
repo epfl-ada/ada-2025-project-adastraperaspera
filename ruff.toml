@@ -28,6 +28,8 @@ ignore = [
     "D104",
     "D105",
     "D107", # pydocstyle (if enabled via pydocstyle)
+    "ANN101", # Missing type annotation for self
+    "ANN102", # Missing type annotation for cls
 ]
 fixable = ["ALL"]
 

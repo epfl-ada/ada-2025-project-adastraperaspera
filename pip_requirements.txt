@@ -13,3 +13,28 @@ codespell==2.2.6
 nbstripout==0.7.1
 pytest==8.3.3
 pytest-cov==5.0.0
+
+PyYAML>=6.0.1
+
+# Core numerics
+numpy>=1.26,<2.0
+pandas>=2.2
+
+# Geometry / GIS stack
+shapely>=2.0.2
+pyproj>=3.6
+geopandas>=0.14
+pyogrio>=0.9.0        # preferred engine for reading/writing GeoJSON
+# fiona>=1.9.5.post1   # <-- alternative to pyogrio; uncomment if you prefer Fiona/GDAL
+
+# Image registration + robust model fitting
+scikit-image>=0.22
+
+# Optional niceties for speed & plotting / checks
+rtree>=1.2            # optional, speeds up some spatial ops
+matplotlib>=3.8       # optional, for quick sanity plots
+tqdm>=4.66            # optional, for progress bars
+
+# Jupyter environment (if your environment doesn’t already have it)
+ipykernel>=6.29
+jupyterlab>=4.2
