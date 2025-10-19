@@ -38,3 +38,8 @@ tqdm>=4.66            # optional, for progress bars
 # Jupyter environment (if your environment doesn’t already have it)
 ipykernel>=6.29
 jupyterlab>=4.2
+
+# Single-cell / Spatial transcriptomics stack
+scanpy>=1.10.0
+anndata>=0.10.3
+h5py>=3.10.0
