@@ -166,3 +166,4 @@ venv
 .ruff_cache/
 archive
 logs
+.DS_Store

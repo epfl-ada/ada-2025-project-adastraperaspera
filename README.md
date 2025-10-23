@@ -81,6 +81,7 @@ Notes:
 │   │       ├── Xenium_V1_FFPE_TgCRND8_17_9_months_if_image.qpdata   # QuPath project: 11 negative rects + 9 positive polygons + classifier outputs (IF space).
 │   │       ├── image_keypoints.csv                # 26 matched control points (morphology↔IF).
 │   │       ├── plaque_polygons.csv                # 1,938 plaque polygons transformed into morphology coords (post-alignment).
+│   │       ├── brain_polygon.csv                  # The coordinates delimiting the brain region.
 │   │       └── qupath_plaque_polygons.geojson     # Predicted plaque polygons exported from QuPath in IF-image coords (pre-alignment).
 │   ├── scripts
 │   │   └── plaque_alignment
