@@ -92,3 +92,51 @@ def merge_expression_with_cells(cells_df: pd.DataFrame, adata: sc.AnnData) -> pd
 
     logger.info(f"Merged dataframe shape: {merged.shape}")
     return merged
+
+def load_plaque_polygons(path: str) -> pd.DataFrame:
+    """
+    Load the plaque polygons CSV file.
+    
+    Args:
+        path (str): Path to the plaque polygons CSV file
+        
+    Returns:
+        pd.DataFrame: Plaque polygons data
+    """
+    if not os.path.exists(path):
+        raise FileNotFoundError(f"Plaque polygons file not found: {path}")
+    
+    logger.info(f"Loading plaque polygons from {path}")
+    df = pd.read_csv(path, low_memory=False)
+    logger.info(f"Loaded {df.shape[0]} plaque polygons with {df.shape[1]} columns")
+    return df
+
+
+def load_brain_polygon(path: str) -> pd.DataFrame:
+    """
+    Load the brain polygon CSV file with proper parsing.
+    
+    Args:
+        path (str): Path to the brain polygon CSV file
+        
+    Returns:
+        pd.DataFrame: Brain polygon data with x, y coordinates
+    """
+    if not os.path.exists(path):
+        raise FileNotFoundError(f"Brain polygon file not found: {path}")
+    
+    logger.info(f"Loading brain polygon from {path}")
+    df = pd.read_csv(
+        path,
+        sep=",",
+        header=None,
+        skiprows=2,
+        names=["name", "x", "y"],
+        engine="python"
+    ).assign(
+        x=lambda d: pd.to_numeric(d["x"], errors="coerce"),
+        y=lambda d: pd.to_numeric(d["y"], errors="coerce")
+    ).dropna(subset=["x", "y"]).reset_index(drop=True)
+    
+    logger.info(f"Loaded brain polygon with {df.shape[0]} points")
+    return df
