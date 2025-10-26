@@ -23,6 +23,12 @@ def download_xenium_dataset(url: str, output_dir: str) -> str:
         str: Path to the directory containing the extracted files.
     """
     os.makedirs(output_dir, exist_ok=True)
+
+    # Skip download if directory is not empty
+    if os.listdir(output_dir):
+        logger.info(f"Dataset already downloaded in {output_dir}, skipping.")
+        return output_dir
+
     zip_path = os.path.join(output_dir, "Xenium_TgCRND8_17mo_outs.zip")
 
     logger.info(f"Downloading Xenium dataset from {url}")
