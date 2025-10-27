@@ -17,6 +17,9 @@ def filter_cells(
     cells_df: pd.DataFrame,
     transcript_q: float = 0.05,
     area_q: float = 0.05,
+    nucleus_q: float = 0.05,
+    genes_q: float = 0.05,
+    gene_cols: list[str] = [],
 ) -> pd.DataFrame:
     """
     Filter out low-quality cells using relative thresholds (percentile-based).
@@ -34,21 +37,44 @@ def filter_cells(
     """
     logger.info(
         f"Filtering cells below {transcript_q*100:.1f}th percentile for transcript_counts "
-        f"and {area_q*100:.1f}th percentile for cell_area"
+        f"and {area_q*100:.1f}th percentile for cell_area "
+        f"and {nucleus_q*100:.1f}th percentile for nucleus_area"
+        f"and {genes_q*100:.1f}th percentile for n_genes"
+        f"and removing cells with <=0 cell area / nucleus area / total number of nonzero genes"
     )
 
-    if "transcript_counts" not in cells_df.columns or "cell_area" not in cells_df.columns:
-        raise KeyError("Required columns 'transcript_counts' and 'cell_area' not found.")
+    if (
+        "transcript_counts" not in cells_df.columns
+        or "cell_area" not in cells_df.columns
+        or "nucleus_area" not in cells_df.columns
+    ):
+        raise KeyError(
+            "Required columns 'transcript_counts', 'cell_area' and 'nucleus_area' not found."
+        )
+
+    cells_df["n_genes"] = (cells_df[gene_cols] > 0).sum(axis=1)
+    cells_df = cells_df.loc[
+        (cells_df["nucleus_area"] > 0) & (cells_df["cell_area"] > 0) & (cells_df["n_genes"] > 0)
+    ].copy()
 
     min_transcripts = cells_df["transcript_counts"].quantile(transcript_q)
     min_area = cells_df["cell_area"].quantile(area_q)
+    min_nucleus = cells_df["nucleus_area"].quantile(nucleus_q)
+    min_genes = cells_df["n_genes"].quantile(genes_q)
 
     logger.info(
         f"Computed thresholds: transcript_counts > {min_transcripts:.2f}, "
-        f"cell_area > {min_area:.2f}"
+        f"cell_area > {min_area:.2f} "
+        f"nucleus_area > {min_nucleus:.2f} "
+        f"n_genes > {min_genes:.2f}"
     )
 
-    mask = (cells_df["transcript_counts"] > min_transcripts) & (cells_df["cell_area"] > min_area)
+    mask = (
+        (cells_df["transcript_counts"] > min_transcripts)
+        & (cells_df["cell_area"] > min_area)
+        & (cells_df["nucleus_area"] > min_nucleus)
+        & (cells_df["n_genes"] > min_genes)
+    )
     filtered = cells_df.loc[mask].copy()
 
     logger.info(

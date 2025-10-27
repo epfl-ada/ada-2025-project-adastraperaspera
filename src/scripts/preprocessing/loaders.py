@@ -7,10 +7,36 @@ from __future__ import annotations
 
 import os
 
+from anndata import AnnData
 import pandas as pd
 import scanpy as sc
 
 from src.utils.logging_utils import logger
+
+
+def combine_cells_and_expression(
+    cells_with_dist: pd.DataFrame,
+    adata: AnnData,
+    file_path: str,
+) -> pd.DataFrame:
+    """
+    Convenience wrapper to merge cells and expression data and save to a CSV file.
+    If already exists, load from CSV.
+
+    Args:
+        cells_with_dist (pd.DataFrame): Cells with distances to plaques
+        adata (AnnData): Expression data
+        file_path (str): Path to the CSV file
+
+    Returns:
+        pd.DataFrame: Combined cells and expression data
+    """
+    if not os.path.exists(file_path):
+        combined_df = merge_expression_with_cells(cells_with_dist, adata)
+        combined_df.to_csv(file_path, index=False)
+    else:
+        combined_df = pd.read_csv(file_path)
+    return combined_df
 
 
 def load_cells_table(path: str) -> pd.DataFrame:
@@ -93,19 +119,20 @@ def merge_expression_with_cells(cells_df: pd.DataFrame, adata: sc.AnnData) -> pd
     logger.info(f"Merged dataframe shape: {merged.shape}")
     return merged
 
+
 def load_plaque_polygons(path: str) -> pd.DataFrame:
     """
     Load the plaque polygons CSV file.
-    
+
     Args:
         path (str): Path to the plaque polygons CSV file
-        
+
     Returns:
         pd.DataFrame: Plaque polygons data
     """
     if not os.path.exists(path):
         raise FileNotFoundError(f"Plaque polygons file not found: {path}")
-    
+
     logger.info(f"Loading plaque polygons from {path}")
     df = pd.read_csv(path, low_memory=False)
     logger.info(f"Loaded {df.shape[0]} plaque polygons with {df.shape[1]} columns")
@@ -115,28 +142,28 @@ def load_plaque_polygons(path: str) -> pd.DataFrame:
 def load_brain_polygon(path: str) -> pd.DataFrame:
     """
     Load the brain polygon CSV file with proper parsing.
-    
+
     Args:
         path (str): Path to the brain polygon CSV file
-        
+
     Returns:
         pd.DataFrame: Brain polygon data with x, y coordinates
     """
     if not os.path.exists(path):
         raise FileNotFoundError(f"Brain polygon file not found: {path}")
-    
+
     logger.info(f"Loading brain polygon from {path}")
-    df = pd.read_csv(
-        path,
-        sep=",",
-        header=None,
-        skiprows=2,
-        names=["name", "x", "y"],
-        engine="python"
-    ).assign(
-        x=lambda d: pd.to_numeric(d["x"], errors="coerce"),
-        y=lambda d: pd.to_numeric(d["y"], errors="coerce")
-    ).dropna(subset=["x", "y"]).reset_index(drop=True)
-    
+    df = (
+        pd.read_csv(
+            path, sep=",", header=None, skiprows=2, names=["name", "x", "y"], engine="python"
+        )
+        .assign(
+            x=lambda d: pd.to_numeric(d["x"], errors="coerce"),
+            y=lambda d: pd.to_numeric(d["y"], errors="coerce"),
+        )
+        .dropna(subset=["x", "y"])
+        .reset_index(drop=True)
+    )
+
     logger.info(f"Loaded brain polygon with {df.shape[0]} points")
     return df

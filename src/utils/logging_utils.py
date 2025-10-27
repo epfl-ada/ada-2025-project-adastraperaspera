@@ -4,13 +4,28 @@ from datetime import datetime
 import logging
 import os
 import pathlib
+import sys
 from typing import Any
 from zoneinfo import ZoneInfo
 
 from src.scripts.plaque_alignment.config import PathsCfg
 
 # Global logger for this module
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(message)s",
+    handlers=[logging.StreamHandler(sys.stdout)],
+    force=True,
+)
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+
+if not logger.handlers:
+    h = logging.StreamHandler(sys.stdout)
+    h.setFormatter(logging.Formatter("%(message)s"))
+    logger.addHandler(h)
+
+logger.propagate = False
 
 
 class TZFormatter(logging.Formatter):
@@ -24,20 +39,34 @@ class TZFormatter(logging.Formatter):
         self._tz = ZoneInfo(tz)
 
     def formatTime(self, record: logging.LogRecord, datefmt: str | None = None) -> str:  # noqa: N802
-        # Use timezone-aware datetime derived from the record timestamp.
-        # Example output: 2025-10-18T16:27:03.123+02:00
         dt = datetime.fromtimestamp(record.created, self._tz)
         if datefmt:
-            # If a custom datefmt is supplied, honor it (still tz-aware)
             return dt.strftime(datefmt)
-        # Default: ISO-8601 with milliseconds and numeric offset
         return dt.isoformat(timespec="milliseconds")
+
+
+class ImmediateFlushHandler(logging.StreamHandler):
+    """StreamHandler that flushes immediately after each log record."""
+
+    def __init__(self, stream=None):
+        super().__init__(stream=sys.stdout if stream is None else stream)
+
+    def emit(self, record):
+        super().emit(record)
+        self.flush()
+
+
+class ImmediateFlushFileHandler(logging.FileHandler):
+    """FileHandler that flushes immediately after each log record."""
+
+    def emit(self, record):
+        super().emit(record)
+        self.flush()
 
 
 def _timestamp_for_filename(tzname: str = "Europe/Zurich") -> str:
     """Timestamp safe for filenames, e.g., 2025-10-18T16-27-03+02-00"""
     tz = ZoneInfo(tzname)
-    # Use offset in filename so you can see whether it was CET (+01:00) or CEST (+02:00)
     return (
         datetime.now(tz).strftime("%Y-%m-%dT%H-%M-%S%z")[:-2]
         + "-"
@@ -62,11 +91,11 @@ def setup_logging(
 
     fmt = TZFormatter("%(asctime)s | %(levelname)s | %(name)s | %(message)s", tz=tzname)
 
-    fh = logging.FileHandler(log_file, encoding="utf-8")
+    fh = ImmediateFlushFileHandler(log_file, encoding="utf-8")
     fh.setLevel(logging.DEBUG)
     fh.setFormatter(fmt)
 
-    ch = logging.StreamHandler()
+    ch = ImmediateFlushHandler(stream=sys.stdout)
     ch.setLevel(level)
     ch.setFormatter(fmt)
 

@@ -1,34 +1,39 @@
 from __future__ import annotations
-from typing import Iterable, Tuple, Dict, List
-import pandas as pd
-import numpy as np
-from scipy.stats import skew, kurtosis, gaussian_kde
-from dataclasses import dataclass
-import matplotlib.pyplot as plt
-from typing import Sequence, Optional
 
+from collections.abc import Iterable, Sequence
+from dataclasses import dataclass
+
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+from scipy.stats import gaussian_kde, kurtosis, skew
 
 # Default metadata columns for your Xenium dataset
 DEFAULT_META_COLS = {
-    "cell_id","x_centroid","y_centroid","transcript_counts",
-    "control_probe_counts","control_codeword_counts",
-    "unassigned_codeword_counts","total_counts",
-    "cell_area","nucleus_area",
+    "cell_id",
+    "x_centroid",
+    "y_centroid",
+    "transcript_counts",
+    "control_probe_counts",
+    "control_codeword_counts",
+    "unassigned_codeword_counts",
+    "total_counts",
+    "cell_area",
+    "nucleus_area",
+    "distance_to_plaque",
 }
 
-def get_gene_columns(
-    df: pd.DataFrame,
-    meta_cols: Iterable[str] = DEFAULT_META_COLS
-) -> List[str]:
+
+def get_gene_columns(df: pd.DataFrame, meta_cols: Iterable[str] = DEFAULT_META_COLS) -> list[str]:
     """Return numeric columns not in meta as gene feature columns."""
     num_cols = df.select_dtypes(include=[np.number]).columns.tolist()
     meta_set = set(meta_cols)
     return [c for c in num_cols if c not in meta_set]
 
+
 def split_meta_vs_genes(
-    df: pd.DataFrame,
-    meta_cols: Iterable[str] = DEFAULT_META_COLS
-) -> Tuple[pd.DataFrame, pd.DataFrame, Dict[str, int]]:
+    df: pd.DataFrame, meta_cols: Iterable[str] = DEFAULT_META_COLS
+) -> tuple[pd.DataFrame, pd.DataFrame, dict[str, int]]:
     """Split DataFrame into meta and gene feature DataFrames."""
     meta_set = set(meta_cols)
     meta_df = df.loc[:, [c for c in df.columns if c in meta_set]].copy()
@@ -41,13 +46,12 @@ def split_meta_vs_genes(
     }
     return meta_df, genes_df, info
 
- 
+
 @dataclass(frozen=True)
 class QCBounds:
-    lo_counts: float
-    hi_counts: float
     lo_genes: float
     hi_genes: float
+
 
 def _iqr_bounds(s: pd.Series, mult: float = 3.0, floor: float = 1.0) -> tuple[float, float]:
     q1, q3 = s.quantile([0.25, 0.75])
@@ -56,15 +60,18 @@ def _iqr_bounds(s: pd.Series, mult: float = 3.0, floor: float = 1.0) -> tuple[fl
     hi = float(q3 + mult * iqr)
     return lo, hi
 
+
 def add_qc_metrics(df: pd.DataFrame, gene_cols: Iterable[str]) -> pd.DataFrame:
     """
     Return a copy with n_genes (nonzero gene features) and n_counts (sum across genes).
     """
     out = df.copy()
     gc = list(gene_cols)
-    out["n_genes"]  = (out[gc] > 0).sum(axis=1)
-    out["n_counts"] = out[gc].sum(axis=1)
+    # Counts the number of genes with above zero expression level in each cell
+    # Dimension: cells x 1
+    out["n_genes"] = (out[gc] > 0).sum(axis=1)
     return out
+
 
 def filter_cells_iqr(
     df: pd.DataFrame,
@@ -74,7 +81,8 @@ def filter_cells_iqr(
     iqr_mult: float = 3.0,
     min_floor_counts: float = 1.0,
     min_floor_genes: float = 1.0,
-) -> tuple[pd.DataFrame, pd.Series, QCBounds, Dict[str, int], pd.DataFrame]:
+) -> tuple[pd.DataFrame, pd.Series, QCBounds, dict[str, int], pd.DataFrame]:
+    # TODO: update docstring to be more granular
     """
     Add QC metrics, compute IQR-based bounds for n_counts / n_genes, build a mask,
     and return filtered cells.
@@ -88,15 +96,13 @@ def filter_cells_iqr(
     """
     df_qc = add_qc_metrics(df, gene_cols)
 
-    lo_counts, hi_counts = _iqr_bounds(df_qc["n_counts"], mult=iqr_mult, floor=min_floor_counts)
-    lo_genes,  hi_genes  = _iqr_bounds(df_qc["n_genes"],  mult=iqr_mult, floor=min_floor_genes)
+    lo_genes, hi_genes = _iqr_bounds(df_qc["n_genes"], mult=iqr_mult, floor=min_floor_genes)
 
-    area_ok   = df_qc.get(area_col, pd.Series(1, index=df_qc.index, dtype="int64")) > 0
-    nuc_ok    = df_qc.get(nucleus_col, pd.Series(0, index=df_qc.index, dtype="int64")) >= 0
-    counts_ok = df_qc["n_counts"].between(lo_counts, hi_counts)
-    genes_ok  = df_qc["n_genes"].between(lo_genes,  hi_genes)
+    area_ok = df_qc.get(area_col, pd.Series(1, index=df_qc.index, dtype="int64")) > 0
+    nuc_ok = df_qc.get(nucleus_col, pd.Series(0, index=df_qc.index, dtype="int64")) > 0
+    genes_ok = df_qc["n_genes"].between(lo_genes, hi_genes)
 
-    mask = area_ok & nuc_ok & counts_ok & genes_ok
+    mask = area_ok & nuc_ok & genes_ok
     df_clean = df_qc.loc[mask].copy()
 
     kept = int(mask.sum())
@@ -104,15 +110,18 @@ def filter_cells_iqr(
     removed = total - kept
 
     bounds = QCBounds(
-        lo_counts=lo_counts, hi_counts=hi_counts,
-        lo_genes=lo_genes,   hi_genes=hi_genes,
+        lo_genes=lo_genes,
+        hi_genes=hi_genes,
     )
     summary_numbers = {"kept": kept, "total": total, "removed": removed}
 
-    cols_to_show = [c for c in ["n_counts","n_genes", area_col, nucleus_col] if c in df_clean.columns]
+    cols_to_show = [
+        c for c in ["n_counts", "n_genes", area_col, nucleus_col] if c in df_clean.columns
+    ]
     describe_tbl = df_clean[cols_to_show].describe().T
 
     return df_clean, mask, bounds, summary_numbers, describe_tbl
+
 
 def summarize_genes(gene_df: pd.DataFrame) -> pd.DataFrame:
     """
@@ -127,27 +136,31 @@ def summarize_genes(gene_df: pd.DataFrame) -> pd.DataFrame:
     """
     g = gene_df
 
-    summary = pd.DataFrame({
-        "gene": g.columns,
-        "mean": g.mean(axis=0).values,
-        "std": g.std(axis=0, ddof=0).values,
-        "median": g.median(axis=0).values,
-        "mad": g.subtract(g.median()).abs().median(axis=0).values,
-        "skew": g.apply(lambda s: skew(s, bias=False, nan_policy="omit")).values,
-        "kurtosis": g.apply(lambda s: kurtosis(s, fisher=True, bias=False, nan_policy="omit")).values,
-        "nonzero_frac": (g > 0).mean(axis=0).values
-    }).set_index("gene").sort_index()
+    summary = (
+        pd.DataFrame(
+            {
+                "gene": g.columns,
+                "mean": g.mean(axis=0).values,
+                "std": g.std(axis=0, ddof=0).values,
+                "median": g.median(axis=0).values,
+                "mad": g.subtract(g.median()).abs().median(axis=0).values,
+                "skew": g.apply(lambda s: skew(s, bias=False, nan_policy="omit")).values,
+                "kurtosis": g.apply(
+                    lambda s: kurtosis(s, fisher=True, bias=False, nan_policy="omit")
+                ).values,
+                "nonzero_frac": (g > 0).mean(axis=0).values,
+            }
+        )
+        .set_index("gene")
+        .sort_index()
+    )
 
     return summary
 
 
-
 def compute_pigs_zscores(
-    df: pd.DataFrame,
-    gene_cols: List[str],
-    pigs: List[str] | None = None,
-    clip: float = 10.0
-) -> Tuple[pd.DataFrame, Dict[str, List[str]]]:
+    df: pd.DataFrame, gene_cols: list[str], pigs: list[str] | None = None, clip: float = 10.0
+) -> tuple[pd.DataFrame, dict[str, list[str]]]:
     """
     Compute z-scored expression matrix for a predefined set of PIG genes.
 
@@ -163,8 +176,22 @@ def compute_pigs_zscores(
     """
     if pigs is None:
         pigs = [
-            "Hexb","Cst3","CD63","C4b","Ctsd","B2m","H2-K1","Apoe","Gfap",
-            "Nrep","Serpina3n","Cd74","Cxcl10","Vim","S100a6","Ifit3"
+            "Hexb",
+            "Cst3",
+            "CD63",
+            "C4b",
+            "Ctsd",
+            "B2m",
+            "H2-K1",
+            "Apoe",
+            "Gfap",
+            "Nrep",
+            "Serpina3n",
+            "Cd74",
+            "Cxcl10",
+            "Vim",
+            "S100a6",
+            "Ifit3",
         ]
 
     # Map lowercased gene names to actual column names
@@ -190,15 +217,13 @@ def compute_pigs_zscores(
     return pigs_z, {"present": pigs_present, "missing": pigs_missing}
 
 
-
-
 def plot_gene_distributions(
     df: pd.DataFrame,
     genes: Sequence[str],
     bins: int = 50,
     cols: int = 4,
     title: str = "Per-gene distributions (histogram + KDE)",
-    figsize: Optional[tuple[int, int]] = None,
+    figsize: tuple[int, int] | None = None,
     show: bool = True,
     save_path: str | None = None,
 ):
@@ -211,7 +236,7 @@ def plot_gene_distributions(
         bins (int): Number of histogram bins.
         cols (int): Number of subplot columns.
         title (str): Figure title.
-        figsize (tuple, optional): (width, height) in inches. 
+        figsize (tuple, optional): (width, height) in inches.
             Defaults to (4*cols, 3.2*rows).
         show (bool): Whether to display the plot.
         save_path (str, optional): If provided, save the figure to this path.
@@ -222,12 +247,12 @@ def plot_gene_distributions(
     n = len(genes)
     rows = (n + cols - 1) // cols
     if figsize is None:
-        figsize = (4*cols, 3.2*rows)
+        figsize = (4 * cols, 3.2 * rows)
 
     fig, axes = plt.subplots(rows, cols, figsize=figsize)
     axes = np.array(axes).ravel()
 
-    for ax, gene in zip(axes, genes):
+    for ax, gene in zip(axes, genes, strict=False):
         x = df[gene].to_numpy(dtype=float)
         x = x[np.isfinite(x)]
         ax.hist(x, bins=bins, density=True, alpha=0.45)
@@ -259,13 +284,13 @@ def plot_gene_distributions(
     return fig
 
 
-
 def compute_weird_gene_scores(
     gene_df: pd.DataFrame,
     clip_z: float = 3.0,
     ddof_std: int = 0,
     eps: float = 1e-9,
-) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    PIGs: list[str] | None = None,
+) -> tuple[pd.DataFrame, pd.DataFrame]:
     """
     Compute per-gene metrics and a composite 'weird_score' capturing
     zero-inflation, dispersion, shape (skew/kurtosis), and tail ratio.
@@ -302,30 +327,35 @@ def compute_weird_gene_scores(
     tail_ratio = (q90 + eps) / (q10 + eps)
 
     # Aggregate table
-    S = pd.DataFrame({
-        "zero_frac": zero_frac,
-        "nonzero_frac": 1.0 - zero_frac,
-        "mean": mean_,
-        "std": std_,
-        "cv": cv,
-        "skew": sk,
-        "kurtosis": ku,
-        "q10": q10,
-        "q90": q90,
-        "tail_ratio": tail_ratio,
-    }).replace([np.inf, -np.inf], np.nan)
+    S = pd.DataFrame(
+        {
+            "zero_frac": zero_frac,
+            "nonzero_frac": 1.0 - zero_frac,
+            "mean": mean_,
+            "std": std_,
+            "cv": cv,
+            "skew": sk,
+            "kurtosis": ku,
+            "q10": q10,
+            "q90": q90,
+            "tail_ratio": tail_ratio,
+            "isPIG": G.columns.isin(PIGs),
+        }
+    ).replace([np.inf, -np.inf], np.nan)
 
     # Z-standardize selected components
     def _zcol(col: pd.Series) -> pd.Series:
         return (col - col.mean()) / (col.std(ddof=ddof_std) + eps)
 
-    Z = pd.DataFrame({
-        "zero_frac": _zcol(S["zero_frac"]),
-        "cv": _zcol(S["cv"]),
-        "skew": _zcol(S["skew"]).abs(),        # use |skew|
-        "kurtosis": _zcol(S["kurtosis"]),
-        "tail_ratio": _zcol(S["tail_ratio"]),
-    })
+    Z = pd.DataFrame(
+        {
+            "zero_frac": _zcol(S["zero_frac"]),
+            "cv": _zcol(S["cv"]),
+            "skew": _zcol(S["skew"]).abs(),
+            "kurtosis": _zcol(S["kurtosis"]),
+            "tail_ratio": _zcol(S["tail_ratio"]),
+        }
+    )
 
     # Clip and sum to get the composite score
     Zc = Z.clip(lower=-clip_z, upper=clip_z)
@@ -358,6 +388,7 @@ def _panel(values: pd.Series, ax: plt.Axes, title: str, bins: int, use_log1p: bo
     ax.set_xlabel("log1p(expression)" if use_log1p else "expression")
     ax.set_ylabel("density")
 
+
 def plot_weird_gene_panels(
     df: pd.DataFrame,
     genes: Sequence[str],
@@ -367,9 +398,9 @@ def plot_weird_gene_panels(
     linear_title: str = "Weirdest genes — linear scale",
     log_title: str = "Weirdest genes — log1p scale",
     show: bool = True,
-    save_linear_path: Optional[str] = None,
-    save_log_path: Optional[str] = None,
-) -> Tuple[plt.Figure, plt.Figure]:
+    save_linear_path: str | None = None,
+    save_log_path: str | None = None,
+) -> tuple[plt.Figure, plt.Figure]:
     """
     Plot histogram + KDE panels for a list of genes, both linear and log1p scales.
 
@@ -383,7 +414,7 @@ def plot_weird_gene_panels(
     # Linear panels
     fig_lin, axes_lin = plt.subplots(rows, cols, figsize=figsize)
     axes_lin = np.array(axes_lin).ravel()
-    for ax, g in zip(axes_lin, genes):
+    for ax, g in zip(axes_lin, genes, strict=False):
         _panel(df[g], ax, g, bins=bins, use_log1p=False)
     for k in range(n, len(axes_lin)):
         axes_lin[k].axis("off")
@@ -395,7 +426,7 @@ def plot_weird_gene_panels(
     # Log1p panels
     fig_log, axes_log = plt.subplots(rows, cols, figsize=figsize)
     axes_log = np.array(axes_log).ravel()
-    for ax, g in zip(axes_log, genes):
+    for ax, g in zip(axes_log, genes, strict=False):
         _panel(df[g], ax, g, bins=bins, use_log1p=True)
     for k in range(n, len(axes_log)):
         axes_log[k].axis("off")
@@ -407,6 +438,7 @@ def plot_weird_gene_panels(
     if show:
         plt.show()
     else:
-        plt.close(fig_lin); plt.close(fig_log)
+        plt.close(fig_lin)
+        plt.close(fig_log)
 
     return fig_lin, fig_log
