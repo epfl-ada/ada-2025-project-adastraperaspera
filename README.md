@@ -178,6 +178,8 @@ python -m scripts.plaque_alignment.cli --config configs/config.yaml
   - Cells are colored by distance (cool = near plaque, warm = far).
   - Plaque outlines are shown in green overlay to confirm correct alignment.
 
+  ![Cell-to-plaque distance](src/data/figures/cell-plaque-dist.png)
+
 ---
 
 ### Integrating gene expression data
@@ -198,6 +200,9 @@ python -m scripts.plaque_alignment.cli --config configs/config.yaml
 - `mean_expression_by_bin()` then computes the mean log1p expression for each gene per distance bin.
 - Visualization functions (`plot_gene_trends`, `plot_mean_heatmap`) reveal genes whose expression systematically varies with plaque proximity.
 
+![Genre trend](src/data/figures/gene_trend.png)
+![Mean heatmap](src/data/figures/top_genes.png)
+
 #### Regression and correlation analysis
 
 - Gene-wise correlations and slopes versus plaque distance are computed with
@@ -208,6 +213,7 @@ python -m scripts.plaque_alignment.cli --config configs/config.yaml
   - Benjamini–Hochberg FDR-corrected p-value (`fdr_pval`)
 - Genes are ranked by `spearman_r` or absolute `slope` and visualized using `plot_top_spatial_genes()`.
 
+![Top 20 genes](src/data/figures/top_twenty.png)
 #### Example biological insight
 
 - Classical plaque-induced glial markers such as **Cst3**, **Gfap**, **Apoe**, and **Clu** show steep positive slopes and significant correlations (FDR < 0.05), confirming strong up-regulation near amyloid plaques.
