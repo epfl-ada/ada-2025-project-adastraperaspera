@@ -424,7 +424,7 @@ def plot_top_spatial_genes_interactive(
     if gene_col not in df.columns:
         raise ValueError(f"'{gene_col}' absent de stats_df.")
 
-    # Détection auto des métriques si non fournies
+    # Auto-detect metrics if not provided
     if metrics is None:
         non_metric = {gene_col, *p_col_candidates, *fdr_col_candidates}
         metrics = [
@@ -434,11 +434,11 @@ def plot_top_spatial_genes_interactive(
     if not metrics:
         raise ValueError("Aucune métrique numérique détectée. Fournis `metrics=[...]`.")
 
-    # Colonnes p/FDR pour le hover (si présentes)
+    # p/FDR columns for hover (if present)
     p_col = next((c for c in p_col_candidates if c in df.columns), None)
     fdr_col = next((c for c in fdr_col_candidates if c in df.columns), None)
 
-    # Construit 1 trace/barplot par métrique (on bascule la visibilité via dropdown)
+    # Build one trace (horizontal bar) per metric; visibility will be toggled via dropdown
     traces = []
     vis_map = {}
     top_n = int(min(top_n, len(df)))
@@ -479,7 +479,7 @@ def plot_top_spatial_genes_interactive(
 
     fig = go.Figure(data=traces)
 
-    # Boutons du menu (sélecteur de “gène” dans ton vocabulaire, ici = métrique)
+    # Menu dropdown
     buttons = []
     for m in metrics:
         vis = [i == vis_map[m] for i in range(len(traces))]
@@ -497,13 +497,13 @@ def plot_top_spatial_genes_interactive(
         title=dict(text=f"{title} — {init_metric}", x=0.5, xanchor="center", y=0.96, yanchor="top"),
         xaxis_title=init_metric,
         yaxis_title="Gene",
-        margin=dict(l=140, r=30, t=110, b=50),  # top ↑ pour loger le menu
+        margin=dict(l=140, r=30, t=110, b=50),  # top ↑ for menu
         showlegend=False,
         updatemenus=[dict(
             buttons=buttons,
             direction="down", showactive=True,
             x=0.02, xanchor="left",
-            y=1.10, yanchor="top",       # juste sous le titre
+            y=1.10, yanchor="top",       
             bgcolor="white", bordercolor="#ccc",
             pad={"r": 6, "t": 6},
         )],
