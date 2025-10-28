@@ -1,12 +1,15 @@
 import plotly.express as px
 import plotly.graph_objects as go
 import numpy as np
-import plotly.graph_objects as go
 from typing import List, Optional
-import pandas as pd
 from typing import Sequence, Optional
-import plotly.graph_objects as go
 from scipy.stats import gaussian_kde
+import geopandas as gpd
+import matplotlib.pyplot as plt
+import seaborn as sns
+import pandas as pd
+from sklearn.metrics import r2_score
+
 
 def add_plaques_to_plotly(fig, plaques_gdf, name="Plaques", line_color="lime", line_width=2):
     def _add_ring(ring, fig):
@@ -543,3 +546,395 @@ def draw_figures(plot_func,img_pth="std.png", *args, **kwargs):
     fig = plot_func(*args, **kwargs)
     fig.write_html(img_pth)
     fig.show()
+
+
+
+
+def plot_model_performance(results_df):
+    """Bar plot comparing R² scores across models."""
+    plt.figure(figsize=(6, 4))
+    results_melted = results_df.melt(
+        id_vars="model", value_vars=["train_r2", "test_r2"],
+        var_name="Dataset", value_name="R²"
+    )
+    sns.barplot(data=results_melted, x="model", y="R²", hue="Dataset", palette="viridis")
+    plt.title("Model Performance Comparison (Train vs Test R²)")
+    plt.xlabel("Model")
+    plt.ylabel("R²")
+    plt.legend(title="")
+    plt.tight_layout()
+    plt.show()
+
+
+def plot_top_gene_importances(importance_df, top_n=20):
+    """Heatmap of top predictive genes across models."""
+    # Normalize importance per model
+    normed = (
+        importance_df.groupby("model", group_keys=False)
+        .apply(lambda d: d.assign(norm_importance=d["importance"] / d["importance"].max()))
+    )
+
+    # Take top_n per model
+    top_genes = (
+        normed.groupby("model", group_keys=False)
+        .apply(lambda d: d.nlargest(top_n, "norm_importance"))
+    )
+
+    # Pivot for heatmap
+    pivot = top_genes.pivot_table(
+        index="gene", columns="model", values="norm_importance", fill_value=0
+    )
+
+    # Order genes by average importance
+    pivot = pivot.loc[pivot.mean(axis=1).sort_values(ascending=False).index]
+
+    plt.figure(figsize=(10, max(6, top_n * 0.3)))
+    sns.heatmap(pivot, cmap="mako", linewidths=0.5, cbar_kws={"label": "Normalized Importance"})
+    plt.title(f"Top {top_n} Predictive Genes Across Models")
+    plt.xlabel("Model")
+    plt.ylabel("Gene")
+    plt.tight_layout()
+    plt.show()
+
+
+def plot_spatial_overlay(df, gene, alpha=0.7, sample_size=20000):
+    """
+    Scatter overlay showing per-cell expression intensity in tissue coordinates.
+    Colors high expression regions with a semi-transparent viridis map.
+    """
+    import matplotlib.pyplot as plt
+    import seaborn as sns
+
+    data = df.sample(min(sample_size, len(df)), random_state=42)
+    plt.figure(figsize=(6, 6))
+    sc = plt.scatter(
+        data["x_centroid"], data["y_centroid"],
+        c=data[gene], cmap="viridis", s=6, alpha=alpha, linewidth=0
+    )
+    plt.gca().invert_yaxis()
+    plt.axis("off")
+    plt.title(f"{gene} spatial expression map")
+    plt.colorbar(sc, label="Expression (log₁₊)")
+    plt.tight_layout()
+    plt.show()
+
+
+def plot_predicted_proximity(df, score_col="plaque_proximity_score", sample_size=20000):
+    """
+    Shows predicted proximity score across tissue space.
+    Darker/brighter regions = cells predicted closer to plaques.
+    """
+    import matplotlib.pyplot as plt
+    import seaborn as sns
+
+    data = df.sample(min(sample_size, len(df)), random_state=42)
+    plt.figure(figsize=(6, 6))
+    sc = plt.scatter(
+        data["x_centroid"], data["y_centroid"],
+        c=data[score_col], cmap="magma", s=6, alpha=0.8, linewidth=0
+    )
+    plt.gca().invert_yaxis()
+    plt.axis("off")
+    plt.title("Predicted plaque proximity score")
+    plt.colorbar(sc, label="Model-predicted proximity (relative units)")
+    plt.tight_layout()
+    plt.show()
+
+
+def plot_multi_gene_signature(df, genes, distance_col="distance_to_plaque"):
+    """
+    Plots mean expression of multiple genes along plaque distance as a heatmap.
+    """
+    import numpy as np
+    import matplotlib.pyplot as plt
+    import seaborn as sns
+    import pandas as pd
+
+    bins = np.linspace(0, df[distance_col].max(), 40)
+    df["distance_bin"] = pd.cut(df[distance_col], bins=bins)
+
+    grouped = df.groupby("distance_bin")[genes].mean().reset_index()
+    heatmap_data = grouped.set_index("distance_bin")[genes].T
+
+    plt.figure(figsize=(10, 4))
+    sns.heatmap(heatmap_data, cmap="rocket_r", cbar_kws={"label": "Mean expression"})
+    plt.xlabel("Distance bin (µm)")
+    plt.ylabel("Gene")
+    plt.title("Spatial gradient of multi-gene expression around plaques")
+    plt.tight_layout()
+    plt.show()
+
+
+
+def plot_gene_near_plaques(df, gene, dist_thresh=30.0, sample_size=20000):
+    """
+    Highlights cells near plaques in grey and colors only the most predictive gene expression.
+    """
+
+    data = df.sample(min(sample_size, len(df)), random_state=42)
+
+    # Split proximal vs distal
+    near = data[data["distance_to_plaque"] <= dist_thresh]
+    far = data[data["distance_to_plaque"] > dist_thresh]
+
+    plt.figure(figsize=(6, 6))
+    # Plot background (all cells)
+    plt.scatter(
+        far["x_centroid"], far["y_centroid"],
+        color="lightgrey", s=4, alpha=0.3, linewidth=0, label="Distal cells"
+    )
+    # Overlay plaque-near colored by gene expression
+    sc = plt.scatter(
+        near["x_centroid"], near["y_centroid"],
+        c=near[gene], cmap="inferno", s=8, alpha=0.8, linewidth=0
+    )
+    plt.gca().invert_yaxis()
+    plt.axis("off")
+    plt.title(f"{gene}: Expression near plaques (≤ {dist_thresh} µm)")
+    cbar = plt.colorbar(sc, label="Expression (log₁₊)")
+    plt.tight_layout()
+    plt.show()
+
+
+def plot_spatial_with_plaques(df, plaques_poly, gene=None, score_col=None, sample_size=20000):
+    """
+    Visualizes either gene expression or model-predicted proximity,
+    with plaque outlines overlaid from the plaque_polygons DataFrame.
+    - If gene is given: color by gene expression
+    - If score_col is given: color by model score
+    """
+
+    data = df.sample(min(sample_size, len(df)), random_state=42)
+
+    # Decide which column to plot
+    if gene:
+        color_values = data[gene]
+        title = f"{gene} expression + plaque outlines"
+        cmap = "inferno"
+    elif score_col:
+        color_values = data[score_col]
+        title = f"{score_col} + plaque outlines"
+        cmap = "magma"
+    else:
+        raise ValueError("Provide either `gene` or `score_col`.")
+
+    plt.figure(figsize=(7, 7))
+    sc = plt.scatter(
+        data["x_centroid"],
+        data["y_centroid"],
+        c=color_values,
+        cmap=cmap,
+        s=6,
+        alpha=0.8,
+        linewidth=0
+    )
+    plt.gca().invert_yaxis()
+    plt.axis("off")
+
+    # Overlay plaque polygons 
+    try:
+        if isinstance(plaques_poly, pd.DataFrame) and "geometry" in plaques_poly.columns:
+            gdf = gpd.GeoDataFrame(plaques_poly, geometry="geometry")
+        elif isinstance(plaques_poly, gpd.GeoDataFrame):
+            gdf = plaques_poly
+        else:
+            raise ValueError("plaques_poly must contain a 'geometry' column.")
+        
+        gdf.boundary.plot(ax=plt.gca(), color="cyan", linewidth=0.7, alpha=0.8, label="Plaques")
+    except Exception as e:
+        print(f"Could not overlay plaques: {e}")
+
+    plt.title(title)
+    plt.colorbar(sc, label="Intensity")
+    plt.tight_layout()
+    plt.show()
+
+
+def plot_pred_vs_true(y_true, y_pred, model_name="Model"):
+    """
+    Scatter plot showing predicted vs. true spatial distances.
+    Includes line of identity and R² annotation.
+    """
+    import matplotlib.pyplot as plt
+    import seaborn as sns
+    from sklearn.metrics import r2_score
+
+    r2 = r2_score(y_true, y_pred)
+
+    plt.figure(figsize=(5, 5))
+    sns.scatterplot(x=y_true, y=y_pred, s=10, alpha=0.4, color="teal")
+    plt.plot([y_true.min(), y_true.max()], [y_true.min(), y_true.max()], "r--", lw=1)
+    plt.xlabel("Ground truth distance (µm)")
+    plt.ylabel("Predicted distance (µm)")
+    plt.title(f"{model_name}: Predicted vs. Actual\nR² = {r2:.3f}")
+    plt.tight_layout()
+    plt.show()
+
+
+
+def plot_residual_hist(y_true, y_pred, model_name="Model"):
+    """
+    Histogram + KDE of residuals (true - predicted).
+    Reveals bias in over/under-prediction.
+    """
+    import matplotlib.pyplot as plt
+    import seaborn as sns
+    import numpy as np
+
+    residuals = y_true - y_pred
+    plt.figure(figsize=(6, 4))
+    sns.histplot(residuals, kde=True, color="darkslateblue", bins=50)
+    plt.axvline(0, color="r", linestyle="--", linewidth=1)
+    plt.xlabel("Residual (True − Predicted, µm)")
+    plt.ylabel("Cell count")
+    plt.title(f"{model_name}: Residual Distribution")
+    plt.tight_layout()
+    plt.show()
+
+
+def plot_spatial_residual_map(df, y_true, y_pred, sample_size=20000, model_name="Model"):
+    """
+    Plots per-cell residuals in spatial coordinates.
+    Blue = over-predicted (model thinks it's farther),
+    Red = under-predicted (model thinks it's closer).
+    """
+
+    y_true_vals = np.asarray(y_true).reshape(-1)
+    y_pred_vals = np.asarray(y_pred).reshape(-1)
+    n = min(sample_size, len(df))
+
+    sample_idx = np.random.choice(len(df), size=n, replace=False)
+    data = df.iloc[sample_idx].copy()
+
+    data["residual"] = y_true_vals[sample_idx] - y_pred_vals[sample_idx]
+
+
+    plt.figure(figsize=(7, 7))
+    sc = plt.scatter(
+        data["x_centroid"],
+        data["y_centroid"],
+        c=data["residual"],
+        cmap="coolwarm",
+        s=6,
+        alpha=0.8,
+        linewidth=0,
+        vmin=-np.percentile(abs(data["residual"]), 99),
+        vmax=np.percentile(abs(data["residual"]), 99)
+    )
+    plt.gca().invert_yaxis()
+    plt.axis("off")
+    plt.title(f"{model_name}: Spatial Residual Map")
+    plt.colorbar(sc, label="True − Predicted distance (µm)")
+    plt.tight_layout()
+    plt.show()
+
+
+def plot_residual_figure(
+    df,
+    y_true,
+    y_pred,
+    gene_cols,
+    plaques_poly=None,
+    oligo_marker="Plp1",
+    sample_size=20000,
+):
+    """
+    Composite figure for analyzing residual structure and cell-type bias.
+    Panels:
+      A: Predicted vs True distance, colored by oligodendrocyte marker
+      B: Spatial residual map (with optional plaque outlines)
+      C: Mean |residual| by major cell-type markers
+      D: correlation heatmap for top residual-associated genes
+    """
+
+    y_true_vals = np.asarray(y_true)
+    y_pred_vals = np.asarray(y_pred)
+    residual = y_true_vals - y_pred_vals
+    abs_resid = np.abs(residual)
+    r2 = r2_score(y_true_vals, y_pred_vals)
+    df = df.copy()
+    df["residual"] = residual
+    df["abs_residual"] = abs_resid
+
+    
+    n = min(sample_size, len(df))
+    sample_idx = np.random.choice(len(df), size=n, replace=False)
+    data = df.iloc[sample_idx]
+
+    fig, axes = plt.subplots(1, 3, figsize=(18, 5))
+    plt.subplots_adjust(wspace=0.35)
+    sns.set_style("white")
+
+    
+    plp_expr = np.log1p(data[oligo_marker])
+    sc = axes[0].scatter(
+        y_true_vals[sample_idx],
+        y_pred_vals[sample_idx],
+        c=plp_expr,
+        cmap="viridis",
+        s=10,
+        alpha=0.6,
+        linewidth=0,
+    )
+    lims = [0, max(y_true_vals.max(), y_pred_vals.max())]
+    axes[0].plot(lims, lims, "r--", lw=1)
+    axes[0].set_xlabel("True distance (µm)")
+    axes[0].set_ylabel("Predicted distance (µm)")
+    axes[0].set_title(f"(A) Predicted vs True (colored by {oligo_marker})\nR² = {r2:.3f}")
+    fig.colorbar(sc, ax=axes[0], label=f"{oligo_marker} expression (log₁₊)")
+
+    
+    res = data["residual"]
+    sc2 = axes[1].scatter(
+        data["x_centroid"],
+        data["y_centroid"],
+        c=res,
+        cmap="coolwarm",
+        s=6,
+        alpha=0.8,
+        linewidth=0,
+        vmin=-np.percentile(abs(res), 99),
+        vmax=np.percentile(abs(res), 99),
+    )
+    axes[1].invert_yaxis()
+    axes[1].axis("off")
+    axes[1].set_title("(B) Spatial residual map")
+    fig.colorbar(sc2, ax=axes[1], label="True − Predicted (µm)")
+
+    if plaques_poly is not None:
+        try:
+            import geopandas as gpd
+            if "geometry" not in plaques_poly.columns:
+                raise ValueError("plaques_poly must include a 'geometry' column.")
+            gpd.GeoDataFrame(plaques_poly, geometry="geometry").boundary.plot(
+                ax=axes[1], color="cyan", linewidth=0.7, alpha=0.7
+            )
+        except Exception as e:
+            print(f"⚠️ Plaque overlay skipped: {e}")
+
+    
+    marker_genes = {
+        "Astrocyte (Gfap)": "Gfap",
+        "Microglia (C1qa)": "C1qa",
+        "Neuron (Slc17a7)": "Slc17a7",
+        "Oligodendrocyte (Plp1)": oligo_marker,
+    }
+
+    mean_resids = {}
+    for label, g in marker_genes.items():
+        mask = df[g] > np.percentile(df[g], 75)
+        mean_resids[label] = df.loc[mask, "abs_residual"].mean()
+
+    bars = pd.Series(mean_resids).sort_values(ascending=False)
+    sns.barplot(x=bars.values, y=bars.index, palette="crest", ax=axes[2])
+    axes[2].set_xlabel("Mean |Residual| (µm)")
+    axes[2].set_ylabel("")
+    axes[2].set_title("(C) Mean residual by cell-type marker")
+
+    plt.suptitle("Residual Structure and Cell-type Bias", fontsize=14, y=1.02)
+    plt.tight_layout()
+    plt.show()
+
+    return {"r2": r2, "mean_resids": bars}
+
+
