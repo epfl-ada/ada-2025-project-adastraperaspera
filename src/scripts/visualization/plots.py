@@ -1,3 +1,14 @@
+from __future__ import annotations
+
+from collections.abc import Sequence
+from typing import Union
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+import seaborn as sns
+from matplotlib.lines import Line2D
+from matplotlib.patches import Polygon as MplPoly
+from shapely.geometry import MultiPolygon, Polygon
 import plotly.express as px
 import plotly.graph_objects as go
 import numpy as np
@@ -5,550 +16,12 @@ from typing import List, Optional
 from typing import Sequence, Optional
 from scipy.stats import gaussian_kde
 import geopandas as gpd
-import matplotlib.pyplot as plt
-import seaborn as sns
-import pandas as pd
 from sklearn.metrics import r2_score
+import logging
+from scipy.stats import spearmanr
+from statsmodels.stats.multitest import multipletests
 
-
-def add_plaques_to_plotly(fig, plaques_gdf, name="Plaques", line_color="lime", line_width=2):
-    def _add_ring(ring, fig):
-        xs, ys = ring.xy  # -> array('d', ...)
-        fig.add_trace(go.Scatter(
-            x=list(xs), y=list(ys),  # conversion indispensable
-            mode="lines",
-            line=dict(color=line_color, width=line_width),
-            name=name,
-            hoverinfo="skip",
-            showlegend=False  # évite de répéter la légende pour chaque polygone
-        ))
-
-    for geom in plaques_gdf.geometry.dropna():
-        if geom.is_empty:
-            continue
-        gtype = geom.geom_type
-        if gtype == "Polygon":
-            _add_ring(geom.exterior, fig)
-            for interior in geom.interiors:  # trous éventuels
-                _add_ring(interior, fig)
-        elif gtype == "MultiPolygon":
-            for poly in geom.geoms:
-                _add_ring(poly.exterior, fig)
-                for interior in poly.interiors:
-                    _add_ring(interior, fig)
-        elif gtype in ("LineString", "LinearRing"):
-            _add_ring(geom, fig)
-        else:
-            # fallback: tenter d'extraire un exterior s'il existe
-            if hasattr(geom, "exterior") and geom.exterior is not None:
-                _add_ring(geom.exterior, fig)
-
-    return fig
-
-def plot_plaques_dist(cells_with_dist, plaques_gdf):
-    fig = px.scatter(
-    cells_with_dist,
-    x="x_centroid", y="y_centroid",
-    color="distance_to_plaque",
-    color_continuous_scale="plasma",
-    title="Cell-to-plaque distance map",
-    width=900, height=800,
-    render_mode="webgl"  # accélère l’affichage si beaucoup de points
-    )
-
-    fig.update_traces(marker=dict(size=3), selector=dict(mode='markers'))
-    fig = add_plaques_to_plotly(fig, plaques_gdf, name="Plaques", line_color="lime", line_width=2)
-
-    fig.update_yaxes(scaleanchor="x", scaleratio=1)
-
-    # export
-    fig.write_html("src/data/figures/cell_to_plaque_map_interactive.html")
-    #fig.write_image("src/data/figures/cell_to_plaque_map_interactive.png", scale=2)
-    fig.show()
-
-def plot_gene_trends_interactive(
-    mean_expr: pd.DataFrame,
-    genes: List[str],
-    ylabel: str = "Mean expression (log1p normalized)",
-    xlabel: str = "Distance to plaque (µm, binned)",
-    title: str = "Spatial gene expression gradients",
-    line_width: int = 2,
-    height: int = 480,
-    width: int = 820,
-    use_webgl: bool = True,
-) -> go.Figure:
-    """
-    Version Plotly interactive de 'plot_gene_trends'.
-
-    Paramètres
-    ----------
-    mean_expr : DataFrame
-        Index = bins (IntervalIndex, Categorical ou labels), colonnes = gènes.
-    genes : list[str]
-        Sous-ensemble de gènes à tracer (ignore ceux absents).
-    """
-    if mean_expr.empty:
-        raise ValueError("mean_expr is empty; check your inputs")
-
-    # Crée des labels propres pour l'axe X (gère IntervalIndex -> 'L-R')
-    if isinstance(mean_expr.index, pd.IntervalIndex):
-        bin_labels = [f"{b.left:.0f}-{b.right:.0f}" for b in mean_expr.index]
-    else:
-        bin_labels = [str(x) for x in mean_expr.index]
-
-    # Assemble en format long pour Plotly
-    df = mean_expr.copy()
-    df["__bin__"] = bin_labels
-    long = df.melt(id_vars="__bin__", var_name="gene", value_name="mean_expr")
-
-    # Filtre sur les gènes demandés et garde seulement les présents
-    genes_present = [g for g in genes if g in mean_expr.columns]
-    if not genes_present:
-        raise ValueError("None of the requested genes were found in 'mean_expr' columns.")
-
-    long = long[long["gene"].isin(genes_present)]
-
-    # Trace (line + markers)
-    if use_webgl:
-        # Scattergl (via graph_objects) -> plus fluide si beaucoup de points/traces
-        fig = go.Figure()
-        for g in genes_present:
-            sub = long[long["gene"] == g]
-            fig.add_trace(
-                go.Scattergl(
-                    x=sub["__bin__"], y=sub["mean_expr"],
-                    mode="lines+markers",
-                    name=g,
-                    line=dict(width=line_width),
-                )
-            )
-    else:
-        fig = px.line(
-            long, x="__bin__", y="mean_expr", color="gene",
-            markers=True, title=title, height=height, width=width
-        )
-
-    fig.update_layout(
-        title=title,
-        xaxis_title=xlabel,
-        yaxis_title=ylabel,
-        template="simple_white",
-        height=height,
-        width=width,
-        legend_title="Gene",
-        margin=dict(l=60, r=20, t=60, b=60),
-    )
-    fig.update_xaxes(tickangle=45)
-    return fig
-
-def plot_mean_heatmap_interactive(
-    mean_expr: pd.DataFrame,
-    top_n: int = 25,
-    zscore: bool = True,
-    title: str = "Top genes varying with plaque distance",
-    height: int = 600,
-    width: int = 900,
-):
-    """
-    Version Plotly interactive de 'plot_mean_heatmap'.
-
-    - Sélectionne les 'top_n' gènes qui varient le plus (somme des |diff| entre bins).
-    - Z-score optionnel par gène pour comparer les profils.
-    """
-    non_gene_cols = {
-        "cell_id","x_centroid","y_centroid","cell_area","nucleus_area",
-        "total_counts","transcript_counts","distance_to_plaque","distance_bin",
-    }
-    gene_cols = [c for c in mean_expr.columns if c not in non_gene_cols]
-    if not gene_cols:
-        raise ValueError("No gene columns detected in 'mean_expr'.")
-
-    expr = mean_expr[gene_cols].copy()
-
-    # Sélection des gènes avec plus forte variation spatiale
-    grad = expr.diff().abs().sum().sort_values(ascending=False)
-    top_genes = grad.head(top_n).index
-    sub_df = expr[top_genes]
-
-    # Z-score optionnel
-    if zscore:
-        # convertit sparse -> dense si besoin, puis zscore colonne par colonne
-        sub_df = sub_df.apply(
-            lambda x: x.sparse.to_dense() if pd.api.types.is_sparse(x) else x
-        )
-        sub_df = (sub_df - sub_df.mean()) / (sub_df.std(ddof=0).replace(0, np.nan))
-
-    # Labels d'axe X
-    if isinstance(mean_expr.index, pd.IntervalIndex):
-        x_labels = [f"{b.left:.0f}-{b.right:.0f}" for b in mean_expr.index]
-    else:
-        x_labels = [str(x) for x in mean_expr.index]
-
-    # Plotly attend un array 2D -> transpose pour avoir (gene x bin)
-    fig = px.imshow(
-        sub_df.T.values,
-        x=x_labels,
-        y=sub_df.columns,
-        color_continuous_scale="RdBu" if zscore else "Magma",
-        origin="upper",
-        aspect="auto",
-        labels=dict(color="Z-score" if zscore else "Mean log1p"),
-        title=title,
-        height=height, width=width,
-    )
-    # Centrer la palette à 0 si zscore
-    if zscore:
-        vmax = float(np.nanmax(np.abs(sub_df.values)))
-        fig.update_coloraxes(cmid=0.0, cmax=vmax, cmin=-vmax)
-
-    fig.update_layout(
-        template="simple_white",
-        xaxis_title="Distance bin",
-        yaxis_title="Gene",
-        margin=dict(l=60, r=20, t=60, b=60),
-    )
-    return fig
-
-def gene_distribution_selector_interactive(
-    df: pd.DataFrame,
-    genes: Sequence[str],
-    bins: int = 50,
-    title: str = "Per-gene distributions (histogram + KDE)",
-    width: int = 900,
-    height: int = 600,
-    kde_points: int = 400
-):
-    """
-    Create an interactive HTML figure with dropdowns to choose:
-      - the gene
-      - the scale (raw vs log1p)
-
-    df: DataFrame (cells x genes) with numeric columns for gene expression.
-    genes: list of gene column names in df.
-    """
-    # --- Precompute per-gene traces (raw + log1p) ---
-    traces = []      # list of go.Scatter / go.Histogram
-    vis_map = {}     # (gene, scale) -> list of trace indices to set visible=True
-    x_ranges = {}    # scale -> (global_min, global_max) for consistent axes
-
-    # Prepare global x-limits for stability across genes
-    def _clean(x):
-        x = np.asarray(x, dtype=float)
-        return x[np.isfinite(x)]
-    raw_vals = _clean(pd.concat([df[g] for g in genes], axis=0, ignore_index=True))
-    log_vals = _clean(np.log1p(raw_vals))
-    x_ranges["raw"] = (float(np.nanmin(raw_vals)), float(np.nanmax(raw_vals)))
-    x_ranges["log1p"] = (float(np.nanmin(log_vals)), float(np.nanmax(log_vals)))
-
-    for g in genes:
-        # Raw
-        x_raw = _clean(df[g].to_numpy())
-        # Log1p
-        x_log = _clean(np.log1p(df[g].to_numpy()))
-
-        # Histogram (raw)
-        h_raw = go.Histogram(
-            x=x_raw, nbinsx=bins, histnorm="probability density",
-            name=f"{g} — hist (raw)", opacity=0.45, showlegend=False
-        )
-        # KDE (raw)
-        raw_kde_trace = None
-        if x_raw.size > 5:
-            xr = np.linspace(max(x_ranges["raw"][0], np.min(x_raw)),
-                             min(x_ranges["raw"][1], np.max(x_raw)),
-                             kde_points)
-            try:
-                kde = gaussian_kde(x_raw[x_raw > 0] if (x_raw > 0).sum() > 5 else x_raw)
-                yr = kde(xr)
-                raw_kde_trace = go.Scatter(
-                    x=xr, y=yr, mode="lines",
-                    name=f"{g} — kde (raw)", line=dict(width=2), showlegend=False
-                )
-            except Exception:
-                pass
-
-        # Histogram (log1p)
-        h_log = go.Histogram(
-            x=x_log, nbinsx=bins, histnorm="probability density",
-            name=f"{g} — hist (log1p)", opacity=0.45, showlegend=False
-        )
-        # KDE (log1p)
-        log_kde_trace = None
-        if x_log.size > 5:
-            xl = np.linspace(max(x_ranges["log1p"][0], np.min(x_log)),
-                             min(x_ranges["log1p"][1], np.max(x_log)),
-                             kde_points)
-            try:
-                kde_l = gaussian_kde(x_log)  # déjà > 0
-                yl = kde_l(xl)
-                log_kde_trace = go.Scatter(
-                    x=xl, y=yl, mode="lines",
-                    name=f"{g} — kde (log1p)", line=dict(width=2), showlegend=False
-                )
-            except Exception:
-                pass
-
-        # Store indices for visibility toggling
-        start_idx = len(traces)
-        g_raw_idxs = [start_idx]                     # raw hist
-        traces.append(h_raw)
-        if raw_kde_trace is not None:
-            g_raw_idxs.append(len(traces))
-            traces.append(raw_kde_trace)
-
-        g_log_idxs = [len(traces)]                   # log hist
-        traces.append(h_log)
-        if log_kde_trace is not None:
-            g_log_idxs.append(len(traces))
-            traces.append(log_kde_trace)
-
-        vis_map[(g, "raw")] = g_raw_idxs
-        vis_map[(g, "log1p")] = g_log_idxs
-
-    # --- Build the figure with all traces (initially hide everything) ---
-    fig = go.Figure(data=traces)
-    for t in fig.data:
-        t.visible = False
-
-    # Initial state
-    init_gene = genes[0]
-    init_scale = "log1p"
-    for idx in vis_map[(init_gene, init_scale)]:
-        fig.data[idx].visible = True
-
-    # --- Dropdowns ---
-    # Helper to build visibility masks
-    def visibility_for(g, scale):
-        vis = [False] * len(traces)
-        for idx in vis_map[(g, scale)]:
-            vis[idx] = True
-        return vis
-
-    # Buttons for genes
-    gene_buttons = []
-    for g in genes:
-        gene_buttons.append(dict(
-            label=g,
-            method="update",
-            args=[
-                {"visible": visibility_for(g, init_scale)},
-                {"title": f"{title} — {g} ({init_scale})",
-                 "xaxis": {"title": "log1p(expression)"} if init_scale == "log1p" else {"title": "expression"}}
-            ],
-        ))
-
-    # Buttons for scale
-    scale_buttons = []
-    for sc in ["raw", "log1p"]:
-        scale_buttons.append(dict(
-            label=sc,
-            method="update",
-            args=[
-                {"visible": visibility_for(init_gene, sc)},
-                {"title": f"{title} — {init_gene} ({sc})",
-                 "xaxis": {"title": "log1p(expression)"} if sc == "log1p" else {"title": "expression"}}
-            ],
-        ))
-
-    fig.update_layout(
-        width=width, height=height, template="simple_white",
-        title=f"{title} — {init_gene} ({init_scale})",
-        xaxis_title="log1p(expression)",
-        yaxis_title="density",
-        barmode="overlay",
-        legend_title=None,
-        updatemenus=[
-            dict(
-                buttons=gene_buttons,
-                direction="down", showactive=True, x=0.02, xanchor="left", y=1.15, yanchor="top",
-                bgcolor="white", bordercolor="#ccc"
-            ),
-            dict(
-                buttons=scale_buttons,
-                direction="down", showactive=True, x=0.30, xanchor="left", y=1.15, yanchor="top",
-                bgcolor="white", bordercolor="#ccc",
-            ),
-        ],
-        margin=dict(l=60, r=20, t=90, b=60),
-    )
-
-    # Consistent x ranges per scale (switch via relayout on button click)
-    # We’ll attach ranges to layout meta for clarity (optional)
-    fig.layout.meta = dict(xrange_raw=x_ranges["raw"], xrange_log=x_ranges["log1p"])
-    fig.update_layout(
-    title={
-        "text": f"{title} — {init_gene} ({init_scale})",
-        "x": 0.5,                # center horizontally
-        "xanchor": "center",     
-        "y": 0.97,               # slightly below top edge
-        "yanchor": "top",
-    },
-    updatemenus=[
-        dict(
-            buttons=gene_buttons,
-            direction="down",
-            showactive=True,
-            x=0.0, xanchor="left",
-            y=1.12, yanchor="top",   # a bit below title
-            bgcolor="white", bordercolor="#ccc"
-        ),
-        dict(
-            buttons=scale_buttons,
-            direction="down",
-            showactive=True,
-            x=0.25, xanchor="left",
-            y=1.12, yanchor="top",
-            bgcolor="white", bordercolor="#ccc"
-        ),
-    ],
-    margin=dict(l=60, r=20, t=100, b=60),
-    )
-
-    return fig
-
-def plot_top_spatial_genes_interactive(
-    stats_df: pd.DataFrame,
-    top_n: int = 20,
-    metrics: Optional[List[str]] = None,   # ex: ["spearman_r","slope"]
-    gene_col: str = "gene",
-    p_col_candidates = ("p_value","pval","p"),
-    fdr_col_candidates = ("fdr","q_value","adj_p","qval"),
-    title: str = "Top 20 genes by spatial metric",
-    width: int = 820,
-    height: int = 650
-) -> go.Figure:
-    """
-    Interactive horizontal bar plots of the genes most spatially associated.  
-    - No slider: top_n is fixed.  
-    - A single dropdown menu to select the metric.  
-    - Centered title, with the menu positioned just below the title (no overlap).
-    """
-    df = stats_df.copy()
-    if gene_col not in df.columns:
-        raise ValueError(f"'{gene_col}' absent de stats_df.")
-
-    # Auto-detect metrics if not provided
-    if metrics is None:
-        non_metric = {gene_col, *p_col_candidates, *fdr_col_candidates}
-        metrics = [
-            c for c in df.select_dtypes(include=[np.number]).columns
-            if c not in non_metric
-        ]
-    if not metrics:
-        raise ValueError("Aucune métrique numérique détectée. Fournis `metrics=[...]`.")
-
-    # p/FDR columns for hover (if present)
-    p_col = next((c for c in p_col_candidates if c in df.columns), None)
-    fdr_col = next((c for c in fdr_col_candidates if c in df.columns), None)
-
-    # Build one trace (horizontal bar) per metric; visibility will be toggled via dropdown
-    traces = []
-    vis_map = {}
-    top_n = int(min(top_n, len(df)))
-
-    for m in metrics:
-        if m not in df.columns:
-            continue
-        top = df.nlargest(top_n, m).copy().sort_values(m, ascending=True)  # pour empiler vers le haut
-
-        hover = f"<b>%{{y}}</b><br>{m}: %{{x:.4g}}"
-        custom = None
-        if p_col or fdr_col:
-            hover += f"<br>{p_col or 'p'}: %{{customdata[0]:.2e}}" if p_col else ""
-            hover += f"<br>{fdr_col or 'FDR'}: %{{customdata[1]:.2e}}" if fdr_col else ""
-            custom = np.stack([
-                top[p_col].to_numpy() if p_col else np.full(len(top), np.nan),
-                top[fdr_col].to_numpy() if fdr_col else np.full(len(top), np.nan),
-            ], axis=1)
-
-        trace = go.Bar(
-            x=top[m].to_numpy(),
-            y=top[gene_col].to_numpy(),
-            orientation="h",
-            name=m,
-            marker=dict(color=np.where(top[m] >= 0, "rgb(31,120,180)", "rgb(227,26,28)")),
-            hovertemplate=hover,
-            customdata=custom,
-            visible=False,
-        )
-        traces.append(trace)
-        vis_map[m] = len(traces) - 1
-
-    if not traces:
-        raise ValueError("Aucune trace créée (vérifie les noms de métriques).")
-
-    init_metric = metrics[0]
-    traces[vis_map[init_metric]].visible = True
-
-    fig = go.Figure(data=traces)
-
-    # Menu dropdown
-    buttons = []
-    for m in metrics:
-        vis = [i == vis_map[m] for i in range(len(traces))]
-        buttons.append(dict(
-            label=m,
-            method="update",
-            args=[
-                {"visible": vis},
-                {"title": f"{title} — {m}", "xaxis": {"title": m}},
-            ],
-        ))
-
-    fig.update_layout(
-        width=width, height=height, template="simple_white",
-        title=dict(text=f"{title} — {init_metric}", x=0.5, xanchor="center", y=0.96, yanchor="top"),
-        xaxis_title=init_metric,
-        yaxis_title="Gene",
-        margin=dict(l=140, r=30, t=110, b=50),  # top ↑ for menu
-        showlegend=False,
-        updatemenus=[dict(
-            buttons=buttons,
-            direction="down", showactive=True,
-            x=0.02, xanchor="left",
-            y=1.10, yanchor="top",       
-            bgcolor="white", bordercolor="#ccc",
-            pad={"r": 6, "t": 6},
-        )],
-    )
-    return fig
-
-def _topn_args(df, metrics, vis_map, n, p_col, fdr_col, title):
-    """Build the (args) for the slider step to update data for all metric traces."""
-    new_data = []
-    for m in metrics:
-        if m not in df.columns:
-            # placeholder (won't be visible anyway)
-            new_data.append({})
-            continue
-        top = df.nlargest(int(n), m).copy().sort_values(m, ascending=True)
-        hover = f"<b>%{{y}}</b><br>{m}: %{{x:.4g}}"
-        if p_col:
-            hover += f"<br>p: %{{customdata[0]:.2e}}"
-        if fdr_col:
-            hover += f"<br>FDR: %{{customdata[1]:.2e}}"
-        custom = np.stack([
-            top[p_col].to_numpy() if p_col else np.full(len(top), np.nan),
-            top[fdr_col].to_numpy() if fdr_col else np.full(len(top), np.nan),
-        ], axis=1) if (p_col or fdr_col) else None
-
-        new_data.append({
-            "x": [top[m].to_numpy()],
-            "y": [top["gene"].to_numpy()],
-            "customdata": [custom] if custom is not None else [None],
-            "hovertemplate": [hover],
-            "marker": [dict(color=np.where(top[m].to_numpy() >= 0, "rgb(31,120,180)", "rgb(227,26,28)"))],
-        })
-    # visibility mask stays the same; layout title & xaxis will be set by the dropdown
-    return [{"data": new_data}, {}]
-
-def draw_figures(plot_func,img_pth="std.png", *args, **kwargs):
-    fig = plot_func(*args, **kwargs)
-    fig.write_html(img_pth)
-    fig.show()
-
-
-
+Number = Union[int, float, np.number]
 
 def plot_model_performance(results_df):
     """Bar plot comparing R² scores across models."""
@@ -936,5 +409,739 @@ def plot_residual_figure(
     plt.show()
 
     return {"r2": r2, "mean_resids": bars}
+
+def plot_plaques(
+    df,
+    *,
+    brain_geom: Polygon | None = None,
+    sample_hulls: int = 20,
+    seed: int = 42,
+    figsize=(8, 8),
+    ax: plt.Axes | None = None,
+):
+    """
+    Plot plaque geometries with styling by convexity and sampled convex hulls.
+
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        Must have a 'geometry' column with shapely (Multi)Polygon objects, and an
+        'is_convex' boolean column. 'plaque_id' and 'area' will be created if missing.
+    brain_geom : shapely Polygon, optional
+        If provided and valid, its outline is drawn as the Brain ROI.
+    sample_hulls : int
+        Number of random plaques to overlay convex hulls for (capped by len(df)).
+    seed : int
+        Random seed for hull sampling.
+    figsize : tuple
+        Matplotlib figure size if `ax` is not provided.
+    ax : matplotlib.axes.Axes, optional
+        Existing axes to draw on. A new figure/axes is created if None.
+
+    Returns
+    -------
+    ax : matplotlib.axes.Axes
+    """
+    if "geometry" not in df.columns:
+        raise ValueError("Input DataFrame must contain a 'geometry' column.")
+
+    # Work on a shallow copy to avoid mutating caller's frame
+    P = df.copy()
+
+    if "plaque_id" not in P.columns:
+        P["plaque_id"] = np.arange(1, len(P) + 1, dtype=int)
+    if "area" not in P.columns:
+        P["area"] = P["geometry"].map(lambda g: getattr(g, "area", np.nan))
+
+    # Create axes if needed
+    created_fig = False
+    if ax is None:
+        fig, ax = plt.subplots(figsize=figsize)
+        created_fig = True
+
+    # ---- internal helpers -------------------------------------------------
+
+    def _iter_polygons(g):
+        """Yield Polygon objects from Polygon or MultiPolygon; ignore others."""
+        if isinstance(g, Polygon):
+            yield g
+        elif isinstance(g, MultiPolygon):
+            for sub in g.geoms:
+                if isinstance(sub, Polygon):
+                    yield sub
+
+    def _add_geom(
+        g,
+        *,
+        facecolor="none",
+        edgecolor="black",
+        alpha=0.6,
+        linestyle="-",
+        linewidth=0.8,
+    ):
+        """Add a (Multi)Polygon geometry to axes."""
+        for poly in _iter_polygons(g):
+            # Skip degenerate or invalid rings gracefully
+            if poly.is_empty or not poly.is_valid or poly.exterior is None:
+                continue
+            x, y = poly.exterior.xy
+            ax.add_patch(
+                MplPoly(
+                    list(zip(x, y, strict=False)),
+                    closed=True,
+                    facecolor=facecolor,
+                    edgecolor=edgecolor,
+                    linewidth=linewidth,
+                    linestyle=linestyle,
+                    alpha=alpha,
+                )
+            )
+
+    # ---- draw brain ROI (optional) ----------------------------------------
+    if brain_geom is not None and getattr(brain_geom, "is_valid", False):
+        bx, by = brain_geom.exterior.xy
+        ax.plot(bx, by, color="blue", lw=1.0, label="Brain ROI")
+
+    # ---- draw plaques by convexity ----------------------------------------
+    # Use itertuples for speed and avoid repeated attribute lookups
+    for row in P.itertuples(index=False):
+        g = getattr(row, "geometry", None)
+        is_convex = getattr(row, "is_convex", None)
+        if g is None:
+            continue
+
+        if bool(is_convex):
+            _add_geom(
+                g,
+                facecolor="none",
+                edgecolor="green",
+                linestyle="-",
+                linewidth=0.8,
+            )
+        else:
+            _add_geom(
+                g,
+                facecolor="none",
+                edgecolor="red",
+                linestyle="--",
+                linewidth=0.8,
+            )
+
+    # ---- sample convex hull overlays --------------------------------------
+    n = min(len(P), int(sample_hulls))
+    if n > 0:
+        hull_sample = P.sample(n=n, random_state=seed)
+        for row in hull_sample.itertuples(index=False):
+            g = getattr(row, "geometry", None)
+            if g is None:
+                continue
+            _add_geom(
+                g.convex_hull,
+                facecolor="none",
+                edgecolor="orange",
+                linestyle=":",
+                linewidth=1.0,
+            )
+
+    # ---- cosmetics ---------------------------------------------------------
+    ax.set_aspect("equal", "box")
+    ax.set_title(
+        "Plaque geometries after normalization\n"
+        "Green = convex, Red dashed = non-convex, Orange dotted = convex hulls",
+        fontsize=11,
+    )
+    ax.set_xlabel("X coordinate (µm)")
+    ax.set_ylabel("Y coordinate (µm)")
+
+    # Build a clean legend with proxy artists (avoids duplicate entries)
+    legend_elems = [
+        Line2D([0], [0], color="blue", lw=1.0, label="Brain ROI"),
+        Line2D([0], [0], color="green", lw=0.8, linestyle="-", label="Convex"),
+        Line2D([0], [0], color="red", lw=0.8, linestyle="--", label="Non-convex"),
+        Line2D([0], [0], color="orange", lw=1.0, linestyle=":", label="Convex hull (sample)"),
+    ]
+    # Only include items that were actually drawn
+    handles, labels = [], []
+    if brain_geom is not None and getattr(brain_geom, "is_valid", False):
+        handles.append(legend_elems[0])
+        labels.append(legend_elems[0].get_label())
+    handles.extend(legend_elems[1:])
+    labels.extend([e.get_label() for e in legend_elems[1:]])
+    ax.legend(handles, labels, loc="upper right", frameon=False)
+
+    if created_fig:
+        plt.tight_layout()
+        plt.show()
+
+    return ax
+
+
+def analyze_plaque_distance(
+    cells_with_distances: pd.DataFrame,
+    *,
+    column: str = "nearest_plaque_dist",
+    prox_thresh: float = 30.0,
+    distal_thresh: float = 100.0,
+    out_col: str = "dist_bin_proximal_distal",
+    bins: int = 60,
+    figsize: tuple[float, float] = (7, 3),
+    ax: plt.Axes | None = None,
+    logger: object | None = None,
+    inplace: bool = True,
+):
+    """
+    Compute summary stats, plot a histogram, and bin distances into
+    {'proximal','intermediate','distal'} based on thresholds.
+
+    Parameters
+    ----------
+    cells_with_distances : pd.DataFrame
+        Input dataframe containing the distance column.
+    column : str
+        Name of the distance column.
+    prox_thresh : float
+        Distance <= prox_thresh -> 'proximal'.
+    distal_thresh : float
+        Distance >= distal_thresh -> 'distal'.
+    out_col : str
+        Name of the output bin column to create.
+    bins : int
+        Number of histogram bins.
+    figsize : (w, h)
+        Figure size if `ax` is None.
+    ax : matplotlib.axes.Axes or None
+        Existing axes to plot on. A new figure/axes is created if None.
+    logger : object or None
+        Logger with an `.info()` method. If None, prints to stdout.
+    inplace : bool
+        If True, add `out_col` to `cells_with_distances` in place. Otherwise return a copy.
+
+    Returns
+    -------
+    df : pd.DataFrame
+        The dataframe (original or a copy) with `out_col` added.
+    ax : matplotlib.axes.Axes
+        The axes containing the histogram.
+    """
+    if column not in cells_with_distances.columns:
+        raise KeyError(f"'{column}' not found in dataframe columns.")
+
+    # Work on either the original df or a copy
+    df = cells_with_distances if inplace else cells_with_distances.copy()
+
+    # Drop NaNs for stats/plot only
+    d = df[column].dropna()
+
+    # Stats
+    stats = {
+        "min": float(d.min()) if len(d) else np.nan,
+        "median": float(d.median()) if len(d) else np.nan,
+        "mean": float(d.mean()) if len(d) else np.nan,
+        "max": float(d.max()) if len(d) else np.nan,
+        "n": int(len(d)),
+        "n_nan": int(df[column].isna().sum()),
+    }
+    if logger is not None:
+        logger.info(stats)
+    else:
+        print(stats)
+
+    # Plot
+    created_fig = False
+    if ax is None:
+        plt.figure(figsize=figsize)
+        ax = plt.gca()
+        created_fig = True
+
+    ax.hist(d, bins=bins, alpha=0.8)
+    ax.set_xlabel("Nearest plaque boundary distance")
+    ax.set_ylabel("Count")
+    ax.set_title("Cells: boundary distance to nearest plaque")
+    if created_fig:
+        plt.tight_layout()
+        plt.show()
+
+    # Binning
+    def _bin(v: float):
+        if pd.isna(v):
+            return np.nan
+        if v <= prox_thresh:
+            return "proximal"
+        if v >= distal_thresh:
+            return "distal"
+        return "intermediate"
+
+    df[out_col] = df[column].map(_bin)
+
+    # Report bin counts
+    bin_counts = df[out_col].value_counts(dropna=False)
+    if logger is not None:
+        logger.info({"bin_counts": bin_counts.to_dict()})
+    else:
+        print({"bin_counts": bin_counts.to_dict()})
+
+    return df, ax
+
+
+def _apply_axis_formatting(
+    ax: plt.Axes,
+    *,
+    xlim: tuple[Number, Number] | None = None,
+    ylim: tuple[Number, Number] | None = None,
+    xlabel: str | None = None,
+    ylabel: str | None = None,
+    title: str | None = None,
+    xscale: str = "linear",
+    yscale: str = "linear",
+    grid: bool = True,
+    tight: bool = True,
+    rotate_xticks: int | None = None,
+) -> None:
+    if xlim is not None:
+        ax.set_xlim(xlim)
+    if ylim is not None:
+        ax.set_ylim(ylim)
+    if xlabel:
+        ax.set_xlabel(xlabel)
+    if ylabel:
+        ax.set_ylabel(ylabel)
+    if title:
+        ax.set_title(title)
+    if xscale:
+        ax.set_xscale(xscale)
+    if yscale:
+        ax.set_yscale(yscale)
+    if grid:
+        ax.grid(alpha=0.25, linestyle="--", linewidth=0.5)
+    if rotate_xticks:
+        ax.tick_params(axis="x", rotation=rotate_xticks)
+    if tight:
+        plt.tight_layout()
+
+
+def hist1d(
+    data: Sequence[Number] | np.ndarray,
+    *,
+    bins: int = 60,
+    density: bool = False,
+    thresholds: Sequence[tuple[Number, str, str]] | None = None,
+    # thresholds: list of tuples (x_value, color, linestyle)
+    figsize: tuple[int, int] = (7, 4),
+    alpha: float = 0.85,
+    xlim: tuple[Number, Number] | None = None,
+    ylim: tuple[Number, Number] | None = None,
+    xlabel: str | None = None,
+    ylabel: str | None = None,
+    title: str | None = None,
+    xscale: str = "linear",
+    yscale: str = "linear",
+) -> plt.Axes:
+    data = np.asarray(data)
+    fig, ax = plt.subplots(figsize=figsize)
+    ax.hist(data, bins=bins, alpha=alpha, density=density)
+    if thresholds:
+        for x, color, ls in thresholds:
+            ax.axvline(x, color=color, linestyle=ls, linewidth=1.0)
+    _apply_axis_formatting(
+        ax,
+        xlim=xlim,
+        ylim=ylim,
+        xlabel=xlabel,
+        ylabel=ylabel,
+        title=title,
+        xscale=xscale,
+        yscale=yscale,
+    )
+    return ax
+
+
+def line_with_ci(
+    x: Sequence,
+    y: Sequence[Number],
+    *,
+    yerr: Sequence[Number] | None = None,
+    marker: str = "o",
+    linewidth: float = 1.0,
+    capsize: float = 3.0,
+    figsize: tuple[int, int] = (6, 4),
+    xlim: tuple[Number, Number] | None = None,
+    ylim: tuple[Number, Number] | None = None,
+    xlabel: str | None = None,
+    ylabel: str | None = None,
+    title: str | None = None,
+    rotate_xticks: int | None = 0,
+    xscale: str = "linear",
+    yscale: str = "linear",
+) -> plt.Axes:
+    fig, ax = plt.subplots(figsize=figsize)
+    if yerr is None:
+        ax.plot(x, y, marker=marker, linewidth=linewidth)
+    else:
+        ax.errorbar(x, y, yerr=yerr, marker=marker, linewidth=linewidth, capsize=capsize)
+    _apply_axis_formatting(
+        ax,
+        xlim=xlim,
+        ylim=ylim,
+        xlabel=xlabel,
+        ylabel=ylabel,
+        title=title,
+        xscale=xscale,
+        yscale=yscale,
+        rotate_xticks=rotate_xticks,
+    )
+    return ax
+
+
+def scatter2d(
+    x: Sequence[Number],
+    y: Sequence[Number],
+    *,
+    s: float = 8.0,
+    alpha: float = 0.7,
+    figsize: tuple[int, int] = (6, 5),
+    xlim: tuple[Number, Number] | None = None,
+    ylim: tuple[Number, Number] | None = None,
+    xlabel: str | None = None,
+    ylabel: str | None = None,
+    title: str | None = None,
+    xscale: str = "linear",
+    yscale: str = "linear",
+) -> plt.Axes:
+    fig, ax = plt.subplots(figsize=figsize)
+    ax.scatter(x, y, s=s, alpha=alpha)
+    _apply_axis_formatting(
+        ax,
+        xlim=xlim,
+        ylim=ylim,
+        xlabel=xlabel,
+        ylabel=ylabel,
+        title=title,
+        xscale=xscale,
+        yscale=yscale,
+    )
+    return ax
+
+
+def violin_plot(
+    df: pd.DataFrame,
+    col: str,
+    title: str = None,
+    xlabel: str = None,
+    ylabel: str = None,
+):
+    """
+    Create a violin plot for a specified column in a DataFrame.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        The input dataframe containing the data.
+    col : str
+        The column name in the dataframe to visualize.
+    title : str, optional
+        The plot title. Defaults to None.
+    xlabel : str, optional
+        The label for the x-axis. Defaults to the column name if None.
+    ylabel : str, optional
+        The label for the y-axis. Defaults to "Density" if None.
+    """
+    # Validate column
+    if col not in df.columns:
+        raise ValueError(f"Column '{col}' not found in DataFrame")
+
+    # Plot style
+    sns.set(style="whitegrid", palette="pastel")
+
+    # Create the figure
+    plt.figure(figsize=(8, 5))
+    sns.violinplot(y=df[col], inner="box", cut=0)
+
+    # Titles and labels
+    plt.title(title or f"Distribution of {col}", fontsize=14, pad=12)
+    plt.xlabel(xlabel or "", fontsize=12)
+    plt.ylabel(ylabel or col, fontsize=12)
+
+    # Clean layout
+    plt.tight_layout()
+    plt.show()
+
+    
+def cell_type_prop_by_dist(props):
+    """
+    Plot stacked bar chart of cell type proportions by distance bin.
+    """
+    pivot_props = props.pivot(index="distance_bin", columns="cell_type", values="proportion").fillna(0)
+    pivot_props.plot(kind="bar", stacked=True, figsize=(8,5), colormap="tab20")
+    plt.ylabel("Proportion")
+    plt.xlabel("Distance bin (µm)")
+    plt.title("Stacked cell type proportions by plaque distance")
+    plt.legend(bbox_to_anchor=(1.05, 1))
+    plt.tight_layout()
+    plt.show()
+
+def cell_type_comp_by_dist(props):
+    """
+    Plot bar chart of cell type composition by distance bin.
+    """
+    plt.figure(figsize=(8,5))
+    sns.barplot(
+        data=props,
+        x="distance_bin",
+        y="proportion",
+        hue="cell_type",
+    )
+    plt.title("Cell type composition by distance to plaque")
+    plt.xlabel("Distance to plaque (µm, binned)")
+    plt.ylabel("Proportion of cells")
+    plt.legend(bbox_to_anchor=(1.05, 1), loc="upper left", title="Cell type")
+    plt.tight_layout()
+    plt.show()
+
+def mean_exp_dist(mean_melt):
+    """
+    Plot mean expression per distance bin for PIG genes."""
+    g = sns.catplot(
+    data=mean_melt,
+    x="distance_bin", y="mean_expr", hue="gene",
+    kind="bar", height=4, aspect=1.6
+    )
+    g.set_axis_labels("Distance to plaque (µm, binned)", "Mean expression")
+    g.fig.suptitle("Mean PIG expression per distance bin")
+    plt.tight_layout()
+    plt.show()
+
+def cellular_comp_by_dist(pivot_prop):
+    ax = pivot_prop.plot(kind="bar", stacked=True, figsize=(8,5), width=0.85, colormap="tab20")
+    ax.set_xlabel("PLaque distance (µm)")
+    ax.set_ylabel("Proportion")
+    ax.set_title("Cellular composition by plaque distance")
+    ax.legend(bbox_to_anchor=(1.02, 1), loc="upper left", frameon=False, ncol=1)
+    plt.tight_layout()
+    plt.show()
+
+def pig_expr_by_dist(mean_by_bin, pig_cols):
+    plt.figure(figsize=(9,5))
+    x = np.arange(len(mean_by_bin))
+    for g in pig_cols:
+        plt.plot(x, mean_by_bin[g], marker="o", linewidth=2, label=g)
+    plt.xticks(x, mean_by_bin["distance_bin"].astype(str), rotation=30)
+    plt.xlabel("Distance (bins)")
+    plt.ylabel("Mean expression (log1p)")
+    plt.title("PIGs : mean expression by distance bin")
+    plt.legend(bbox_to_anchor=(1.02, 1), loc="upper left", frameon=False, ncol=1)
+    plt.tight_layout(); plt.show()
+
+def pig_comp_heatmap(pig_mat, prop_mat, pig_cols):
+    corrs = pd.DataFrame(index=pig_cols, columns=prop_mat.columns, dtype=float)
+    pvals = pd.DataFrame(index=pig_cols, columns=prop_mat.columns, dtype=float)
+    for g in pig_cols:
+        y = pig_mat[g].to_numpy()
+        for ct in prop_mat.columns:
+            x = prop_mat[ct].to_numpy()
+            if len(y) >= 2:
+                r, p = spearmanr(y, x, nan_policy="omit")
+            else:
+                r, p = (np.nan, np.nan)
+            corrs.loc[g, ct] = r
+            pvals.loc[g, ct] = p
+
+    # FDR
+    mask = np.isfinite(pvals.values)
+    flat = pvals.values[mask]
+    rej, qvals, *_ = multipletests(flat, method="fdr_bh")
+    q = pvals.copy(); q.values[mask] = qvals
+
+    plt.figure(figsize=(min(14, 6+0.25*len(corrs.columns)), 8))
+    sns.heatmap(corrs.astype(float), cmap="coolwarm", center=0, annot=True, fmt=".2f",
+                cbar_kws={"label":"Spearman ρ"})
+    plt.title("PIG correlation ↔ cellular type proportion (per bins distance)")
+    plt.xlabel("Cellular type"); plt.ylabel("PIG Gene")
+    plt.tight_layout(); plt.show()
+
+    
+def add_plaques_to_plotly(fig, plaques_gdf, name="Plaques", line_color="lime", line_width=2):
+    def _add_ring(ring, fig):
+        xs, ys = ring.xy  # -> array('d', ...)
+        fig.add_trace(go.Scatter(
+            x=list(xs), y=list(ys),  # conversion
+            mode="lines",
+            line=dict(color=line_color, width=line_width),
+            name=name,
+            hoverinfo="skip",
+            showlegend=False  # avoid legend duplication
+        ))
+
+    for geom in plaques_gdf.geometry.dropna():
+        if geom.is_empty:
+            continue
+        gtype = geom.geom_type
+        if gtype == "Polygon":
+            _add_ring(geom.exterior, fig)
+            for interior in geom.interiors:  # holes
+                _add_ring(interior, fig)
+        elif gtype == "MultiPolygon":
+            for poly in geom.geoms:
+                _add_ring(poly.exterior, fig)
+                for interior in poly.interiors:
+                    _add_ring(interior, fig)
+        elif gtype in ("LineString", "LinearRing"):
+            _add_ring(geom, fig)
+        else:
+            # fallback: try to access exterior if possible
+            if hasattr(geom, "exterior") and geom.exterior is not None:
+                _add_ring(geom.exterior, fig)
+
+    return fig
+
+def plot_plaques_dist(cells_with_dist, plaques_gdf):
+    fig = px.scatter(
+    cells_with_dist,
+    x="x_centroid", y="y_centroid",
+    color="distance_to_plaque",
+    color_continuous_scale="plasma",
+    title="Cell-to-plaque distance map",
+    width=900, height=800,
+    render_mode="webgl"  # faster for large datasets
+    )
+
+    fig.update_traces(marker=dict(size=3), selector=dict(mode='markers'))
+    fig = add_plaques_to_plotly(fig, plaques_gdf, name="Plaques", line_color="lime", line_width=2)
+
+    fig.update_yaxes(scaleanchor="x", scaleratio=1)
+
+    # export
+    fig.write_html("src/data/figures/cell_to_plaque_map_interactive.html")
+    #fig.write_image("src/data/figures/cell_to_plaque_map_interactive.png", scale=2)
+    fig.show()
+
+
+def _topn_args(df, metrics, vis_map, n, p_col, fdr_col, title):
+    """Build the (args) for the slider step to update data for all metric traces."""
+    new_data = []
+    for m in metrics:
+        if m not in df.columns:
+            # placeholder (won't be visible anyway)
+            new_data.append({})
+            continue
+        top = df.nlargest(int(n), m).copy().sort_values(m, ascending=True)
+        hover = f"<b>%{{y}}</b><br>{m}: %{{x:.4g}}"
+        if p_col:
+            hover += f"<br>p: %{{customdata[0]:.2e}}"
+        if fdr_col:
+            hover += f"<br>FDR: %{{customdata[1]:.2e}}"
+        custom = np.stack([
+            top[p_col].to_numpy() if p_col else np.full(len(top), np.nan),
+            top[fdr_col].to_numpy() if fdr_col else np.full(len(top), np.nan),
+        ], axis=1) if (p_col or fdr_col) else None
+
+        new_data.append({
+            "x": [top[m].to_numpy()],
+            "y": [top["gene"].to_numpy()],
+            "customdata": [custom] if custom is not None else [None],
+            "hovertemplate": [hover],
+            "marker": [dict(color=np.where(top[m].to_numpy() >= 0, "rgb(31,120,180)", "rgb(227,26,28)"))],
+        })
+    # visibility mask stays the same; layout title & xaxis will be set by the dropdown
+    return [{"data": new_data}, {}]
+
+def draw_figures(plot_func,img_pth="std.png", *args, **kwargs):
+    fig = plot_func(*args, **kwargs)
+    fig.write_html(img_pth)
+    fig.show()
+
+def cell_type_prop_by_dist(props):
+    """
+    Plot stacked bar chart of cell type proportions by distance bin.
+    """
+    pivot_props = props.pivot(index="distance_bin", columns="cell_type", values="proportion").fillna(0)
+    pivot_props.plot(kind="bar", stacked=True, figsize=(8,5), colormap="tab20")
+    plt.ylabel("Proportion")
+    plt.xlabel("Distance bin (µm)")
+    plt.title("Stacked cell type proportions by plaque distance")
+    plt.legend(bbox_to_anchor=(1.05, 1))
+    plt.tight_layout()
+    plt.show()
+
+def cell_type_comp_by_dist(props):
+    """
+    Plot bar chart of cell type composition by distance bin.
+    """
+    plt.figure(figsize=(8,5))
+    sns.barplot(
+        data=props,
+        x="distance_bin",
+        y="proportion",
+        hue="cell_type",
+    )
+    plt.title("Cell type composition by distance to plaque")
+    plt.xlabel("Distance to plaque (µm, binned)")
+    plt.ylabel("Proportion of cells")
+    plt.legend(bbox_to_anchor=(1.05, 1), loc="upper left", title="Cell type")
+    plt.tight_layout()
+    plt.show()
+
+def mean_exp_dist(mean_melt):
+    """
+    Plot mean expression per distance bin for PIG genes."""
+    g = sns.catplot(
+    data=mean_melt,
+    x="distance_bin", y="mean_expr", hue="gene",
+    kind="bar", height=4, aspect=1.6
+    )
+    g.set_axis_labels("Distance to plaque (µm, binned)", "Mean expression")
+    g.fig.suptitle("Mean PIG expression per distance bin")
+    plt.tight_layout()
+    plt.show()
+
+def cellular_comp_by_dist(pivot_prop):
+    ax = pivot_prop.plot(kind="bar", stacked=True, figsize=(8,5), width=0.85, colormap="tab20")
+    ax.set_xlabel("Distance to plaque (µm)")
+    ax.set_ylabel("Proportion")
+    ax.set_title("Cellular composition by plaque distance")
+    ax.legend(bbox_to_anchor=(1.02, 1), loc="upper left", frameon=False, ncol=1)
+    plt.tight_layout()
+    plt.show()
+
+def pig_expr_by_dist(mean_by_bin, pig_cols):
+    plt.figure(figsize=(9,5))
+    x = np.arange(len(mean_by_bin))
+    for g in pig_cols:
+        plt.plot(x, mean_by_bin[g], marker="o", linewidth=2, label=g)
+    plt.xticks(x, mean_by_bin["distance_bin"].astype(str), rotation=30)
+    plt.xlabel("Distance (bins)")
+    plt.ylabel("Mean expression (log1p)")
+    plt.title("PIGs : men expression by distance bin")
+    plt.legend(bbox_to_anchor=(1.02, 1), loc="upper left", frameon=False, ncol=1)
+    plt.tight_layout(); plt.show()
+
+def pig_comp_heatmap(pig_mat, prop_mat, pig_cols):
+    corrs = pd.DataFrame(index=pig_cols, columns=prop_mat.columns, dtype=float)
+    pvals = pd.DataFrame(index=pig_cols, columns=prop_mat.columns, dtype=float)
+    for g in pig_cols:
+        y = pig_mat[g].to_numpy()
+        for ct in prop_mat.columns:
+            x = prop_mat[ct].to_numpy()
+            if len(y) >= 2:
+                r, p = spearmanr(y, x, nan_policy="omit")
+            else:
+                r, p = (np.nan, np.nan)
+            corrs.loc[g, ct] = r
+            pvals.loc[g, ct] = p
+
+    # FDR
+    mask = np.isfinite(pvals.values)
+    flat = pvals.values[mask]
+    rej, qvals, *_ = multipletests(flat, method="fdr_bh")
+    q = pvals.copy(); q.values[mask] = qvals
+
+    plt.figure(figsize=(min(14, 6+0.25*len(corrs.columns)), 8))
+    sns.heatmap(corrs.astype(float), cmap="coolwarm", center=0, annot=True, fmt=".2f",
+                cbar_kws={"label":"Spearman ρ"})
+    plt.title("PIG correclation ↔ cellular type proportion")
+    plt.xlabel("Cellular type"); plt.ylabel("PIG genes")
+    plt.tight_layout(); plt.show()
+
+
+
 
 
