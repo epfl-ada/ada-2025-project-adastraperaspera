@@ -69,7 +69,7 @@ def add_qc_metrics(df: pd.DataFrame, gene_cols: Iterable[str]) -> pd.DataFrame:
     gc = list(gene_cols)
     # Counts the number of genes with above zero expression level in each cell
     # Dimension: cells x 1
-    out["n_genes"] = (out[gc] > 0).sum(axis=1)
+    out["n_genes"] = (out[gc] > 0).sum(axis=1).astype("int64")
     return out
 
 

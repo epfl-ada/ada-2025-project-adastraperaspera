@@ -2,33 +2,29 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from typing import Union
+
+import geopandas as gpd
+from matplotlib.lines import Line2D
+from matplotlib.patches import Polygon as MplPoly
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import seaborn as sns
-from matplotlib.lines import Line2D
-from matplotlib.patches import Polygon as MplPoly
-from shapely.geometry import MultiPolygon, Polygon
 import plotly.express as px
 import plotly.graph_objects as go
-import numpy as np
-from typing import List, Optional
-from typing import Sequence, Optional
-from scipy.stats import gaussian_kde
-import geopandas as gpd
-from sklearn.metrics import r2_score
-import logging
 from scipy.stats import spearmanr
+import seaborn as sns
+from shapely.geometry import MultiPolygon, Polygon
+from sklearn.metrics import r2_score
 from statsmodels.stats.multitest import multipletests
 
 Number = Union[int, float, np.number]
+
 
 def plot_model_performance(results_df):
     """Bar plot comparing R² scores across models."""
     plt.figure(figsize=(6, 4))
     results_melted = results_df.melt(
-        id_vars="model", value_vars=["train_r2", "test_r2"],
-        var_name="Dataset", value_name="R²"
+        id_vars="model", value_vars=["train_r2", "test_r2"], var_name="Dataset", value_name="R²"
     )
     sns.barplot(data=results_melted, x="model", y="R²", hue="Dataset", palette="viridis")
     plt.title("Model Performance Comparison (Train vs Test R²)")
@@ -42,15 +38,13 @@ def plot_model_performance(results_df):
 def plot_top_gene_importances(importance_df, top_n=20):
     """Heatmap of top predictive genes across models."""
     # Normalize importance per model
-    normed = (
-        importance_df.groupby("model", group_keys=False)
-        .apply(lambda d: d.assign(norm_importance=d["importance"] / d["importance"].max()))
+    normed = importance_df.groupby("model", group_keys=False).apply(
+        lambda d: d.assign(norm_importance=d["importance"] / d["importance"].max())
     )
 
     # Take top_n per model
-    top_genes = (
-        normed.groupby("model", group_keys=False)
-        .apply(lambda d: d.nlargest(top_n, "norm_importance"))
+    top_genes = normed.groupby("model", group_keys=False).apply(
+        lambda d: d.nlargest(top_n, "norm_importance")
     )
 
     # Pivot for heatmap
@@ -76,13 +70,17 @@ def plot_spatial_overlay(df, gene, alpha=0.7, sample_size=20000):
     Colors high expression regions with a semi-transparent viridis map.
     """
     import matplotlib.pyplot as plt
-    import seaborn as sns
 
     data = df.sample(min(sample_size, len(df)), random_state=42)
     plt.figure(figsize=(6, 6))
     sc = plt.scatter(
-        data["x_centroid"], data["y_centroid"],
-        c=data[gene], cmap="viridis", s=6, alpha=alpha, linewidth=0
+        data["x_centroid"],
+        data["y_centroid"],
+        c=data[gene],
+        cmap="viridis",
+        s=6,
+        alpha=alpha,
+        linewidth=0,
     )
     plt.gca().invert_yaxis()
     plt.axis("off")
@@ -98,13 +96,17 @@ def plot_predicted_proximity(df, score_col="plaque_proximity_score", sample_size
     Darker/brighter regions = cells predicted closer to plaques.
     """
     import matplotlib.pyplot as plt
-    import seaborn as sns
 
     data = df.sample(min(sample_size, len(df)), random_state=42)
     plt.figure(figsize=(6, 6))
     sc = plt.scatter(
-        data["x_centroid"], data["y_centroid"],
-        c=data[score_col], cmap="magma", s=6, alpha=0.8, linewidth=0
+        data["x_centroid"],
+        data["y_centroid"],
+        c=data[score_col],
+        cmap="magma",
+        s=6,
+        alpha=0.8,
+        linewidth=0,
     )
     plt.gca().invert_yaxis()
     plt.axis("off")
@@ -118,10 +120,10 @@ def plot_multi_gene_signature(df, genes, distance_col="distance_to_plaque"):
     """
     Plots mean expression of multiple genes along plaque distance as a heatmap.
     """
-    import numpy as np
     import matplotlib.pyplot as plt
-    import seaborn as sns
+    import numpy as np
     import pandas as pd
+    import seaborn as sns
 
     bins = np.linspace(0, df[distance_col].max(), 40)
     df["distance_bin"] = pd.cut(df[distance_col], bins=bins)
@@ -138,7 +140,6 @@ def plot_multi_gene_signature(df, genes, distance_col="distance_to_plaque"):
     plt.show()
 
 
-
 def plot_gene_near_plaques(df, gene, dist_thresh=30.0, sample_size=20000):
     """
     Highlights cells near plaques in grey and colors only the most predictive gene expression.
@@ -153,13 +154,23 @@ def plot_gene_near_plaques(df, gene, dist_thresh=30.0, sample_size=20000):
     plt.figure(figsize=(6, 6))
     # Plot background (all cells)
     plt.scatter(
-        far["x_centroid"], far["y_centroid"],
-        color="lightgrey", s=4, alpha=0.3, linewidth=0, label="Distal cells"
+        far["x_centroid"],
+        far["y_centroid"],
+        color="lightgrey",
+        s=4,
+        alpha=0.3,
+        linewidth=0,
+        label="Distal cells",
     )
     # Overlay plaque-near colored by gene expression
     sc = plt.scatter(
-        near["x_centroid"], near["y_centroid"],
-        c=near[gene], cmap="inferno", s=8, alpha=0.8, linewidth=0
+        near["x_centroid"],
+        near["y_centroid"],
+        c=near[gene],
+        cmap="inferno",
+        s=8,
+        alpha=0.8,
+        linewidth=0,
     )
     plt.gca().invert_yaxis()
     plt.axis("off")
@@ -199,12 +210,12 @@ def plot_spatial_with_plaques(df, plaques_poly, gene=None, score_col=None, sampl
         cmap=cmap,
         s=6,
         alpha=0.8,
-        linewidth=0
+        linewidth=0,
     )
     plt.gca().invert_yaxis()
     plt.axis("off")
 
-    # Overlay plaque polygons 
+    # Overlay plaque polygons
     try:
         if isinstance(plaques_poly, pd.DataFrame) and "geometry" in plaques_poly.columns:
             gdf = gpd.GeoDataFrame(plaques_poly, geometry="geometry")
@@ -212,7 +223,7 @@ def plot_spatial_with_plaques(df, plaques_poly, gene=None, score_col=None, sampl
             gdf = plaques_poly
         else:
             raise ValueError("plaques_poly must contain a 'geometry' column.")
-        
+
         gdf.boundary.plot(ax=plt.gca(), color="cyan", linewidth=0.7, alpha=0.8, label="Plaques")
     except Exception as e:
         print(f"Could not overlay plaques: {e}")
@@ -244,7 +255,6 @@ def plot_pred_vs_true(y_true, y_pred, model_name="Model"):
     plt.show()
 
 
-
 def plot_residual_hist(y_true, y_pred, model_name="Model"):
     """
     Histogram + KDE of residuals (true - predicted).
@@ -252,7 +262,6 @@ def plot_residual_hist(y_true, y_pred, model_name="Model"):
     """
     import matplotlib.pyplot as plt
     import seaborn as sns
-    import numpy as np
 
     residuals = y_true - y_pred
     plt.figure(figsize=(6, 4))
@@ -281,7 +290,6 @@ def plot_spatial_residual_map(df, y_true, y_pred, sample_size=20000, model_name=
 
     data["residual"] = y_true_vals[sample_idx] - y_pred_vals[sample_idx]
 
-
     plt.figure(figsize=(7, 7))
     sc = plt.scatter(
         data["x_centroid"],
@@ -292,7 +300,7 @@ def plot_spatial_residual_map(df, y_true, y_pred, sample_size=20000, model_name=
         alpha=0.8,
         linewidth=0,
         vmin=-np.percentile(abs(data["residual"]), 99),
-        vmax=np.percentile(abs(data["residual"]), 99)
+        vmax=np.percentile(abs(data["residual"]), 99),
     )
     plt.gca().invert_yaxis()
     plt.axis("off")
@@ -329,7 +337,6 @@ def plot_residual_figure(
     df["residual"] = residual
     df["abs_residual"] = abs_resid
 
-    
     n = min(sample_size, len(df))
     sample_idx = np.random.choice(len(df), size=n, replace=False)
     data = df.iloc[sample_idx]
@@ -338,7 +345,6 @@ def plot_residual_figure(
     plt.subplots_adjust(wspace=0.35)
     sns.set_style("white")
 
-    
     plp_expr = np.log1p(data[oligo_marker])
     sc = axes[0].scatter(
         y_true_vals[sample_idx],
@@ -356,7 +362,6 @@ def plot_residual_figure(
     axes[0].set_title(f"(A) Predicted vs True (colored by {oligo_marker})\nR² = {r2:.3f}")
     fig.colorbar(sc, ax=axes[0], label=f"{oligo_marker} expression (log₁₊)")
 
-    
     res = data["residual"]
     sc2 = axes[1].scatter(
         data["x_centroid"],
@@ -377,6 +382,7 @@ def plot_residual_figure(
     if plaques_poly is not None:
         try:
             import geopandas as gpd
+
             if "geometry" not in plaques_poly.columns:
                 raise ValueError("plaques_poly must include a 'geometry' column.")
             gpd.GeoDataFrame(plaques_poly, geometry="geometry").boundary.plot(
@@ -385,7 +391,6 @@ def plot_residual_figure(
         except Exception as e:
             print(f"⚠️ Plaque overlay skipped: {e}")
 
-    
     marker_genes = {
         "Astrocyte (Gfap)": "Gfap",
         "Microglia (C1qa)": "C1qa",
@@ -409,6 +414,7 @@ def plot_residual_figure(
     plt.show()
 
     return {"r2": r2, "mean_resids": bars}
+
 
 def plot_plaques(
     df,
@@ -865,13 +871,15 @@ def violin_plot(
     plt.tight_layout()
     plt.show()
 
-    
+
 def cell_type_prop_by_dist(props):
     """
     Plot stacked bar chart of cell type proportions by distance bin.
     """
-    pivot_props = props.pivot(index="distance_bin", columns="cell_type", values="proportion").fillna(0)
-    pivot_props.plot(kind="bar", stacked=True, figsize=(8,5), colormap="tab20")
+    pivot_props = props.pivot(
+        index="distance_bin", columns="cell_type", values="proportion"
+    ).fillna(0)
+    pivot_props.plot(kind="bar", stacked=True, figsize=(8, 5), colormap="tab20")
     plt.ylabel("Proportion")
     plt.xlabel("Distance bin (µm)")
     plt.title("Stacked cell type proportions by plaque distance")
@@ -879,11 +887,12 @@ def cell_type_prop_by_dist(props):
     plt.tight_layout()
     plt.show()
 
+
 def cell_type_comp_by_dist(props):
     """
     Plot bar chart of cell type composition by distance bin.
     """
-    plt.figure(figsize=(8,5))
+    plt.figure(figsize=(8, 5))
     sns.barplot(
         data=props,
         x="distance_bin",
@@ -897,30 +906,27 @@ def cell_type_comp_by_dist(props):
     plt.tight_layout()
     plt.show()
 
+
 def mean_exp_dist(mean_melt):
     """
     Plot mean expression per distance bin for PIG genes."""
     g = sns.catplot(
-    data=mean_melt,
-    x="distance_bin", y="mean_expr", hue="gene",
-    kind="bar", height=4, aspect=1.6
+        data=mean_melt,
+        x="distance_bin",
+        y="mean_expr",
+        hue="gene",
+        kind="bar",
+        height=4,
+        aspect=1.6,
     )
     g.set_axis_labels("Distance to plaque (µm, binned)", "Mean expression")
     g.fig.suptitle("Mean PIG expression per distance bin")
     plt.tight_layout()
     plt.show()
 
-def cellular_comp_by_dist(pivot_prop):
-    ax = pivot_prop.plot(kind="bar", stacked=True, figsize=(8,5), width=0.85, colormap="tab20")
-    ax.set_xlabel("PLaque distance (µm)")
-    ax.set_ylabel("Proportion")
-    ax.set_title("Cellular composition by plaque distance")
-    ax.legend(bbox_to_anchor=(1.02, 1), loc="upper left", frameon=False, ncol=1)
-    plt.tight_layout()
-    plt.show()
 
 def pig_expr_by_dist(mean_by_bin, pig_cols):
-    plt.figure(figsize=(9,5))
+    plt.figure(figsize=(9, 5))
     x = np.arange(len(mean_by_bin))
     for g in pig_cols:
         plt.plot(x, mean_by_bin[g], marker="o", linewidth=2, label=g)
@@ -929,7 +935,9 @@ def pig_expr_by_dist(mean_by_bin, pig_cols):
     plt.ylabel("Mean expression (log1p)")
     plt.title("PIGs : mean expression by distance bin")
     plt.legend(bbox_to_anchor=(1.02, 1), loc="upper left", frameon=False, ncol=1)
-    plt.tight_layout(); plt.show()
+    plt.tight_layout()
+    plt.show()
+
 
 def pig_comp_heatmap(pig_mat, prop_mat, pig_cols):
     corrs = pd.DataFrame(index=pig_cols, columns=prop_mat.columns, dtype=float)
@@ -949,27 +957,39 @@ def pig_comp_heatmap(pig_mat, prop_mat, pig_cols):
     mask = np.isfinite(pvals.values)
     flat = pvals.values[mask]
     rej, qvals, *_ = multipletests(flat, method="fdr_bh")
-    q = pvals.copy(); q.values[mask] = qvals
+    q = pvals.copy()
+    q.values[mask] = qvals
 
-    plt.figure(figsize=(min(14, 6+0.25*len(corrs.columns)), 8))
-    sns.heatmap(corrs.astype(float), cmap="coolwarm", center=0, annot=True, fmt=".2f",
-                cbar_kws={"label":"Spearman ρ"})
+    plt.figure(figsize=(min(14, 6 + 0.25 * len(corrs.columns)), 8))
+    sns.heatmap(
+        corrs.astype(float),
+        cmap="coolwarm",
+        center=0,
+        annot=True,
+        fmt=".2f",
+        cbar_kws={"label": "Spearman ρ"},
+    )
     plt.title("PIG correlation ↔ cellular type proportion (per bins distance)")
-    plt.xlabel("Cellular type"); plt.ylabel("PIG Gene")
-    plt.tight_layout(); plt.show()
+    plt.xlabel("Cellular type")
+    plt.ylabel("PIG Gene")
+    plt.tight_layout()
+    plt.show()
 
-    
+
 def add_plaques_to_plotly(fig, plaques_gdf, name="Plaques", line_color="lime", line_width=2):
     def _add_ring(ring, fig):
         xs, ys = ring.xy  # -> array('d', ...)
-        fig.add_trace(go.Scatter(
-            x=list(xs), y=list(ys),  # conversion
-            mode="lines",
-            line=dict(color=line_color, width=line_width),
-            name=name,
-            hoverinfo="skip",
-            showlegend=False  # avoid legend duplication
-        ))
+        fig.add_trace(
+            go.Scatter(
+                x=list(xs),
+                y=list(ys),  # conversion
+                mode="lines",
+                line=dict(color=line_color, width=line_width),
+                name=name,
+                hoverinfo="skip",
+                showlegend=False,  # avoid legend duplication
+            )
+        )
 
     for geom in plaques_gdf.geometry.dropna():
         if geom.is_empty:
@@ -993,25 +1013,28 @@ def add_plaques_to_plotly(fig, plaques_gdf, name="Plaques", line_color="lime", l
 
     return fig
 
+
 def plot_plaques_dist(cells_with_dist, plaques_gdf):
     fig = px.scatter(
-    cells_with_dist,
-    x="x_centroid", y="y_centroid",
-    color="distance_to_plaque",
-    color_continuous_scale="plasma",
-    title="Cell-to-plaque distance map",
-    width=900, height=800,
-    render_mode="webgl"  # faster for large datasets
+        cells_with_dist,
+        x="x_centroid",
+        y="y_centroid",
+        color="distance_to_plaque",
+        color_continuous_scale="plasma",
+        title="Cell-to-plaque distance map",
+        width=900,
+        height=800,
+        render_mode="webgl",  # faster for large datasets
     )
 
-    fig.update_traces(marker=dict(size=3), selector=dict(mode='markers'))
+    fig.update_traces(marker=dict(size=3), selector=dict(mode="markers"))
     fig = add_plaques_to_plotly(fig, plaques_gdf, name="Plaques", line_color="lime", line_width=2)
 
     fig.update_yaxes(scaleanchor="x", scaleratio=1)
 
     # export
     fig.write_html("src/data/figures/cell_to_plaque_map_interactive.html")
-    #fig.write_image("src/data/figures/cell_to_plaque_map_interactive.png", scale=2)
+    # fig.write_image("src/data/figures/cell_to_plaque_map_interactive.png", scale=2)
     fig.show()
 
 
@@ -1026,122 +1049,49 @@ def _topn_args(df, metrics, vis_map, n, p_col, fdr_col, title):
         top = df.nlargest(int(n), m).copy().sort_values(m, ascending=True)
         hover = f"<b>%{{y}}</b><br>{m}: %{{x:.4g}}"
         if p_col:
-            hover += f"<br>p: %{{customdata[0]:.2e}}"
+            hover += "<br>p: %{customdata[0]:.2e}"
         if fdr_col:
-            hover += f"<br>FDR: %{{customdata[1]:.2e}}"
-        custom = np.stack([
-            top[p_col].to_numpy() if p_col else np.full(len(top), np.nan),
-            top[fdr_col].to_numpy() if fdr_col else np.full(len(top), np.nan),
-        ], axis=1) if (p_col or fdr_col) else None
+            hover += "<br>FDR: %{customdata[1]:.2e}"
+        custom = (
+            np.stack(
+                [
+                    top[p_col].to_numpy() if p_col else np.full(len(top), np.nan),
+                    top[fdr_col].to_numpy() if fdr_col else np.full(len(top), np.nan),
+                ],
+                axis=1,
+            )
+            if (p_col or fdr_col)
+            else None
+        )
 
-        new_data.append({
-            "x": [top[m].to_numpy()],
-            "y": [top["gene"].to_numpy()],
-            "customdata": [custom] if custom is not None else [None],
-            "hovertemplate": [hover],
-            "marker": [dict(color=np.where(top[m].to_numpy() >= 0, "rgb(31,120,180)", "rgb(227,26,28)"))],
-        })
+        new_data.append(
+            {
+                "x": [top[m].to_numpy()],
+                "y": [top["gene"].to_numpy()],
+                "customdata": [custom] if custom is not None else [None],
+                "hovertemplate": [hover],
+                "marker": [
+                    dict(
+                        color=np.where(top[m].to_numpy() >= 0, "rgb(31,120,180)", "rgb(227,26,28)")
+                    )
+                ],
+            }
+        )
     # visibility mask stays the same; layout title & xaxis will be set by the dropdown
     return [{"data": new_data}, {}]
 
-def draw_figures(plot_func,img_pth="std.png", *args, **kwargs):
+
+def draw_figures(plot_func, img_pth="std.png", *args, **kwargs):
     fig = plot_func(*args, **kwargs)
     fig.write_html(img_pth)
     fig.show()
 
-def cell_type_prop_by_dist(props):
-    """
-    Plot stacked bar chart of cell type proportions by distance bin.
-    """
-    pivot_props = props.pivot(index="distance_bin", columns="cell_type", values="proportion").fillna(0)
-    pivot_props.plot(kind="bar", stacked=True, figsize=(8,5), colormap="tab20")
-    plt.ylabel("Proportion")
-    plt.xlabel("Distance bin (µm)")
-    plt.title("Stacked cell type proportions by plaque distance")
-    plt.legend(bbox_to_anchor=(1.05, 1))
-    plt.tight_layout()
-    plt.show()
-
-def cell_type_comp_by_dist(props):
-    """
-    Plot bar chart of cell type composition by distance bin.
-    """
-    plt.figure(figsize=(8,5))
-    sns.barplot(
-        data=props,
-        x="distance_bin",
-        y="proportion",
-        hue="cell_type",
-    )
-    plt.title("Cell type composition by distance to plaque")
-    plt.xlabel("Distance to plaque (µm, binned)")
-    plt.ylabel("Proportion of cells")
-    plt.legend(bbox_to_anchor=(1.05, 1), loc="upper left", title="Cell type")
-    plt.tight_layout()
-    plt.show()
-
-def mean_exp_dist(mean_melt):
-    """
-    Plot mean expression per distance bin for PIG genes."""
-    g = sns.catplot(
-    data=mean_melt,
-    x="distance_bin", y="mean_expr", hue="gene",
-    kind="bar", height=4, aspect=1.6
-    )
-    g.set_axis_labels("Distance to plaque (µm, binned)", "Mean expression")
-    g.fig.suptitle("Mean PIG expression per distance bin")
-    plt.tight_layout()
-    plt.show()
 
 def cellular_comp_by_dist(pivot_prop):
-    ax = pivot_prop.plot(kind="bar", stacked=True, figsize=(8,5), width=0.85, colormap="tab20")
+    ax = pivot_prop.plot(kind="bar", stacked=True, figsize=(8, 5), width=0.85, colormap="tab20")
     ax.set_xlabel("Distance to plaque (µm)")
     ax.set_ylabel("Proportion")
     ax.set_title("Cellular composition by plaque distance")
     ax.legend(bbox_to_anchor=(1.02, 1), loc="upper left", frameon=False, ncol=1)
     plt.tight_layout()
     plt.show()
-
-def pig_expr_by_dist(mean_by_bin, pig_cols):
-    plt.figure(figsize=(9,5))
-    x = np.arange(len(mean_by_bin))
-    for g in pig_cols:
-        plt.plot(x, mean_by_bin[g], marker="o", linewidth=2, label=g)
-    plt.xticks(x, mean_by_bin["distance_bin"].astype(str), rotation=30)
-    plt.xlabel("Distance (bins)")
-    plt.ylabel("Mean expression (log1p)")
-    plt.title("PIGs : men expression by distance bin")
-    plt.legend(bbox_to_anchor=(1.02, 1), loc="upper left", frameon=False, ncol=1)
-    plt.tight_layout(); plt.show()
-
-def pig_comp_heatmap(pig_mat, prop_mat, pig_cols):
-    corrs = pd.DataFrame(index=pig_cols, columns=prop_mat.columns, dtype=float)
-    pvals = pd.DataFrame(index=pig_cols, columns=prop_mat.columns, dtype=float)
-    for g in pig_cols:
-        y = pig_mat[g].to_numpy()
-        for ct in prop_mat.columns:
-            x = prop_mat[ct].to_numpy()
-            if len(y) >= 2:
-                r, p = spearmanr(y, x, nan_policy="omit")
-            else:
-                r, p = (np.nan, np.nan)
-            corrs.loc[g, ct] = r
-            pvals.loc[g, ct] = p
-
-    # FDR
-    mask = np.isfinite(pvals.values)
-    flat = pvals.values[mask]
-    rej, qvals, *_ = multipletests(flat, method="fdr_bh")
-    q = pvals.copy(); q.values[mask] = qvals
-
-    plt.figure(figsize=(min(14, 6+0.25*len(corrs.columns)), 8))
-    sns.heatmap(corrs.astype(float), cmap="coolwarm", center=0, annot=True, fmt=".2f",
-                cbar_kws={"label":"Spearman ρ"})
-    plt.title("PIG correclation ↔ cellular type proportion")
-    plt.xlabel("Cellular type"); plt.ylabel("PIG genes")
-    plt.tight_layout(); plt.show()
-
-
-
-
-

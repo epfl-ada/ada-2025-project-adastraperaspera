@@ -11,7 +11,7 @@ def build_parser() -> argparse.ArgumentParser:
         prog="xenium-plaque",
         description="Align IF plaque polygons to Xenium morphology space and export selections.",
     )
-    p.add_argument("--config", default="configs/config.yaml", help="Path to YAML config.")
+    p.add_argument("--config", default="configs/plaque_alignment.yaml", help="Path to YAML config.")
     p.add_argument("--keypoints")
     p.add_argument("--plaques")
     p.add_argument("--cells")

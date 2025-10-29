@@ -44,7 +44,7 @@ The CSV columns of this file are:
 
 ```bash
 export PYTHONPATH="$PWD/src"
-python -m scripts.plaque_alignment.cli --config configs/config.yaml
+python -m scripts.plaque_alignment.cli --config configs/plaque_alignment.yaml
 ```
 
 - Now that we have a mapping from the IF coordinate space into the morphology coordinate space, we can transform the plaque polygons into the morphology coordinate space.

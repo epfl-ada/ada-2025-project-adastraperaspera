@@ -1,0 +1,5 @@
+# Plaque preprocessing configuration
+enforce_convex: True
+fill_holes: True
+remove_nested: True
+merge_overlaps: True

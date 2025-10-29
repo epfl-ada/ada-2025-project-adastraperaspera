@@ -51,8 +51,6 @@ def filter_cells(
         raise KeyError(
             "Required columns 'transcript_counts', 'cell_area' and 'nucleus_area' not found."
         )
-
-    cells_df["n_genes"] = (cells_df[gene_cols] > 0).sum(axis=1)
     cells_df = cells_df.loc[
         (cells_df["nucleus_area"] > 0) & (cells_df["cell_area"] > 0) & (cells_df["n_genes"] > 0)
     ].copy()

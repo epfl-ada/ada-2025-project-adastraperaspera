@@ -52,7 +52,7 @@ Notes:
 ```
 .
 ├── configs
-│   └── config.yaml                                # Config used by the plaque-alignment CLI.
+│   └── plaque_alignment.yaml                                # Config used by the plaque-alignment CLI.
 ├── src
 │   ├── data
 │   │   └── Xenium_V1_FFPE_TgCRND8_17_9_months

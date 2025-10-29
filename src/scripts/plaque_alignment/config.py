@@ -1,6 +1,6 @@
 """
 Configuration loading & validation.
-Expects a `../../../configs/config.yaml` file for user-editable settings; CLI flags can override.
+Expects a `../../../configs/plaque_alignment.yaml` file for user-editable settings; CLI flags can override.
 """
 
 from __future__ import annotations
@@ -13,7 +13,7 @@ import typing as t
 import yaml
 
 # ===========================================================
-# Dataclass models for validating the config.yaml
+# Dataclass models for validating the plaque_alignment.yaml
 # ===========================================================
 
 
