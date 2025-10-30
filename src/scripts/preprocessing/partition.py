@@ -159,7 +159,10 @@ def summarize_genes(gene_df: pd.DataFrame) -> pd.DataFrame:
 
 
 def compute_pigs_zscores(
-    df: pd.DataFrame, gene_cols: list[str], pigs: list[str] | None = None, clip: float = 10.0
+    df: pd.DataFrame,
+    gene_cols: list[str],
+    pigs: list[str] | None = None,
+    clip: float = 10.0,
 ) -> tuple[pd.DataFrame, dict[str, list[str]]]:
     """
     Compute z-scored expression matrix for a predefined set of PIG genes.
@@ -395,8 +398,8 @@ def plot_weird_gene_panels(
     *,
     bins: int = 50,
     cols: int = 4,
-    linear_title: str = "Weirdest genes — linear scale",
-    log_title: str = "Weirdest genes — log1p scale",
+    linear_title: str = "Weirdest genes - linear scale",
+    log_title: str = "Weirdest genes - log1p scale",
     show: bool = True,
     save_linear_path: str | None = None,
     save_log_path: str | None = None,

@@ -149,7 +149,7 @@ def preprocess_cells_and_expression(
         f"{PATH_TO_DATA_FOLDER}/combined_normalized.csv",
     )
 
-    return filtered_combined_df, combined_df_normalized
+    return filtered_combined_df, combined_df_normalized, gene_cols
 
 
 def preprocess_plaques(PATH_TO_DATA_FOLDER: str | Path) -> tuple[pd.DataFrame, Polygon]:

@@ -54,7 +54,11 @@ def _write_cfg(tmp_path: Path, kp: Path, plaques: Path, out_sel: Path, logs_dir:
         },
         "params": {
             "xenium_pixel_size_um": 0.2125,
-            "ransac": {"min_samples": 3, "residual_threshold_px": 1.0, "max_trials": 50},
+            "ransac": {
+                "min_samples": 3,
+                "residual_threshold_px": 1.0,
+                "max_trials": 50,
+            },
             "upgrade_to_affine_rmse_px": 5.0,
             "selections": {"decimals": 3, "top_n": None},
         },

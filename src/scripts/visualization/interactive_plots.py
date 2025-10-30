@@ -1,25 +1,23 @@
 from collections.abc import Sequence
-from typing import Union
-import matplotlib.pyplot as plt
+import logging
+import os
+
 import numpy as np
 import pandas as pd
-import seaborn as sns
-from matplotlib.lines import Line2D
-from matplotlib.patches import Polygon as MplPoly
-from shapely.geometry import MultiPolygon, Polygon
 import plotly.express as px
 import plotly.graph_objects as go
-import numpy as np
-from typing import List, Optional
-from typing import Sequence, Optional
 from scipy.stats import gaussian_kde
-import geopandas as gpd
-from sklearn.metrics import r2_score
-import logging
+
+# Get current directory
+vis_dir = os.path.dirname(os.path.abspath(__file__))
+scripts_dir = os.path.dirname(vis_dir)
+src_dir = os.path.dirname(scripts_dir)
+figures_dir = os.path.join(src_dir, "data", "figures")
+
 
 def plot_gene_trends_interactive(
     mean_expr: pd.DataFrame,
-    genes: List[str],
+    genes: list[str],
     ylabel: str = "Mean expression (log1p normalized)",
     xlabel: str = "Distance to plaque (µm, binned)",
     title: str = "Spatial gene expression gradients",
@@ -67,7 +65,8 @@ def plot_gene_trends_interactive(
             sub = long[long["gene"] == g]
             fig.add_trace(
                 go.Scattergl(
-                    x=sub["__bin__"], y=sub["mean_expr"],
+                    x=sub["__bin__"],
+                    y=sub["mean_expr"],
                     mode="lines+markers",
                     name=g,
                     line=dict(width=line_width),
@@ -75,8 +74,14 @@ def plot_gene_trends_interactive(
             )
     else:
         fig = px.line(
-            long, x="__bin__", y="mean_expr", color="gene",
-            markers=True, title=title, height=height, width=width
+            long,
+            x="__bin__",
+            y="mean_expr",
+            color="gene",
+            markers=True,
+            title=title,
+            height=height,
+            width=width,
         )
 
     fig.update_layout(
@@ -92,6 +97,7 @@ def plot_gene_trends_interactive(
     fig.update_xaxes(tickangle=45)
     return fig
 
+
 def plot_mean_heatmap_interactive(
     mean_expr: pd.DataFrame,
     top_n: int = 25,
@@ -104,8 +110,15 @@ def plot_mean_heatmap_interactive(
     Interactive heatmap of top N genes with highest spatial variation.
     """
     non_gene_cols = {
-        "cell_id","x_centroid","y_centroid","cell_area","nucleus_area",
-        "total_counts","transcript_counts","distance_to_plaque","distance_bin",
+        "cell_id",
+        "x_centroid",
+        "y_centroid",
+        "cell_area",
+        "nucleus_area",
+        "total_counts",
+        "transcript_counts",
+        "distance_to_plaque",
+        "distance_bin",
     }
     gene_cols = [c for c in mean_expr.columns if c not in non_gene_cols]
     if not gene_cols:
@@ -121,9 +134,7 @@ def plot_mean_heatmap_interactive(
     # Z-score (optional)
     if zscore:
         # convertit sparse -> dense si besoin, puis zscore colonne par colonne
-        sub_df = sub_df.apply(
-            lambda x: x.sparse.to_dense() if pd.api.types.is_sparse(x) else x
-        )
+        sub_df = sub_df.apply(lambda x: x.sparse.to_dense() if pd.api.types.is_sparse(x) else x)
         sub_df = (sub_df - sub_df.mean()) / (sub_df.std(ddof=0).replace(0, np.nan))
 
     # Labels d'axe X
@@ -142,7 +153,8 @@ def plot_mean_heatmap_interactive(
         aspect="auto",
         labels=dict(color="Z-score" if zscore else "Mean log1p"),
         title=title,
-        height=height, width=width,
+        height=height,
+        width=width,
     )
     # Center color scale at 0 for z score
     if zscore:
@@ -157,6 +169,7 @@ def plot_mean_heatmap_interactive(
     )
     return fig
 
+
 def gene_distribution_selector_interactive(
     df: pd.DataFrame,
     genes: Sequence[str],
@@ -164,7 +177,7 @@ def gene_distribution_selector_interactive(
     title: str = "Per-gene distributions (histogram + KDE)",
     width: int = 900,
     height: int = 600,
-    kde_points: int = 400
+    kde_points: int = 400,
 ):
     """
     Create an interactive HTML figure with dropdowns to choose:
@@ -175,14 +188,15 @@ def gene_distribution_selector_interactive(
     genes: list of gene column names in df.
     """
     # --- Precompute per-gene traces (raw + log1p) ---
-    traces = []      # list of go.Scatter / go.Histogram
-    vis_map = {}     # (gene, scale) -> list of trace indices to set visible=True
-    x_ranges = {}    # scale -> (global_min, global_max) for consistent axes
+    traces = []  # list of go.Scatter / go.Histogram
+    vis_map = {}  # (gene, scale) -> list of trace indices to set visible=True
+    x_ranges = {}  # scale -> (global_min, global_max) for consistent axes
 
     # Prepare global x-limits for stability across genes
     def _clean(x):
         x = np.asarray(x, dtype=float)
         return x[np.isfinite(x)]
+
     raw_vals = _clean(pd.concat([df[g] for g in genes], axis=0, ignore_index=True))
     log_vals = _clean(np.log1p(raw_vals))
     x_ranges["raw"] = (float(np.nanmin(raw_vals)), float(np.nanmax(raw_vals)))
@@ -196,55 +210,75 @@ def gene_distribution_selector_interactive(
 
         # Histogram (raw)
         h_raw = go.Histogram(
-            x=x_raw, nbinsx=bins, histnorm="probability density",
-            name=f"{g} — hist (raw)", opacity=0.45, showlegend=False
+            x=x_raw,
+            nbinsx=bins,
+            histnorm="probability density",
+            name=f"{g} - hist (raw)",
+            opacity=0.45,
+            showlegend=False,
         )
         # KDE (raw)
         raw_kde_trace = None
         if x_raw.size > 5:
-            xr = np.linspace(max(x_ranges["raw"][0], np.min(x_raw)),
-                             min(x_ranges["raw"][1], np.max(x_raw)),
-                             kde_points)
+            xr = np.linspace(
+                max(x_ranges["raw"][0], np.min(x_raw)),
+                min(x_ranges["raw"][1], np.max(x_raw)),
+                kde_points,
+            )
             try:
                 kde = gaussian_kde(x_raw[x_raw > 0] if (x_raw > 0).sum() > 5 else x_raw)
                 yr = kde(xr)
                 raw_kde_trace = go.Scatter(
-                    x=xr, y=yr, mode="lines",
-                    name=f"{g} — kde (raw)", line=dict(width=2), showlegend=False
+                    x=xr,
+                    y=yr,
+                    mode="lines",
+                    name=f"{g} - kde (raw)",
+                    line=dict(width=2),
+                    showlegend=False,
                 )
             except Exception:
                 pass
 
         # Histogram (log1p)
         h_log = go.Histogram(
-            x=x_log, nbinsx=bins, histnorm="probability density",
-            name=f"{g} — hist (log1p)", opacity=0.45, showlegend=False
+            x=x_log,
+            nbinsx=bins,
+            histnorm="probability density",
+            name=f"{g} - hist (log1p)",
+            opacity=0.45,
+            showlegend=False,
         )
         # KDE (log1p)
         log_kde_trace = None
         if x_log.size > 5:
-            xl = np.linspace(max(x_ranges["log1p"][0], np.min(x_log)),
-                             min(x_ranges["log1p"][1], np.max(x_log)),
-                             kde_points)
+            xl = np.linspace(
+                max(x_ranges["log1p"][0], np.min(x_log)),
+                min(x_ranges["log1p"][1], np.max(x_log)),
+                kde_points,
+            )
             try:
                 kde_l = gaussian_kde(x_log)  # déjà > 0
                 yl = kde_l(xl)
                 log_kde_trace = go.Scatter(
-                    x=xl, y=yl, mode="lines",
-                    name=f"{g} — kde (log1p)", line=dict(width=2), showlegend=False
+                    x=xl,
+                    y=yl,
+                    mode="lines",
+                    name=f"{g} - kde (log1p)",
+                    line=dict(width=2),
+                    showlegend=False,
                 )
             except Exception:
                 pass
 
         # Store indices for visibility toggling
         start_idx = len(traces)
-        g_raw_idxs = [start_idx]                     # raw hist
+        g_raw_idxs = [start_idx]  # raw hist
         traces.append(h_raw)
         if raw_kde_trace is not None:
             g_raw_idxs.append(len(traces))
             traces.append(raw_kde_trace)
 
-        g_log_idxs = [len(traces)]                   # log hist
+        g_log_idxs = [len(traces)]  # log hist
         traces.append(h_log)
         if log_kde_trace is not None:
             g_log_idxs.append(len(traces))
@@ -275,32 +309,50 @@ def gene_distribution_selector_interactive(
     # Buttons for genes
     gene_buttons = []
     for g in genes:
-        gene_buttons.append(dict(
-            label=g,
-            method="update",
-            args=[
-                {"visible": visibility_for(g, init_scale)},
-                {"title": f"{title} — {g} ({init_scale})",
-                 "xaxis": {"title": "log1p(expression)"} if init_scale == "log1p" else {"title": "expression"}}
-            ],
-        ))
+        gene_buttons.append(
+            dict(
+                label=g,
+                method="update",
+                args=[
+                    {"visible": visibility_for(g, init_scale)},
+                    {
+                        "title": f"{title} - {g} ({init_scale})",
+                        "xaxis": (
+                            {"title": "log1p(expression)"}
+                            if init_scale == "log1p"
+                            else {"title": "expression"}
+                        ),
+                    },
+                ],
+            )
+        )
 
     # Buttons for scale
     scale_buttons = []
     for sc in ["raw", "log1p"]:
-        scale_buttons.append(dict(
-            label=sc,
-            method="update",
-            args=[
-                {"visible": visibility_for(init_gene, sc)},
-                {"title": f"{title} — {init_gene} ({sc})",
-                 "xaxis": {"title": "log1p(expression)"} if sc == "log1p" else {"title": "expression"}}
-            ],
-        ))
+        scale_buttons.append(
+            dict(
+                label=sc,
+                method="update",
+                args=[
+                    {"visible": visibility_for(init_gene, sc)},
+                    {
+                        "title": f"{title} - {init_gene} ({sc})",
+                        "xaxis": (
+                            {"title": "log1p(expression)"}
+                            if sc == "log1p"
+                            else {"title": "expression"}
+                        ),
+                    },
+                ],
+            )
+        )
 
     fig.update_layout(
-        width=width, height=height, template="simple_white",
-        title=f"{title} — {init_gene} ({init_scale})",
+        width=width,
+        height=height,
+        template="simple_white",
+        title=f"{title} - {init_gene} ({init_scale})",
         xaxis_title="log1p(expression)",
         yaxis_title="density",
         barmode="overlay",
@@ -308,13 +360,25 @@ def gene_distribution_selector_interactive(
         updatemenus=[
             dict(
                 buttons=gene_buttons,
-                direction="down", showactive=True, x=0.02, xanchor="left", y=1.15, yanchor="top",
-                bgcolor="white", bordercolor="#ccc"
+                direction="down",
+                showactive=True,
+                x=0.02,
+                xanchor="left",
+                y=1.15,
+                yanchor="top",
+                bgcolor="white",
+                bordercolor="#ccc",
             ),
             dict(
                 buttons=scale_buttons,
-                direction="down", showactive=True, x=0.30, xanchor="left", y=1.15, yanchor="top",
-                bgcolor="white", bordercolor="#ccc",
+                direction="down",
+                showactive=True,
+                x=0.30,
+                xanchor="left",
+                y=1.15,
+                yanchor="top",
+                bgcolor="white",
+                bordercolor="#ccc",
             ),
         ],
         margin=dict(l=60, r=20, t=90, b=60),
@@ -324,51 +388,58 @@ def gene_distribution_selector_interactive(
     # We’ll attach ranges to layout meta for clarity (optional)
     fig.layout.meta = dict(xrange_raw=x_ranges["raw"], xrange_log=x_ranges["log1p"])
     fig.update_layout(
-    title={
-        "text": f"{title} — {init_gene} ({init_scale})",
-        "x": 0.5,                # center horizontally
-        "xanchor": "center",     
-        "y": 0.97,               # slightly below top edge
-        "yanchor": "top",
-    },
-    updatemenus=[
-        dict(
-            buttons=gene_buttons,
-            direction="down",
-            showactive=True,
-            x=0.0, xanchor="left",
-            y=1.12, yanchor="top",   # a bit below title
-            bgcolor="white", bordercolor="#ccc"
-        ),
-        dict(
-            buttons=scale_buttons,
-            direction="down",
-            showactive=True,
-            x=0.25, xanchor="left",
-            y=1.12, yanchor="top",
-            bgcolor="white", bordercolor="#ccc"
-        ),
-    ],
-    margin=dict(l=60, r=20, t=100, b=60),
+        title={
+            "text": f"{title} - {init_gene} ({init_scale})",
+            "x": 0.5,  # center horizontally
+            "xanchor": "center",
+            "y": 0.97,  # slightly below top edge
+            "yanchor": "top",
+        },
+        updatemenus=[
+            dict(
+                buttons=gene_buttons,
+                direction="down",
+                showactive=True,
+                x=0.0,
+                xanchor="left",
+                y=1.12,
+                yanchor="top",  # a bit below title
+                bgcolor="white",
+                bordercolor="#ccc",
+            ),
+            dict(
+                buttons=scale_buttons,
+                direction="down",
+                showactive=True,
+                x=0.25,
+                xanchor="left",
+                y=1.12,
+                yanchor="top",
+                bgcolor="white",
+                bordercolor="#ccc",
+            ),
+        ],
+        margin=dict(l=60, r=20, t=100, b=60),
     )
 
     return fig
 
+
 def plot_top_spatial_genes_interactive(
     stats_df: pd.DataFrame,
     top_n: int = 20,
-    metrics: Optional[List[str]] = None,   # ex: ["spearman_r","slope"]
+    metrics: list[str] | None = None,  # ex: ["spearman_r","slope"]
     gene_col: str = "gene",
-    p_col_candidates = ("p_value","pval","p"),
-    fdr_col_candidates = ("fdr","q_value","adj_p","qval"),
+    p_col_candidates=("p_value", "pval", "p"),
+    fdr_col_candidates=("fdr", "q_value", "adj_p", "qval"),
     title: str = "Top 20 genes by spatial metric",
     width: int = 820,
-    height: int = 650
+    height: int = 650,
 ) -> go.Figure:
     """
-    Interactive horizontal bar plots of the genes most spatially associated.  
-    - No slider: top_n is fixed.  
-    - A single dropdown menu to select the metric.  
+    Interactive horizontal bar plots of the genes most spatially associated.
+    - No slider: top_n is fixed.
+    - A single dropdown menu to select the metric.
     - Centered title, with the menu positioned just below the title (no overlap).
     """
     df = stats_df.copy()
@@ -378,10 +449,7 @@ def plot_top_spatial_genes_interactive(
     # Auto-detect metrics if not provided
     if metrics is None:
         non_metric = {gene_col, *p_col_candidates, *fdr_col_candidates}
-        metrics = [
-            c for c in df.select_dtypes(include=[np.number]).columns
-            if c not in non_metric
-        ]
+        metrics = [c for c in df.select_dtypes(include=[np.number]).columns if c not in non_metric]
     if not metrics:
         raise ValueError("Aucune métrique numérique détectée. Fournis `metrics=[...]`.")
 
@@ -397,17 +465,22 @@ def plot_top_spatial_genes_interactive(
     for m in metrics:
         if m not in df.columns:
             continue
-        top = df.nlargest(top_n, m).copy().sort_values(m, ascending=True)  # pour empiler vers le haut
+        top = (
+            df.nlargest(top_n, m).copy().sort_values(m, ascending=True)
+        )  # pour empiler vers le haut
 
         hover = f"<b>%{{y}}</b><br>{m}: %{{x:.4g}}"
         custom = None
         if p_col or fdr_col:
             hover += f"<br>{p_col or 'p'}: %{{customdata[0]:.2e}}" if p_col else ""
             hover += f"<br>{fdr_col or 'FDR'}: %{{customdata[1]:.2e}}" if fdr_col else ""
-            custom = np.stack([
-                top[p_col].to_numpy() if p_col else np.full(len(top), np.nan),
-                top[fdr_col].to_numpy() if fdr_col else np.full(len(top), np.nan),
-            ], axis=1)
+            custom = np.stack(
+                [
+                    top[p_col].to_numpy() if p_col else np.full(len(top), np.nan),
+                    top[fdr_col].to_numpy() if fdr_col else np.full(len(top), np.nan),
+                ],
+                axis=1,
+            )
 
         trace = go.Bar(
             x=top[m].to_numpy(),
@@ -434,34 +507,51 @@ def plot_top_spatial_genes_interactive(
     buttons = []
     for m in metrics:
         vis = [i == vis_map[m] for i in range(len(traces))]
-        buttons.append(dict(
-            label=m,
-            method="update",
-            args=[
-                {"visible": vis},
-                {"title": f"{title} — {m}", "xaxis": {"title": m}},
-            ],
-        ))
+        buttons.append(
+            dict(
+                label=m,
+                method="update",
+                args=[
+                    {"visible": vis},
+                    {"title": f"{title} - {m}", "xaxis": {"title": m}},
+                ],
+            )
+        )
 
     fig.update_layout(
-        width=width, height=height, template="simple_white",
-        title=dict(text=f"{title} — {init_metric}", x=0.5, xanchor="center", y=0.96, yanchor="top"),
+        width=width,
+        height=height,
+        template="simple_white",
+        title=dict(
+            text=f"{title} - {init_metric}",
+            x=0.5,
+            xanchor="center",
+            y=0.96,
+            yanchor="top",
+        ),
         xaxis_title=init_metric,
         yaxis_title="Gene",
         margin=dict(l=140, r=30, t=110, b=50),  # top ↑ for menu
         showlegend=False,
-        updatemenus=[dict(
-            buttons=buttons,
-            direction="down", showactive=True,
-            x=0.02, xanchor="left",
-            y=1.10, yanchor="top",       
-            bgcolor="white", bordercolor="#ccc",
-            pad={"r": 6, "t": 6},
-        )],
+        updatemenus=[
+            dict(
+                buttons=buttons,
+                direction="down",
+                showactive=True,
+                x=0.02,
+                xanchor="left",
+                y=1.10,
+                yanchor="top",
+                bgcolor="white",
+                bordercolor="#ccc",
+                pad={"r": 6, "t": 6},
+            )
+        ],
     )
     return fig
 
-def interactive_comp_pig_regression(agg,PIGS, bin_order):
+
+def interactive_comp_pig_regression(agg, PIGS, bin_order):
     # --- mean and SEM per (gene, broad_type, bin)
 
     btypes = agg["broad_type"].unique().tolist()
@@ -491,9 +581,9 @@ def interactive_comp_pig_regression(agg,PIGS, bin_order):
                     line=dict(width=0),
                     name=f"{bt} ± SEM",
                     legendgroup=bt,
-                    showlegend=False,                 # <-- avoid legend clutter
+                    showlegend=False,  # <-- avoid legend clutter
                     visible=(gi == 0),
-                    hoverinfo="skip"
+                    hoverinfo="skip",
                 )
             )
 
@@ -505,12 +595,12 @@ def interactive_comp_pig_regression(agg,PIGS, bin_order):
                     mode="lines+markers",
                     name=bt,
                     legendgroup=bt,
-                    showlegend=(gi == 0),             # <-- legend only shown for first gene
+                    showlegend=(gi == 0),  # <-- legend only shown for first gene
                     visible=(gi == 0),
                     hovertemplate=(
-                    f"Gene: {gene}<br>Type: {bt}<br>Bin: %{{x}}<br>"
-                    "Mean expr: %{y:.3f}<extra></extra>"
-                ),
+                        f"Gene: {gene}<br>Type: {bt}<br>Bin: %{{x}}<br>"
+                        "Mean expr: %{y:.3f}<extra></extra>"
+                    ),
                 )
             )
 
@@ -532,36 +622,43 @@ def interactive_comp_pig_regression(agg,PIGS, bin_order):
             dict(
                 label=gene,
                 method="update",
-                args=[{"visible": vis},
-                    {"title": f"{gene} expression by distance and cell type"}]
+                args=[
+                    {"visible": vis},
+                    {"title": f"{gene} expression by distance and cell type"},
+                ],
             )
         )
 
     fig.update_layout(
-        title={"text": "PIG expression by distance and cell type",
-            "x": 0.5, "xanchor": "center"},
+        title={
+            "text": "PIG expression by distance and cell type",
+            "x": 0.5,
+            "xanchor": "center",
+        },
         xaxis_title="Distance to plaque (µm, binned)",
         yaxis_title="Mean expression (log1p)",
         legend_title="Cell family",
         xaxis=dict(categoryorder="array", categoryarray=bin_order),
-        updatemenus=[dict(
-            type="dropdown",
-            buttons=buttons,
-            x=1.1,                # --> move dropdown to the right
-            xanchor="right",
-            y=1.22,               # --> raise dropdown a bit higher above the legend
-            yanchor="top",
-            pad=dict(l=2, r=2, t=2, b=2),
-            direction="down",     # menu expands downward
-            showactive=True
-        )],
+        updatemenus=[
+            dict(
+                type="dropdown",
+                buttons=buttons,
+                x=1.1,  # --> move dropdown to the right
+                xanchor="right",
+                y=1.22,  # --> raise dropdown a bit higher above the legend
+                yanchor="top",
+                pad=dict(l=2, r=2, t=2, b=2),
+                direction="down",  # menu expands downward
+                showactive=True,
+            )
+        ],
         margin=dict(l=60, r=20, t=120, b=60),  # extra top space to avoid overlap
         legend=dict(
             orientation="h",
             yanchor="bottom",
-            y=1.05,              # --> move legend slightly up
+            y=1.05,  # --> move legend slightly up
             xanchor="center",
-            x=0.5
+            x=0.5,
         ),
     )
 
@@ -569,7 +666,5 @@ def interactive_comp_pig_regression(agg,PIGS, bin_order):
     fig.update_layout(legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0))
 
     fig.show()
-    fig.write_html("src/data/pig_by_distance_interactive.html")
-    logging.info("Saved to figures/pig_by_distance_interactive.html")
-
-
+    fig.write_html(os.path.join(figures_dir, "pig_by_distance_interactive.html"))
+    logging.info(f"Saved to {os.path.join(figures_dir, 'pig_by_distance_interactive.html')}")

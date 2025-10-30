@@ -56,8 +56,8 @@ python -m scripts.plaque_alignment.cli --config configs/plaque_alignment.yaml
 
 - The Xenium Alzheimer’s dataset (`Xenium_V1_FFPE_TgCRND8_17_9_months_outs.zip`) was downloaded directly from the 10x Genomics cloud using a dedicated `download.py` script.
 - The data package includes:
-  - `cells.parquet` — per-cell morphological and QC metadata
-  - `cell_feature_matrix.h5` — cell × gene expression matrix
+  - `cells.parquet` - per-cell morphological and QC metadata
+  - `cell_feature_matrix.h5` - cell × gene expression matrix
 - The archive is automatically extracted to
   `src/data/Xenium_V1_FFPE_TgCRND8_17_9_months/xenium_raw/`.
 

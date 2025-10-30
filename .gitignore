@@ -167,3 +167,5 @@ venv
 archive
 logs
 .DS_Store
+combined_normalized.csv
+combined.csv

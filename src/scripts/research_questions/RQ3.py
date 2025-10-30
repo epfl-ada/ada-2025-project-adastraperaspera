@@ -1,0 +1,428 @@
+from __future__ import annotations
+
+from collections.abc import Callable, Iterable, Sequence
+import logging
+from pathlib import Path
+from typing import Any
+
+import numpy as np
+import pandas as pd
+import statsmodels.formula.api as smf
+
+
+def analyze_plaque_distance_effects(
+    cells: pd.DataFrame,
+    pig_genes: Iterable[str],
+    *,
+    apoe_gene: str = "Apoe",
+    predicted_label_col: str = "predicted_label",
+    unknown_label_value: int = 34,
+    cell_type_col: str = "cell_type",
+    distance_col: str = "distance_to_plaque",
+    distance_bin_col: str = "distance_bin",
+    broad_type_col: str = "broad_type",
+    create_distance_bins: bool = True,
+    logger: logging.Logger | None = None,
+) -> tuple[str, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    """
+    Run OLS models relating gene expression to distance from plaque while controlling
+    for broad cell type, and compute binned summary stats for PIG genes.
+
+    Steps performed:
+      1) If `predicted_label_col` exists, mark cells with `unknown_label_value` as unlabeled
+         by setting their `cell_type_col` to NA.
+      2) Ensure `broad_type_col` exists by simplifying `cell_type_col` into:
+         {"Glutamatergic", "GABAergic", "Glial", "Unlabeled", "Other"}.
+      3) Fit an OLS for `apoe_gene`:
+             Q(apoe_gene) ~ distance + C(broad_type)
+         and log the model summary.
+      4) For each gene in `pig_genes` present in the data, fit:
+             Q(gene) ~ distance + C(broad_type)
+         and collect coefficients and p-values into a tidy DataFrame.
+      5) Produce mean, SEM, and counts per (gene, broad_type, distance_bin). If
+         `distance_bin_col` is missing and `create_distance_bins=True`, create it from
+         `distance_col` using bins: [0,20), [20,50), [50,100), [100,200), [200, ∞).
+
+    Parameters
+    ----------
+    cells : pd.DataFrame
+        DataFrame with at least the columns for distance (`distance_col`) and cell type
+        (`cell_type_col`). Optionally contains `predicted_label_col` and `distance_bin_col`.
+    pig_genes : Iterable[str]
+        Collection of PIG gene names to analyze.
+    apoe_gene : str, optional
+        Name of the Apoe column (default "Apoe").
+    predicted_label_col : str, optional
+        Column indicating predicted label class (default "predicted_label").
+    unknown_label_value : int, optional
+        Value in `predicted_label_col` that means "unknown" (default 34).
+    cell_type_col : str, optional
+        Column with detailed cell types to be simplified (default "cell_type").
+    distance_col : str, optional
+        Column with distance to plaque (default "distance_to_plaque").
+    distance_bin_col : str, optional
+        Column with categorical distance bins (default "distance_bin").
+    broad_type_col : str, optional
+        Output column for simplified cell types (default "broad_type").
+    create_distance_bins : bool, optional
+        If True and `distance_bin_col` is missing, compute bins from `distance_col`.
+    logger : logging.Logger, optional
+        Logger to use for info messages. Defaults to a module-level logger.
+
+    Returns
+    -------
+    apoe_summary_text : str
+        Text representation of the OLS summary for the Apoe model.
+    gene_coefs : pd.DataFrame
+        Tidy coefficients for each gene with columns:
+        ["gene", "variable", "coef", "pval"].
+    binned_stats : pd.DataFrame
+        Aggregated statistics with columns:
+        ["gene", "broad_type", "distance_bin", "mean", "sem", "n"].
+    cells_out : pd.DataFrame
+        A copy of the input DataFrame with ensured `broad_type_col`
+        (and `distance_bin_col` if created).
+
+    Raises
+    ------
+    ValueError
+        If required columns are missing.
+    """
+    logger = logger or logging.getLogger(__name__)
+    pig_genes = list(pig_genes)  # solidify the iterable
+
+    # --- Basic validations
+    required_cols = {cell_type_col, distance_col}
+    missing = required_cols - set(cells.columns)
+    if missing:
+        raise ValueError(f"Missing required columns in `cells`: {sorted(missing)}")
+
+    # Work on a copy to avoid mutating caller data
+    cells = cells.copy()
+
+    # --- Mark unknown predicted labels as unlabeled (NA cell_type)
+    if predicted_label_col in cells.columns:
+        mask_unknown = cells[predicted_label_col] == unknown_label_value
+        n_unknown = int(mask_unknown.sum())
+        if n_unknown:
+            logger.info(
+                "Setting %d rows with %s == %s to NA in %s.",
+                n_unknown,
+                predicted_label_col,
+                unknown_label_value,
+                cell_type_col,
+            )
+            cells.loc[mask_unknown, cell_type_col] = pd.NA
+
+    # --- Ensure broad type
+    def _simplify_celltype(ct: object) -> str:
+        if pd.isna(ct):
+            return "Unlabeled"
+        s = str(ct)
+        if "Glut" in s:
+            return "Glutamatergic"
+        if "GABA" in s:
+            return "GABAergic"
+        if any(x in s for x in ("Astro", "Micro", "Oligo")):
+            return "Glial"
+        return "Other"
+
+    if broad_type_col not in cells.columns:
+        logger.info("Creating '%s' by simplifying '%s'.", broad_type_col, cell_type_col)
+        cells[broad_type_col] = cells[cell_type_col].apply(_simplify_celltype)
+
+    # --- Ensure distance bins if needed
+    bin_order = ["0-20", "20-50", "50-100", "100-200", ">200"]
+    if distance_bin_col not in cells.columns and create_distance_bins:
+        logger.info(
+            "Creating '%s' from '%s' using default bin edges.",
+            distance_bin_col,
+            distance_col,
+        )
+        bins = [0, 20, 50, 100, 200, np.inf]
+        labels = bin_order
+        cells[distance_bin_col] = pd.cut(
+            cells[distance_col].astype(float),
+            bins=bins,
+            labels=labels,
+            include_lowest=True,
+            right=False,  # [0,20), [20,50), ...
+        )
+
+    # --- Apoe model
+    if apoe_gene not in cells.columns:
+        raise ValueError(f"Column '{apoe_gene}' not found in `cells` for the Apoe model.")
+    apoe_df = cells[[apoe_gene, distance_col, broad_type_col]].dropna()
+    if apoe_df.empty:
+        raise ValueError("No rows available for the Apoe model after dropping NAs.")
+    apoe_formula = f"Q('{apoe_gene}') ~ {distance_col} + C({broad_type_col})"
+    apoe_res = smf.ols(apoe_formula, data=apoe_df).fit()
+    apoe_summary_text = apoe_res.summary().as_text()
+    logger.info("\n%s", apoe_summary_text)
+
+    # --- PIG genes models
+    results: list[dict] = []
+    present_genes = [g for g in pig_genes if g in cells.columns]
+    missing_genes = [g for g in pig_genes if g not in cells.columns]
+    if missing_genes:
+        logger.info(
+            "Skipping %d genes not found in data: %s",
+            len(missing_genes),
+            ", ".join(missing_genes[:10]) + ("..." if len(missing_genes) > 10 else ""),
+        )
+
+    for gene in present_genes:
+        df_gene = cells[[distance_col, gene, broad_type_col]].dropna()
+        if df_gene.empty:
+            continue
+        formula = f"Q('{gene}') ~ {distance_col} + C({broad_type_col})"
+        res = smf.ols(formula, data=df_gene).fit()
+        for var in res.params.index:
+            results.append(
+                {
+                    "gene": gene,
+                    "variable": var,
+                    "coef": float(res.params[var]),
+                    "pval": float(res.pvalues[var]),
+                }
+            )
+    gene_coefs = pd.DataFrame(results)
+
+    if gene_coefs.empty:
+        logger.info("No coefficients produced (no qualifying PIG gene models could be fit).")
+    else:
+        logger.info(
+            "Fitted %d gene models. Example rows:\n%s",
+            gene_coefs["gene"].nunique(),
+            gene_coefs.head().to_string(index=False),
+        )
+
+    # --- Binned summaries (mean, SEM, n) per (gene, broad_type, distance_bin)
+    if distance_bin_col not in cells.columns:
+        # If we still don't have bins, we cannot aggregate by bin
+        logger.info(
+            "Column '%s' not available; binned statistics will be empty.",
+            distance_bin_col,
+        )
+        binned_stats = pd.DataFrame(
+            columns=["gene", "broad_type", "distance_bin", "mean", "sem", "n"]
+        )
+    else:
+        long = cells.melt(
+            id_vars=[distance_bin_col, broad_type_col],
+            value_vars=present_genes,
+            var_name="gene",
+            value_name="expression",
+        ).dropna(subset=["expression"])
+
+        def _sem(x: pd.Series) -> float:
+            n = len(x)
+            if n <= 1:
+                return 0.0
+            return float(x.std(ddof=1) / np.sqrt(n))
+
+        agg = (
+            long.groupby(["gene", broad_type_col, distance_bin_col], observed=True)
+            .agg(
+                mean=("expression", "mean"),
+                sem=("expression", _sem),
+                n=("expression", "size"),
+            )
+            .reset_index()
+        )
+
+        # Order distance bins if they match the default labels
+        if set(agg[distance_bin_col].astype(str).unique()).issubset(set(bin_order)):
+            agg[distance_bin_col] = pd.Categorical(
+                agg[distance_bin_col], categories=bin_order, ordered=True
+            )
+            agg = agg.sort_values(["gene", broad_type_col, distance_bin_col])
+
+        binned_stats = agg.rename(
+            columns={broad_type_col: "broad_type", distance_bin_col: "distance_bin"}
+        )
+
+    # Return a copy of cells with ensured columns
+    return apoe_summary_text, gene_coefs, binned_stats, cells, agg, bin_order
+
+
+def _clean_cell_id(x: Any) -> str:
+    """
+    Normalize a cell identifier to a clean UTF-8 string.
+
+    Handles bytes-like inputs and strings that look like ``"b'xxxx'"``.
+
+    Parameters
+    ----------
+    x : Any
+        Original cell identifier (bytes, bytearray, numpy bytes, or any object).
+
+    Returns
+    -------
+    str
+        A normalized string representation of the cell ID.
+    """
+    if isinstance(x, (bytes, bytearray, np.bytes_)):
+        return x.decode("utf-8", errors="ignore")
+    s = str(x)
+    if s.startswith("b'") and s.endswith("'"):
+        return s[2:-1]
+    return s
+
+
+def process_cell_annotations(
+    combined_df_normalized: pd.DataFrame,
+    annotation_csv: str | Path,
+    *,
+    distance_col: str = "distance_to_plaque",
+    distance_bins: Sequence[float] = (0, 20, 50, 100, 200, 1e9),
+    distance_labels: Sequence[str] = ("0-20", "20-50", "50-100", "100-200", ">200"),
+    logger: logging.Logger | None = None,
+    display_fn: Callable[[Any], None] = None,
+) -> dict[str, Any]:
+    """
+    Merge cell annotations into a normalized dataframe, build distance bins,
+    and compute per-bin cell type proportions.
+
+    This function refactors and generalizes the provided script into a reusable
+    pipeline. It reads the annotation CSV, infers/renames the cell ID column,
+    normalizes the ID format, merges with the provided dataframe, constructs
+    distance bins (if missing), and returns diagnostic metrics along with the
+    merged data and proportions.
+
+    Parameters
+    ----------
+    combined_df_normalized : pandas.DataFrame
+        Input dataframe containing at least a ``"cell_id"`` column (or a column
+        that will be merged to ``"cell_id"`` from the annotation file), and
+        typically a distance column (default: ``"distance_to_plaque"``).
+    annotation_csv : str | pathlib.Path
+        Path to the annotation CSV file. Must contain a cell identifier column
+        (e.g., ``cell_id`` or similar containing both “cell” and “id” in its name).
+    distance_col : str, optional
+        Name of the column with distances used to create bins if ``"distance_bin"``
+        is not already present, by default ``"distance_to_plaque"``.
+    distance_bins : Sequence[float], optional
+        Bin edges passed to ``pandas.cut`` for distance binning, by default
+        ``(0, 20, 50, 100, 200, 1e9)``.
+    distance_labels : Sequence[str], optional
+        Labels corresponding to ``distance_bins`` intervals, by default
+        ``("0-20", "20-50", "50-100", "100-200", ">200")``.
+    logger : logging.Logger, optional
+        Logger to use for info messages. If ``None``, uses ``logging.getLogger(__name__)``.
+
+    Returns
+    -------
+    Dict[str, Any]
+        A dictionary containing:
+        - ``"cells"`` : pandas.DataFrame
+            The merged dataframe, including (optional) ``"distance_bin"`` and annotations.
+        - ``"props"`` : pandas.DataFrame
+            A dataframe with columns ``["distance_bin", "cell_type", "n", "proportion"]``.
+        - ``"match_rate"`` : float
+            The fraction of rows with a non-null ``"cell_type"`` after merge.
+        - ``"unknown_count"`` : int
+            Count of cells with ``predicted_label == 34`` (if present).
+        - ``"merged_rows_before"`` : int
+            Row count of the input dataframe prior to merging.
+        - ``"merged_rows_after"`` : int
+            Row count of the merged dataframe.
+        - ``"bin_proportion_sums"`` : pandas.Series
+            Sanity check: sum of proportions per ``distance_bin`` (should be ~1.0).
+
+    Raises
+    ------
+    AssertionError
+        If no cell ID-like column can be identified in the annotation CSV.
+    FileNotFoundError
+        If ``annotation_csv`` does not exist.
+    ValueError
+        If distance binning is needed but ``distance_col`` is missing from the data.
+    """
+    logger = logger or logging.getLogger(__name__)
+
+    annotation_csv = Path(annotation_csv)
+    if not annotation_csv.exists():
+        raise FileNotFoundError(f"Annotation CSV not found: {annotation_csv}")
+
+    # Read annotations
+    annot = pd.read_csv(annotation_csv)
+
+    # Identify and normalize the cell ID column
+    id_col = next(
+        (c for c in annot.columns if "cell" in c.lower() and "id" in c.lower()),
+        None,
+    )
+    assert (
+        id_col is not None
+    ), f"No 'cell_id' column detected in annotations. Available columns: {annot.columns.tolist()}"
+
+    annot = annot.rename(columns={id_col: "cell_id"})
+    annot["cell_id"] = annot["cell_id"].apply(_clean_cell_id)
+
+    # Keep useful columns if present
+    keep_cols = ["cell_id", "cell_type", "coord_X", "coord_Y", "predicted_label"]
+    keep_cols = [c for c in keep_cols if c in annot.columns]
+    annot = annot[keep_cols]
+
+    if display_fn is not None:
+        display_fn(annot.head())
+
+    # Merge
+    before = combined_df_normalized.shape[0]
+    cells = combined_df_normalized.copy()
+    cells["cell_id"] = (
+        cells["cell_id"].apply(_clean_cell_id) if "cell_id" in cells.columns else cells["cell_id"]
+    )
+    cells = cells.merge(annot, on="cell_id", how="left")
+    logger.info("Merged: %d -> %d rows", before, cells.shape[0])
+
+    # Diagnostics: annotation match rate
+    match_rate = cells["cell_type"].notna().mean() if "cell_type" in cells.columns else 0.0
+    logger.info("Annotated cells rate: %.1f%%", 100.0 * match_rate)
+
+    # Check for unknown predicted labels (34)
+    unknown_count = 0
+    if "predicted_label" in cells.columns:
+        unknown_count = int((cells["predicted_label"] == 34).sum())
+        if unknown_count:
+            logger.info(
+                "Attention: %d cells with predicted_label==34 (not a valid tag).",
+                unknown_count,
+            )
+
+    # Build distance bins if missing
+    if "distance_bin" not in cells.columns:
+        if distance_col not in cells.columns:
+            raise ValueError(
+                f"'distance_bin' is missing and '{distance_col}' not found to create it."
+            )
+        cells["distance_bin"] = pd.cut(
+            cells[distance_col],
+            bins=distance_bins,
+            labels=distance_labels,
+            include_lowest=True,
+        )
+
+    # Ensure categorical ordering for distance_bin
+    cells["distance_bin"] = pd.Categorical(
+        cells["distance_bin"], categories=list(distance_labels), ordered=True
+    )
+
+    # Per-bin proportions of cell types
+    props = cells.groupby(["distance_bin", "cell_type"]).size().rename("n").reset_index()
+    props["proportion"] = props.groupby("distance_bin")["n"].transform(lambda x: x / x.sum())
+
+    # Sanity check: sums should be ~1 per bin
+    bin_proportion_sums = props.groupby("distance_bin")["proportion"].sum().round(6)
+    logger.info("Sum of proportions per bin: %s", dict(bin_proportion_sums))
+
+    return {
+        "cells": cells,
+        "props": props,
+        "match_rate": float(match_rate),
+        "unknown_count": int(unknown_count),
+        "merged_rows_before": int(before),
+        "merged_rows_after": int(cells.shape[0]),
+        "bin_proportion_sums": bin_proportion_sums,
+    }

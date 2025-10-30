@@ -44,16 +44,6 @@ def summarize_missing_by_column(
           - pct_missing: float in [0, 1]
           - n_non_missing: int (optional)
         If `serialize=True`, returns `list[dict]` with the same fields.
-
-    Notes
-    -----
-    - Missing detection uses `isna()`, which treats NaN, None, and NaT as missing.
-    - Proportions are computed as `n_missing / n_rows`.
-
-    Examples
-    --------
-    >>> stats_df = summarize_missing_by_column(df)
-    >>> serialized = summarize_missing_by_column(df, serialize=True)
     """
     if not isinstance(df, pd.DataFrame):
         raise TypeError("df must be a pandas DataFrame")
@@ -109,21 +99,6 @@ def summarize_missing_by_row(
             q1_n_missing (25th pct), q3_n_missing (75th pct), max_n_missing
           - mean_pct_missing_per_row
           - pct_rows_no_missing, pct_rows_any_missing, pct_rows_all_missing
-
-    Notes
-    -----
-    - Missing detection uses `isna()`; proportions are normalized by `df.shape[1]`.
-
-    Examples
-    --------
-    >>> missing_per_row, row_agg = summarize_missing_by_row(df)
-    >>> missing_per_row.head()
-    0    3
-    1    0
-    2    1
-    dtype: int64
-    >>> row_agg["mean_n_missing"]
-    0.72
     """
     if not isinstance(df, pd.DataFrame):
         raise TypeError("df must be a pandas DataFrame")

@@ -1,0 +1,45 @@
+PIG_GENES:
+  - Hexb
+  - Cst3
+  - Cd63
+  - C4b
+  - Ctsd
+  - B2m
+  - H2-K1
+  - Apoe
+  - Gfap
+  - Nrep
+  - Serpina3n
+  - Cd74
+  - Cxcl10
+  - Vim
+  - S100a6
+  - Ifit3
+
+meta_cols:
+  - cell_id
+  - x_centroid
+  - y_centroid
+  - transcript_counts
+  - control_probe_counts
+  - control_codeword_counts
+  - unassigned_codeword_counts
+  - total_counts
+  - cell_area
+  - nucleus_area
+  - inside_any_plaque
+  - nearest_plaque_id
+  - nearest_plaque_center_dist
+  - closest_point_x
+  - closest_point_y
+  - nearest_plaque_area
+  - dist_bin_proximal_distal
+  - n_genes
+
+distance_cols:
+  - distance_to_plaque
+  - nearest_plaque_center_dist
+  - nearest_plaque_area
+  - distance_to_plaque
+  - closest_point_x
+  - closest_point_y

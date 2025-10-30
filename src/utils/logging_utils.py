@@ -38,7 +38,7 @@ class TZFormatter(logging.Formatter):
         super().__init__(*args, **kwargs)
         self._tz = ZoneInfo(tz)
 
-    def formatTime(self, record: logging.LogRecord, datefmt: str | None = None) -> str:  # noqa: N802
+    def formatTime(self, record: logging.LogRecord, datefmt: str | None = None) -> str:
         dt = datetime.fromtimestamp(record.created, self._tz)
         if datefmt:
             return dt.strftime(datefmt)

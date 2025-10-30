@@ -24,7 +24,10 @@ def plot_model_performance(results_df):
     """Bar plot comparing R² scores across models."""
     plt.figure(figsize=(6, 4))
     results_melted = results_df.melt(
-        id_vars="model", value_vars=["train_r2", "test_r2"], var_name="Dataset", value_name="R²"
+        id_vars="model",
+        value_vars=["train_r2", "test_r2"],
+        var_name="Dataset",
+        value_name="R²",
     )
     sns.barplot(data=results_melted, x="model", y="R²", hue="Dataset", palette="viridis")
     plt.title("Model Performance Comparison (Train vs Test R²)")
@@ -564,7 +567,14 @@ def plot_plaques(
         Line2D([0], [0], color="blue", lw=1.0, label="Brain ROI"),
         Line2D([0], [0], color="green", lw=0.8, linestyle="-", label="Convex"),
         Line2D([0], [0], color="red", lw=0.8, linestyle="--", label="Non-convex"),
-        Line2D([0], [0], color="orange", lw=1.0, linestyle=":", label="Convex hull (sample)"),
+        Line2D(
+            [0],
+            [0],
+            color="orange",
+            lw=1.0,
+            linestyle=":",
+            label="Convex hull (sample)",
+        ),
     ]
     # Only include items that were actually drawn
     handles, labels = [], []

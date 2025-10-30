@@ -232,6 +232,6 @@ def write_selections_csv(
 
         fmt = f"{{:.{decimals}f}}"
         for name, poly in selections:
-            # exterior coords are typically closed (first point repeated last) — keep as-is
+            # exterior coords are typically closed (first point repeated last) - keep as-is
             for x, y in poly.exterior.coords:
                 writer.writerow([name, fmt.format(float(x)), fmt.format(float(y))])
