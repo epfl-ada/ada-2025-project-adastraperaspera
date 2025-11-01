@@ -70,21 +70,17 @@ def preprocess_cells_and_expression(
 
     Args:
         url (str):
-            The URL pointing to the Xenium dataset archive.
+            The URL pointing to the Xenium dataset Zip archive.
         output_dir (str):
             Directory where the downloaded and extracted dataset will be stored.
         PATH_TO_DATA_FOLDER (str):
             Path to the folder where processed CSV outputs (combined and normalized) will be saved.
 
     Returns:
-        Tuple[pd.DataFrame, pd.DataFrame]:
-            - filtered_combined_df: Filtered DataFrame containing valid cells and their expression values.
-            - combined_df_normalized: Normalized combined DataFrame (expression normalized via PyDESeq2).
-
-    Notes:
-        - The function logs intermediate steps and dataset statistics.
-        - It assumes helper functions like `download_xenium_dataset`, `load_cells_table`,
-          `load_expression_matrix`, and others are defined elsewhere in the codebase.
+        Tuple[pd.DataFrame, pd.DataFrame, list[str]]:
+            - filtered_combined_df: Filtered DataFrame containing valid cells and their raw transcript counts.
+            - combined_df_normalized: Normalized combined DataFrame (transcript counts normalized via PyDESeq2).
+            - gene_cols: List of gene columns in the expression matrix (i.e. gene names).
     """
     # 1. Download the dataset if not already downloaded
     logger.info("\nDownloading the dataset...\n")
@@ -95,11 +91,13 @@ def preprocess_cells_and_expression(
     cells_path = f"{xenium_path}/cells.parquet"
     expr_path = f"{xenium_path}/cell_feature_matrix.h5"
     cells_df = load_cells_table(cells_path)
+    logger.info(cells_df.head())
     adata = load_expression_matrix(expr_path, False)
+
     combined_df = combine_cells_and_expression(
         cells_df, adata, f"{PATH_TO_DATA_FOLDER}/combined.csv"
     )
-    print(f"Shape of combined_df: {combined_df.shape}")
+    logger.info(f"Shape of combined_df: {combined_df.shape}")
 
     # 3. Investigate the missing values
     logger.info("\nInvestigating the missing values...\n")
@@ -123,7 +121,7 @@ def preprocess_cells_and_expression(
     n_genes_map = pd.DataFrame({"cell_id": cell_ids, "n_genes": n_genes})
 
     # Attach n_genes to the combined table
-    combined_df = combined_df.merge(n_genes_map, on="cell_id", how="left")
+    combined_df = combined_df.merge(n_genes_map, on="cell_id", how="inner")
 
     # 5. Filter cells below quality thresholds
     logger.info("\nFiltering cells...\n")

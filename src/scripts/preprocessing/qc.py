@@ -36,11 +36,11 @@ def filter_cells(
         pd.DataFrame: Filtered DataFrame of high-quality cells.
     """
     logger.info(
-        f"Filtering cells below {transcript_q*100:.1f}th percentile for transcript_counts "
-        f"and {area_q*100:.1f}th percentile for cell_area "
-        f"and {nucleus_q*100:.1f}th percentile for nucleus_area"
-        f"and {genes_q*100:.1f}th percentile for n_genes"
-        f"and removing cells with <=0 cell area / nucleus area / total number of nonzero genes"
+        f"Filtering cells below {transcript_q*100:.1f}th percentile for transcript_counts\n"
+        f"and {area_q*100:.1f}th percentile for cell_area\n"
+        f"and {nucleus_q*100:.1f}th percentile for nucleus_area\n"
+        f"and {genes_q*100:.1f}th percentile for n_genes\n"
+        f"and removing cells with <=0 cell area / nucleus area / total number of nonzero genes\n"
     )
 
     if (
@@ -61,10 +61,11 @@ def filter_cells(
     min_genes = cells_df["n_genes"].quantile(genes_q)
 
     logger.info(
-        f"Computed thresholds: transcript_counts > {min_transcripts:.2f}, "
-        f"cell_area > {min_area:.2f} "
-        f"nucleus_area > {min_nucleus:.2f} "
-        f"n_genes > {min_genes:.2f}"
+        f"Computed thresholds:\n"
+        f"transcript_counts > {min_transcripts:.2f}\n"
+        f"cell_area > {min_area:.2f}\n"
+        f"nucleus_area > {min_nucleus:.2f}\n"
+        f"n_genes > {min_genes:.2f}\n"
     )
 
     mask = (

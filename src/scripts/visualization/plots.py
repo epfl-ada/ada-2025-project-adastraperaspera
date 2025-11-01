@@ -183,7 +183,9 @@ def plot_gene_near_plaques(df, gene, dist_thresh=30.0, sample_size=20000):
     plt.show()
 
 
-def plot_spatial_with_plaques(df, plaques_poly, gene=None, score_col=None, sample_size=20000):
+def plot_spatial_with_plaques(
+    df, plaques_poly, gene=None, score_col=None, sample_size=20000, logger=None
+):
     """
     Visualizes either gene expression or model-predicted proximity,
     with plaque outlines overlaid from the plaque_polygons DataFrame.
@@ -229,7 +231,10 @@ def plot_spatial_with_plaques(df, plaques_poly, gene=None, score_col=None, sampl
 
         gdf.boundary.plot(ax=plt.gca(), color="cyan", linewidth=0.7, alpha=0.8, label="Plaques")
     except Exception as e:
-        print(f"Could not overlay plaques: {e}")
+        if logger is not None:
+            logger.warning(f"Could not overlay plaques: {e}")
+        else:
+            print(f"Could not overlay plaques: {e}")
 
     plt.title(title)
     plt.colorbar(sc, label="Intensity")
@@ -321,6 +326,7 @@ def plot_residual_figure(
     plaques_poly=None,
     oligo_marker="Plp1",
     sample_size=20000,
+    logger=None,
 ):
     """
     Composite figure for analyzing residual structure and cell-type bias.
@@ -392,7 +398,10 @@ def plot_residual_figure(
                 ax=axes[1], color="cyan", linewidth=0.7, alpha=0.7
             )
         except Exception as e:
-            print(f"⚠️ Plaque overlay skipped: {e}")
+            if logger is not None:
+                logger.warning(f"Plaque overlay skipped: {e}")
+            else:
+                print(f"⚠️ Plaque overlay skipped: {e}")
 
     marker_genes = {
         "Astrocyte (Gfap)": "Gfap",

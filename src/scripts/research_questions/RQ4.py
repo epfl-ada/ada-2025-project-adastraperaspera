@@ -74,7 +74,6 @@ def run_gene_distance_modeling(
     plaques_poly: Any | None = None,
     logger: logging.Logger | None = None,
     dropna: bool = True,
-    display_fn: Callable[[pd.DataFrame], None] | None = None,
 ) -> GeneModelingOutput:
     """
     Train several models to predict plaque distance from gene expression, collect results,
@@ -204,7 +203,7 @@ def run_gene_distance_modeling(
     )
 
     log.info("Model performance summary created.")
-    display_fn(results_df)
+    log.info(results_df.head())
 
     # Optional performance plots
     if plot_model_performance is not None:
@@ -297,7 +296,7 @@ def run_gene_distance_modeling(
     poor_means = cells_with_distances.loc[poor_mask, gene_cols].mean(numeric_only=True)
     good_means = cells_with_distances.loc[good_mask, gene_cols].mean(numeric_only=True)
     delta_expression = (poor_means - good_means).sort_values(ascending=False)
-    display_fn(delta_expression.head(15))
+    log.info(delta_expression.head(15))
 
     # Final log message
     log.info("Gene modeling pipeline completed.")

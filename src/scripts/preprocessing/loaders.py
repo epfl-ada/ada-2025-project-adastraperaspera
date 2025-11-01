@@ -46,7 +46,7 @@ def load_cells_table(path: str) -> pd.DataFrame:
     if not os.path.exists(path):
         raise FileNotFoundError(f"Cells table not found: {path}")
 
-    logger.info(f"Loading cells table from {path}")
+    logger.info("Loading cells table from the provided path")
     df = pd.read_parquet(path)
     logger.info(f"Loaded {df.shape[0]} cells with {df.shape[1]} columns")
     return df
@@ -60,7 +60,7 @@ def load_expression_matrix(path: str, normalize: bool = True) -> sc.AnnData:
     if not os.path.exists(path):
         raise FileNotFoundError(f"Expression matrix not found: {path}")
 
-    logger.info(f"Loading expression matrix from {path}")
+    logger.info("Loading expression matrix from the provided path")
     adata = sc.read_10x_h5(path)
     adata.var_names_make_unique()
 

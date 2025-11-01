@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Callable, Sequence
+from collections.abc import Sequence
 import logging
 import math
 import re
@@ -27,7 +27,6 @@ def summarize_gene_stats(
     top_n: int = 10,
     bottom_n: int = 5,
     logger: logging.Logger | None = None,
-    display_fn: Callable[[pd.DataFrame], None] | None = None,
 ) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     """
     Merge regression (continuous) and ANOVA (categorical) gene statistics, sort, and
@@ -59,10 +58,6 @@ def summarize_gene_stats(
         Number of bottom rows to show/return from the sorted DataFrame (default 5).
     logger : Optional[logging.Logger], optional
         Logger to use for info messages. If None, messages are not logged (default).
-    display_fn : Optional[Callable[[pd.DataFrame], None]], optional
-        A callable to render DataFrames (e.g., IPython's `display`). If provided,
-        top/bottom tables are rendered via this function. If not provided, they are
-        not rendered.
 
     Returns
     -------
@@ -123,13 +118,11 @@ def summarize_gene_stats(
     # --- Optional logging/display
     if logger is not None:
         logger.info("=== Top plaque-proximal genes (negative slope, smallest q-values) ===")
-    if display_fn is not None:
-        display_fn(top_df)
+        logger.info(top_df.head())
 
     if logger is not None:
         logger.info("\n=== Least plaque-responsive genes (weakest or flat slopes) ===")
-    if display_fn is not None:
-        display_fn(bottom_df)
+        logger.info(bottom_df.head())
 
     return summary_stats, top_df, bottom_df
 

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Callable, Iterable, Sequence
+from collections.abc import Iterable, Sequence
 import logging
 from pathlib import Path
 from typing import Any
@@ -278,7 +278,6 @@ def process_cell_annotations(
     distance_bins: Sequence[float] = (0, 20, 50, 100, 200, 1e9),
     distance_labels: Sequence[str] = ("0-20", "20-50", "50-100", "100-200", ">200"),
     logger: logging.Logger | None = None,
-    display_fn: Callable[[Any], None] = None,
 ) -> dict[str, Any]:
     """
     Merge cell annotations into a normalized dataframe, build distance bins,
@@ -365,8 +364,7 @@ def process_cell_annotations(
     keep_cols = [c for c in keep_cols if c in annot.columns]
     annot = annot[keep_cols]
 
-    if display_fn is not None:
-        display_fn(annot.head())
+    logger.info(annot.head())
 
     # Merge
     before = combined_df_normalized.shape[0]
