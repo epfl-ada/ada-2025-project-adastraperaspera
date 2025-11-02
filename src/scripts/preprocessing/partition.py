@@ -141,7 +141,7 @@ def summarize_genes(gene_df: pd.DataFrame) -> pd.DataFrame:
             {
                 "gene": g.columns,
                 "mean": g.mean(axis=0).values,
-                "std": g.std(axis=0, ddof=0).values,
+                "std": g.std(axis=0, ddof=1).values,
                 "median": g.median(axis=0).values,
                 "mad": g.subtract(g.median()).abs().median(axis=0).values,
                 "skew": g.apply(lambda s: skew(s, bias=False, nan_policy="omit")).values,

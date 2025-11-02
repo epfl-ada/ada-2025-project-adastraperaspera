@@ -107,7 +107,7 @@ def plot_mean_heatmap(
     # --- convert sparse columns to dense if needed ---
     if zscore:
         sub_df = sub_df.apply(lambda x: x.sparse.to_dense() if pd.api.types.is_sparse(x) else x)
-        sub_df = (sub_df - sub_df.mean()) / sub_df.std(ddof=0)
+        sub_df = (sub_df - sub_df.mean()) / sub_df.std(ddof=1)
 
     plt.figure(figsize=(8, 6))
     sns.heatmap(
