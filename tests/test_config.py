@@ -98,5 +98,5 @@ def test_load_config_invalid_params_raise(tmp_path: Path) -> None:
     bad["params"]["xenium_pixel_size_um"] = 0.0
     cfg_path = tmp_path / "cfg_bad.yaml"
     _write_yaml(cfg_path, bad)
-    with pytest.raises(ValueError, match="Invalid configuration format"):
+    with pytest.raises(ValueError, match="xenium_pixel_size_um must be > 0"):
         load_config(cfg_path)

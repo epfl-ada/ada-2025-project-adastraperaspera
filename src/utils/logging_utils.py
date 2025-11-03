@@ -103,5 +103,5 @@ def setup_logging(
     root.addHandler(ch)
 
     logger.debug("Logging configured (level=%s, tz=%s)", level_name, tzname)
-    logger.info("Log file: %s", log_file)
+    root.info("Log file: %s", log_file)
     return log_file

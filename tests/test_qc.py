@@ -22,6 +22,8 @@ def test_filter_cells_relative_quantiles() -> None:
             "cell_id": [f"C{i}" for i in range(10)],
             "transcript_counts": np.linspace(0, 100, 10),
             "cell_area": np.linspace(10, 100, 10),
+            "nucleus_area": np.linspace(5, 50, 10),
+            "n_genes": np.linspace(10, 100, 10),
         }
     )
     # Keep top 80% → should drop bottom 2 cells
@@ -49,6 +51,8 @@ def test_filter_cells_all_fail_safe() -> None:
             "cell_id": ["A", "B"],
             "transcript_counts": [1, 2],
             "cell_area": [10, 15],
+            "nucleus_area": [5, 7],
+            "n_genes": [10, 15],
         }
     )
     filtered = filter_cells(df, transcript_q=0.5, area_q=0.5)

@@ -31,7 +31,7 @@ def fake_cells_df():
 def test_assign_distance_bins_creates_bins(fake_cells_df):
     df_binned = assign_distance_bins(fake_cells_df, n_bins=4)
     assert "distance_bin" in df_binned.columns
-    assert pd.api.types.is_categorical_dtype(df_binned["distance_bin"])
+    assert isinstance(df_binned["distance_bin"].dtype, pd.CategoricalDtype)
     assert df_binned["distance_bin"].nunique() <= 4
 
 
