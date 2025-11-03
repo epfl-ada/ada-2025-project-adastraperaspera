@@ -563,11 +563,7 @@ def plot_plaques(
 
     # ---- cosmetics ---------------------------------------------------------
     ax.set_aspect("equal", "box")
-    ax.set_title(
-        "Plaque geometries after normalization\n"
-        "Green = convex, Red dashed = non-convex, Orange dotted = convex hulls",
-        fontsize=11,
-    )
+    ax.set_title("Plaque geometries after normalization", fontsize=11)
     ax.set_xlabel("X coordinate (µm)")
     ax.set_ylabel("Y coordinate (µm)")
 

@@ -132,22 +132,13 @@ def analyze_plaque_distance_effects(
         cells[broad_type_col] = cells[cell_type_col].apply(_simplify_celltype)
 
     # --- Ensure distance bins if needed
-    bin_order = ["0-20", "20-50", "50-100", "100-200", ">200"]
     if distance_bin_col not in cells.columns and create_distance_bins:
         logger.info(
-            "Creating '%s' from '%s' using default bin edges.",
+            "Creating '%s' from '%s' using 5 equal quantile bins.",
             distance_bin_col,
             distance_col,
         )
-        bins = [0, 20, 50, 100, 200, np.inf]
-        labels = bin_order
-        cells[distance_bin_col] = pd.cut(
-            cells[distance_col].astype(float),
-            bins=bins,
-            labels=labels,
-            include_lowest=True,
-            right=False,  # [0,20), [20,50), ...
-        )
+        cells[distance_bin_col] = pd.qcut(cells[distance_col].astype(float), q=5, duplicates="drop")
 
     # --- Apoe model
     if apoe_gene not in cells.columns:
@@ -231,11 +222,10 @@ def analyze_plaque_distance_effects(
             .reset_index()
         )
 
-        # Order distance bins if they match the default labels
-        if set(agg[distance_bin_col].astype(str).unique()).issubset(set(bin_order)):
-            agg[distance_bin_col] = pd.Categorical(
-                agg[distance_bin_col], categories=bin_order, ordered=True
-            )
+        # Ensure ordering if categorical bins
+        if hasattr(agg[distance_bin_col].dtype, "ordered") and getattr(
+            agg[distance_bin_col].dtype, "ordered", False
+        ):
             agg = agg.sort_values(["gene", broad_type_col, distance_bin_col])
 
         binned_stats = agg.rename(
@@ -243,6 +233,16 @@ def analyze_plaque_distance_effects(
         )
 
     # Return a copy of cells with ensured columns
+    # Derive bin order from cells if available
+    if distance_bin_col in cells.columns and hasattr(cells[distance_bin_col].dtype, "categories"):
+        bin_order = list(map(str, cells[distance_bin_col].cat.categories))
+    else:
+        bin_order = (
+            list(map(str, sorted(cells[distance_bin_col].unique())))
+            if distance_bin_col in cells.columns
+            else []
+        )
+
     return apoe_summary_text, gene_coefs, binned_stats, cells, agg, bin_order
 
 
@@ -275,8 +275,14 @@ def process_cell_annotations(
     annotation_csv: str | Path,
     *,
     distance_col: str = "distance_to_plaque",
-    distance_bins: Sequence[float] = (0, 20, 50, 100, 200, 1e9),
-    distance_labels: Sequence[str] = ("0-20", "20-50", "50-100", "100-200", ">200"),
+    distance_bins: Sequence[float] = (0, 20, 50, 100, 200, 1e9),  # unused when using quantiles
+    distance_labels: Sequence[str] = (
+        "0-20",
+        "20-50",
+        "50-100",
+        "100-200",
+        ">200",
+    ),  # unused when using quantiles
     logger: logging.Logger | None = None,
 ) -> dict[str, Any]:
     """
@@ -389,23 +395,18 @@ def process_cell_annotations(
                 unknown_count,
             )
 
-    # Build distance bins if missing
+    # Build distance bins if missing (use quantiles)
     if "distance_bin" not in cells.columns:
         if distance_col not in cells.columns:
             raise ValueError(
                 f"'distance_bin' is missing and '{distance_col}' not found to create it."
             )
-        cells["distance_bin"] = pd.cut(
-            cells[distance_col],
-            bins=distance_bins,
-            labels=distance_labels,
-            include_lowest=True,
-        )
+        cells["distance_bin"] = pd.qcut(cells[distance_col].astype(float), q=5, duplicates="drop")
 
     # Ensure categorical ordering for distance_bin
-    cells["distance_bin"] = pd.Categorical(
-        cells["distance_bin"], categories=list(distance_labels), ordered=True
-    )
+    # Ensure categorical ordering if present
+    if hasattr(cells["distance_bin"].dtype, "ordered"):
+        cells["distance_bin"] = cells["distance_bin"].cat.as_ordered()
 
     # Per-bin proportions of cell types
     props = cells.groupby(["distance_bin", "cell_type"]).size().rename("n").reset_index()

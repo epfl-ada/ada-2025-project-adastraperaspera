@@ -172,7 +172,7 @@ def compute_cell_to_plaque_distances(
     cols = [
         "inside_any_plaque",
         "nearest_plaque_id",
-        "nearest_plaque_dist",
+        "distance_to_plaque",
         "nearest_plaque_center_dist",
         "closest_point_x",
         "closest_point_y",

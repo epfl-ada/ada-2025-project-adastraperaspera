@@ -169,3 +169,10 @@ logs
 .DS_Store
 combined_normalized.csv
 combined.csv
+ADA-01/
+xenium_data/
+
+# Local data & env
+xenium_data/
+.env
+src/data/figures/*.html

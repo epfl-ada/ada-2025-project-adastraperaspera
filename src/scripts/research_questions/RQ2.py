@@ -17,7 +17,7 @@ import statsmodels.formula.api as smf
 def analyze_plaque_distance(
     df: pd.DataFrame,
     *,
-    column: str = "nearest_plaque_dist",
+    column: str = "distance_to_plaque",
     prox_thresh: float = 30.0,
     distal_thresh: float = 100.0,
     n_bins: int = 60,
@@ -45,7 +45,7 @@ def analyze_plaque_distance(
     df : pd.DataFrame
         Input DataFrame containing the distance column.
     column : str, optional
-        Name of the column with distances (in µm). Default is "nearest_plaque_dist".
+        Name of the column with distances (in µm). Default is "distance_to_plaque".
     prox_thresh : float, optional
         Threshold (in µm) for the proximal class upper bound. Default is 30.0.
     distal_thresh : float, optional

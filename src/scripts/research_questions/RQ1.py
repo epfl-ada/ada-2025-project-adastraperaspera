@@ -762,15 +762,7 @@ def summarize_pig_expression_by_distance(
     df: pd.DataFrame,
     pig_genes: Sequence[str],
     distance_col: str = "distance_to_plaque",
-    bins: Sequence[float] = (0, 20, 50, 100, 200, np.inf),
-    labels: Sequence[str] = (
-        "0–20 µm",
-        "20–50 µm",
-        "50–100 µm",
-        "100–200 µm",
-        ">200 µm",
-    ),
-    include_lowest: bool = True,
+    q: int = 5,
 ) -> tuple[pd.DataFrame, pd.Series]:
     """
     Bin cells by distance to plaque and compute mean ± SEM of PIG gene expression per bin.
@@ -819,11 +811,6 @@ def summarize_pig_expression_by_distance(
     if distance_col not in df.columns:
         raise KeyError(f"Column '{distance_col}' not found in DataFrame.")
 
-    if len(labels) != (len(bins) - 1):
-        raise ValueError(
-            f"`labels` must have length len(bins) - 1 = {len(bins) - 1}, got {len(labels)}."
-        )
-
     pig_cols = [g for g in pig_genes if g in df.columns]
     if not pig_cols:
         raise ValueError("None of the specified `pig_genes` are present in the DataFrame.")
@@ -831,13 +818,8 @@ def summarize_pig_expression_by_distance(
     # Work on a copy to avoid mutating the caller's DataFrame
     tmp = df.copy()
 
-    # Assign distance bins
-    tmp["distance_bin"] = pd.cut(
-        tmp[distance_col],
-        bins=bins,
-        labels=labels,
-        include_lowest=include_lowest,
-    )
+    # Assign distance bins via equal quantiles
+    tmp["distance_bin"] = pd.qcut(tmp[distance_col].astype(float), q=q, duplicates="drop")
 
     # Compute mean and SEM for each distance bin
     mean_expr = tmp.groupby("distance_bin")[pig_cols].mean().reset_index()
