@@ -1982,7 +1982,7 @@ def plot_top_spatial_genes(
     if "spearman" in metric.lower():
         xlabel = "Spearman ρ (unitless)"
     elif "slope" in metric.lower():
-        xlabel = "OLS slope (Δ log₁₊ expression per µm)"
+        xlabel = "OLS slope (Δ log1+ expression per µm)"
     else:
         xlabel = metric
 

@@ -28,15 +28,28 @@ The goal of this project is to build upon the “proximal vs. distal” analysis
 
 ### Computing plaque proximity per cell
 
-- Amyloid plaque polygons are loaded from
-  `plaque_polygons.csv` using `load_plaque_polygons()` in `plaque_distance.py`.
-- Each cell’s centroid coordinate (`x_centroid`, `y_centroid`) is used to compute its Euclidean distance to the nearest plaque polygon via `compute_cell_to_plaque_distance()`.
-- The resulting DataFrame (`cells_with_dist`) includes a new column `distance_to_plaque` (µm).
-- The function `plot_cell_to_plaque_map()` provides a spatial sanity check:
-  - Cells are colored by distance (cool = near plaque, warm = far).
-  - Plaque outlines are shown in green overlay to confirm correct alignment.
+<table>
+<tr>
+<td style="width:55%; vertical-align:top;">
 
-  ![Cell-to-plaque distance](src/data/figures/cell-plaque-dist.png)
+- Amyloid plaque polygons are loaded from  
+  `plaque_polygons.csv` using `load_plaque_polygons()` in `plaque_distance.py`.
+- Each cell’s centroid (`x_centroid`, `y_centroid`) is used to compute its distance to the nearest plaque polygon via `compute_cell_to_plaque_distance()`.
+- The resulting table includes a new column: **`distance_to_plaque` (µm)**.
+- `plot_cell_to_plaque_map()` provides a spatial sanity check:
+  - Cells colored by distance (cool = near plaque, warm = far)
+  - Plaque outlines visualized in blue
+
+</td>
+<td style="width:45%; text-align:center;">
+
+<img src="src/data/figures/cell-plaque-dist.png" width="360"><br>
+<em>Cells colored by plaque proximity (cool = near plaque)</em>
+
+</td>
+</tr>
+</table>
+
 
 ---
 
@@ -58,8 +71,12 @@ The goal of this project is to build upon the “proximal vs. distal” analysis
 - `mean_expression_by_bin()` then computes the mean log1p expression for each gene per distance bin.
 - Visualization functions (`plot_gene_trends`, `plot_mean_heatmap`) reveal genes whose expression systematically varies with plaque proximity.
 
-![Genre trend](src/data/figures/gene_trend.png)
-![Mean heatmap](src/data/figures/top_genes.png)
+<p align="center">
+<img src="src/data/figures/gene_trend.png" width="380">
+<img src="src/data/figures/top_genes.png" width="380">
+<br>
+<em>Left: PIG expression decay with distance. Right: top spatially variable genes.</em>
+</p>
 
 #### Regression and correlation analysis
 
@@ -71,8 +88,82 @@ The goal of this project is to build upon the “proximal vs. distal” analysis
   - Benjamini–Hochberg FDR-corrected p-value (`fdr_pval`)
 - Genes are ranked by `spearman_r` or absolute `slope` and visualized using `plot_top_spatial_genes()`.
 
-![Top 20 genes](src/data/figures/top_twenty.png)
-#### Example biological insight
+---
 
-- Classical plaque-induced glial markers such as **Cst3**, **Gfap**, **Apoe**, and **Clu** show steep positive slopes and significant correlations (FDR < 0.05), confirming strong up-regulation near amyloid plaques.
-- Neuronal genes (e.g., **Npy2r**, **Trp73**) exhibit negative or flat trends, indicating spatial down-regulation near plaque cores.
+## Research
+
+### How does gene expression change with distance from amyloid-β plaques?
+We analyzed the spatial expression patterns of the 16 Plaque-Induced Genes (PIGs) in the Xenium V1 FFPE TgCRND8 17.9-month dataset. Per-cell expression values were merged with plaque-distance metadata and analyzed through both continuous regression (expression ~ distance) and categorical ANOVA (expression ~ distance bin).
+
+<p align="center">
+  <img src="src/data/figures/rq1_expr_by_dist_bin.png" width="480">
+  <br><em>Expression by distance bin</em>
+</p>
+
+#### Findings :
+
+Reactive glial genes (**Gfap, Cst3, B2m, Apoe, Hexb**) showed the strongest spatial gradients, peaking within ~50 µm of plaques and declining sharply with distance.
+Neuronal and homeostatic markers (**Nrep, S100a6**) were reduced near plaques.
+
+>**Interpretation:**
+A compact “glial activation halo” surrounds plaques, consistent with published Xenium data.
+
+### How do cell type frequencies change with distance from plaques?
+
+We investigated how the relative abundance of major cell types varies spatially around plaques in the TgCRND8 17.9-month sample. Using Leiden clustering on 347 genes (~57k cells), we identified putative clusters corresponding to microglia, astrocytes, oligodendrocytes, and neurons via canonical markers (Apoe, Gfap, Mbp, Nrep).
+
+<p align="center">
+<img src="src/data/figures/rq2_cell_dist_near_plaque.png" width="300">
+<img src="src/data/figures/rq2_distr_log.png" width="300">
+<br>
+<em>Linear vs Log scale distribution of cell distances to nearest plaque.</em>
+</p>
+
+<p align="center">
+  <img src="src/data/figures/rq2_clusters.png" width="300">
+</p>
+
+
+#### Findings :
+
+* **Microglia + reactive astrocytes** ↑ sharply near plaques
+* **Neurons & oligodendrocytes** ↓ near plaques
+
+> **Interpretation:** A glial “activation shell” surrounds plaques, with neuronal depletion in the immediate vicinity.
+
+### How do plaque-induced gene expression changes relate to shifts in cell-type proportions?
+We analyzed how plaque-induced gene (PIG) expression relates to changes in cell-type composition across plaque distance. For each distance bin, we quantified mean PIG expression and cell-type proportions, then computed correlations and regression models controlling for plaque distance. This allowed us to distinguish intrinsic gene activation in glial cells from expression changes driven by shifts in cell-type abundance near plaques.
+<p align="center">
+  <img src="src/data/figures/apoe_expr_by_dist.png" width="400">
+</p>
+### Findings :
+Most PIGs correlate with glial density — **but several remain significantly up-regulated after controlling for cell-type proportions**, indicating **true transcriptional activation**, not only cellular redistribution.
+
+>**Conclusion:**
+Plaque responses reflect a **dual mechanism**:
+>* **YES** - Glial accumulates near plaques
+>* **YES** - There's an intrinsic activation of PIG programs in individual cells
+
+### Which genes are most predictive of a cell’s proximity to plaques?
+We modeled the relationship between gene expression and spatial distance to amyloid plaques across ~49k cells using four predictive frameworks (LASSO, ElasticNet, Random Forest, XGBoost) trained on 347 genes. XGBoost achieved the best performance (Test R² = 0.25), revealing a compact set of genes with good predictive power.
+
+<p align="center">
+  <img src="src/data/figures/rq4_res.png" width="600">
+</p>
+
+#### Findings:
+**Top predictors:**
+**Gfap, Lyz2, Apoe, Igf2, Spag16, Strip2**
+
+**Performance:** XGBoost (R² ≈ 0.25)
+
+>**Interpretation:**
+Glial activation states are the strongest spatial determinants of plaque proximity.
+
+
+## Biological Takeaways
+
+* **Glial activation is strongly localized near plaques:** canonical PIGs (**Gfap, Cst3, Apoe, Clu, Hexb**) show steep positive slopes and significant correlations (FDR < 0.05).
+* **Neuronal markers decrease near plaques**, consistent with local neuronal stress or loss (**Npy2r, Trp73**).
+* **PIG expression reflects both glial accumulation and intrinsic activation programs**, confirmed by distance-controlled regression.
+* **Spatial transcriptomics reveals coordinated cellular and transcriptional remodeling** within ~20–100 µm of plaques, linking micro-environment signals to gene expression.
