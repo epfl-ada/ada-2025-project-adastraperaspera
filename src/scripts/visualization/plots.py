@@ -2108,7 +2108,7 @@ def plot_gene_trends(
     sem_expr: pd.DataFrame | None = None,   # <- pass SEM per bin here (optional)
     ci: str = "95ci",                       # "95ci" (1.96*SEM) or "sem"
     xlabel: str = "Distance to plaque (µm, binned)",
-    ylabel: str = "Mean expression (log₁₊)",
+    ylabel: str = "Mean expression (log1+)",
     title: str = "Spatial gene expression gradients (mean ± CI)",
     figsize: tuple = (8.5, 5),
     legend_loc: str = "best",
@@ -2199,7 +2199,7 @@ def plot_mean_heatmap(
 ) -> None:
     """
     Visualize top N genes with strongest spatial variation across plaque distance.
-    Marks PIG genes with ★.
+    Marks PIG genes with *.
     """
     non_gene_cols = {
         "cell_id","x_centroid","y_centroid","cell_area","nucleus_area",
@@ -2225,7 +2225,7 @@ def plot_mean_heatmap(
         xticklabels = [str(x) for x in sub_df.index]
 
     pigs = set(pig_genes or [])
-    row_labels = [f"{g} ★" if g in pigs else g for g in sub_df.columns]
+    row_labels = [f"{g} *" if g in pigs else g for g in sub_df.columns]
 
     plt.figure(figsize=figsize)
     xticklabels = _format_bin_labels(sub_df.index)
@@ -2234,7 +2234,7 @@ def plot_mean_heatmap(
         sub_df.T,
         cmap="vlag" if zscore else "magma",
         center=0 if zscore else None,
-        cbar_kws={"label": "Z-scored mean expression" if zscore else "Mean expression (log₁₊)"},
+        cbar_kws={"label": "Z-scored mean expression" if zscore else "Mean expression (log1+)"},
         linewidths=0.2, linecolor="white",
     )
 
@@ -2244,11 +2244,11 @@ def plot_mean_heatmap(
     ax.set_yticklabels(row_labels, rotation=0)
 
     for tk in ax.get_yticklabels():
-        if tk.get_text().endswith("★"):
+        if tk.get_text().endswith("*"):
             tk.set_fontweight("bold")
 
     if title is None:
-        title = f"Top {top_n} genes varying with plaque distance (★ = PIG)"
+        title = f"Top {top_n} genes varying with plaque distance (* = PIG)"
     ax.set_title(title, pad=8)
 
     plt.tight_layout()

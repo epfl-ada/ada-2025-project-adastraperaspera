@@ -121,6 +121,7 @@ We investigated how the relative abundance of major cell types varies spatially 
 
 <p align="center">
   <img src="src/data/figures/rq2_clusters.png" width="300">
+  <br><em>Leiden clusters</em>
 </p>
 
 
@@ -135,6 +136,7 @@ We investigated how the relative abundance of major cell types varies spatially 
 We analyzed how plaque-induced gene (PIG) expression relates to changes in cell-type composition across plaque distance. For each distance bin, we quantified mean PIG expression and cell-type proportions, then computed correlations and regression models controlling for plaque distance. This allowed us to distinguish intrinsic gene activation in glial cells from expression changes driven by shifts in cell-type abundance near plaques.
 <p align="center">
   <img src="src/data/figures/apoe_expr_by_dist.png" width="400">
+  <br><em>Apoe regression by distance and cell type</em>
 </p>
 ### Findings :
 Most PIGs correlate with glial density — **but several remain significantly up-regulated after controlling for cell-type proportions**, indicating **true transcriptional activation**, not only cellular redistribution.
@@ -149,6 +151,7 @@ We modeled the relationship between gene expression and spatial distance to amyl
 
 <p align="center">
   <img src="src/data/figures/rq4_res.png" width="600">
+  <br><em>Residual structure and cell-type bias</em>
 </p>
 
 #### Findings:
