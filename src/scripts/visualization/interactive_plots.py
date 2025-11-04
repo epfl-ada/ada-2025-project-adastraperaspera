@@ -15,75 +15,110 @@ src_dir = os.path.dirname(scripts_dir)
 figures_dir = os.path.join(src_dir, "data", "figures")
 
 
+import plotly.express as px
+import plotly.graph_objects as go
+import pandas as pd
+from typing import Optional, List
+
 def plot_gene_trends_interactive(
     mean_expr: pd.DataFrame,
-    genes: list[str],
-    ylabel: str = "Mean expression (log1p normalized)",
+    genes: List[str],
+    ylabel: str = "Mean expression (log₁₊ normalized)",
     xlabel: str = "Distance to plaque (µm, binned)",
     title: str = "Spatial gene expression gradients",
     line_width: int = 2,
     height: int = 480,
     width: int = 820,
     use_webgl: bool = True,
+    *,
+    sem_expr: Optional[pd.DataFrame] = None,  # NEW: optional SEM matrix (same shape as mean_expr)
 ) -> go.Figure:
     """
-    Version Plotly interactive de 'plot_gene_trends'.
+    Interactive version of 'plot_gene_trends' with optional SEM error bars.
 
-    Paramètres
-    ----------
-    mean_expr : DataFrame
-        Index = bins (IntervalIndex, Categorical ou labels), colonnes = gènes.
-    genes : list[str]
-        Sous-ensemble de gènes à tracer (ignore ceux absents).
+    mean_expr: wide matrix (rows=bins, cols=genes) of means.
+    sem_expr:  wide matrix (rows=bins, cols=genes) of SEM (optional).
+    genes: list of genes to display (subset of columns in mean_expr/sem_expr).
     """
     if mean_expr.empty:
         raise ValueError("mean_expr is empty; check your inputs")
 
-    # Clean bin labels
-    if isinstance(mean_expr.index, pd.IntervalIndex):
-        bin_labels = [f"{b.left:.0f}-{b.right:.0f}" for b in mean_expr.index]
+    # ---- Order bins & rounded labels ----
+    idx = mean_expr.index
+    if isinstance(idx, pd.IntervalIndex):
+        # sort by bin midpoints, then rebuild mean/sem accordingly
+        order = sorted(idx, key=lambda iv: iv.mid)
+        M = mean_expr.loc[order]
+        S = sem_expr.loc[order] if sem_expr is not None else None
+        bin_labels = [f"{int(round(iv.left))}-{int(round(iv.right))}" for iv in order]
     else:
-        bin_labels = [str(x) for x in mean_expr.index]
+        # keep existing order; still provide nice labels
+        M = mean_expr.copy()
+        S = sem_expr.copy() if sem_expr is not None else None
+        bin_labels = [str(x) for x in M.index]
 
-    # Long format for Plotly
-    df = mean_expr.copy()
-    df["__bin__"] = bin_labels
-    long = df.melt(id_vars="__bin__", var_name="gene", value_name="mean_expr")
-
-    # Filter on requested genes
-    genes_present = [g for g in genes if g in mean_expr.columns]
+    # ---- Filter genes present ----
+    genes_present = [g for g in genes if g in M.columns]
     if not genes_present:
         raise ValueError("None of the requested genes were found in 'mean_expr' columns.")
+    if S is not None:
+        # ensure SEM has the same genes; drop missing gracefully
+        genes_present = [g for g in genes_present if g in S.columns]
+        if not genes_present:
+            raise ValueError("Requested genes not present in both mean_expr and sem_expr.")
 
-    long = long[long["gene"].isin(genes_present)]
+    # ---- Build long frames for Plotly ----
+    M2 = M[genes_present].copy()
+    M2["__bin__"] = bin_labels
+    long_mean = M2.melt(id_vars="__bin__", var_name="gene", value_name="mean_expr")
 
-    # Trace (line + markers)
-    if use_webgl:
-        # Scattergl (via graph_objects) -> better for many traces
-        fig = go.Figure()
-        for g in genes_present:
-            sub = long[long["gene"] == g]
-            fig.add_trace(
-                go.Scattergl(
-                    x=sub["__bin__"],
-                    y=sub["mean_expr"],
-                    mode="lines+markers",
-                    name=g,
-                    line=dict(width=line_width),
-                )
-            )
+    if S is not None:
+        S2 = S[genes_present].copy()
+        S2["__bin__"] = bin_labels
+        long_sem = S2.melt(id_vars="__bin__", var_name="gene", value_name="sem_expr")
+        long = pd.merge(long_mean, long_sem, on=["__bin__", "gene"], how="left")
     else:
-        fig = px.line(
-            long,
-            x="__bin__",
-            y="mean_expr",
-            color="gene",
-            markers=True,
-            title=title,
-            height=height,
-            width=width,
+        long = long_mean
+        long["sem_expr"] = None
+
+    # ---- Choose trace type (error bars not supported in Scattergl) ----
+    use_gl = bool(use_webgl and S is None)
+
+    fig = go.Figure()
+    for g in genes_present:
+        sub = long[long["gene"] == g]
+        # error bars if SEM exists
+        err = None
+        if S is not None:
+            # Plotly expects 'array' (absolute size of +/- error)
+            err = dict(
+                type="data",
+                array=sub["sem_expr"].to_numpy(),
+                visible=True,
+                thickness=1.2,
+                width=3,
+            )
+
+        trace_cls = go.Scattergl if use_gl else go.Scatter
+        fig.add_trace(
+            trace_cls(
+                x=sub["__bin__"],
+                y=sub["mean_expr"],
+                mode="lines+markers",
+                name=g,
+                line=dict(width=line_width),
+                error_y=err,  # ignored by Scattergl; shown by Scatter
+                hovertemplate=(
+                    "Bin: %{x}<br>"
+                    f"Gene: {g}<br>"
+                    "Mean: %{y:.3f}" + ("<br>SEM: %{customdata:.3f}" if S is not None else "") +
+                    "<extra></extra>"
+                ),
+                customdata=sub["sem_expr"] if S is not None else None,
+            )
         )
 
+    # ---- Layout cosmetics ----
     fig.update_layout(
         title=title,
         xaxis_title=xlabel,
@@ -94,8 +129,15 @@ def plot_gene_trends_interactive(
         legend_title="Gene",
         margin=dict(l=60, r=20, t=60, b=60),
     )
-    fig.update_xaxes(tickangle=45)
+    # Keep the bin order as given
+    fig.update_xaxes(
+        tickangle=45,
+        categoryorder="array",
+        categoryarray=bin_labels
+    )
+
     return fig
+
 
 
 def plot_mean_heatmap_interactive(
@@ -668,3 +710,95 @@ def interactive_comp_pig_regression(agg, PIGS, bin_order):
     fig.show()
     fig.write_html(os.path.join(figures_dir, "pig_by_distance_interactive.html"))
     logging.info(f"Saved to {os.path.join(figures_dir, 'pig_by_distance_interactive.html')}")
+
+
+def plot_gene_expression_by_distance_interactive(
+    summary_df: pd.DataFrame,
+    pig_genes: list[str],
+    distance_col: str = "distance_bin",
+    gene_col: str = "gene",
+    mean_col: str = "mean_expr",
+    sem_col: str = "sem_expr",
+    title: str = "Plaque-Induced Gene Expression vs Distance (mean ± SEM, log₁₊)",
+    x_label: str = "Distance to Plaque (µm, binned)",
+    y_label: str = "Mean log₁₊ Expression",
+    use_ci95: bool = True,   # multiply SEM by 1.96
+):
+    """
+    Interactive line plot with gene selector and SEM bands.
+    """
+
+    df = summary_df.copy()
+
+    # Keep only genes found in data
+    pig_genes = [g for g in pig_genes if g in df[gene_col].unique()]
+    if not pig_genes:
+        raise ValueError("None of the requested genes are present in summary_df.")
+
+    # Convert interval bins to clean labels
+    def _bin_label(b):
+        if isinstance(b, pd.Interval):
+            return f"{int(round(b.left))}-{int(round(b.right))}"
+        return str(b)
+
+    df["bin_label"] = df[distance_col].apply(_bin_label)
+
+    # ~95% CI if requested
+    scale = 1.96 if use_ci95 else 1.0
+
+    fig = go.Figure()
+
+    buttons = []
+    traces_per_gene = 2  # main line + shaded band
+
+    for i, gene in enumerate(pig_genes):
+        sub = df[df[gene_col] == gene].sort_values("bin_label")
+
+        m = sub[mean_col].to_numpy(float)
+        s = sub[sem_col].to_numpy(float) * scale
+        x = sub["bin_label"].tolist()
+
+        # mean line
+        fig.add_trace(go.Scatter(
+            x=x, y=m, mode="lines+markers",
+            name=f"{gene}",
+            visible=(i == 0),
+            line=dict(width=2),
+            marker=dict(size=7),
+        ))
+
+        # SEM (shaded band)
+        fig.add_trace(go.Scatter(
+            x=x + x[::-1],
+            y=(m + s).tolist() + (m - s)[::-1].tolist(),
+            fill="toself",
+            fillcolor="rgba(31, 119, 180, 0.18)",
+            line=dict(width=0),
+            hoverinfo="skip",
+            name=f"{gene} CI",
+            visible=(i == 0),
+        ))
+
+        # button to toggle visibility
+        vis = [False] * (len(pig_genes) * traces_per_gene)
+        vis[i*traces_per_gene:(i+1)*traces_per_gene] = [True, True]
+
+        buttons.append(dict(label=gene, method="update",
+                            args=[{"visible": vis},
+                                  {"title": f"{title}<br><sup>{gene}</sup>"}]))
+
+    fig.update_layout(
+        updatemenus=[dict(
+            buttons=buttons,
+            direction="down",
+            x=0.5, xanchor="center",
+            y=1.15, yanchor="top"
+        )],
+        title=title,
+        xaxis_title=x_label,
+        yaxis_title=y_label,
+        template="plotly_white",
+        margin=dict(t=120, l=60, r=20, b=60),
+    )
+
+    fig.show()

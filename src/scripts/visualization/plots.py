@@ -1,9 +1,13 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
-from typing import Union
+import math
+from typing import Optional, Tuple, Union
 
 import geopandas as gpd
+import matplotlib as mpl
+from matplotlib.axes import Axes
+from matplotlib.figure import Figure
 from matplotlib.lines import Line2D
 from matplotlib.patches import Polygon as MplPoly
 import matplotlib.pyplot as plt
@@ -16,8 +20,360 @@ import seaborn as sns
 from shapely.geometry import MultiPolygon, Polygon
 from sklearn.metrics import r2_score
 from statsmodels.stats.multitest import multipletests
+from ..preprocessing.partition import _panel, gaussian_kde
+from numpy.typing import NDArray
+
+from src.utils.logging_utils import logger
 
 Number = Union[int, float, np.number]
+
+def set_pub_style():
+    mpl.rcParams.update({
+        "figure.dpi": 120,
+        "savefig.dpi": 300,
+        "figure.autolayout": False,
+        "axes.titlesize": 12,
+        "axes.labelsize": 11,
+        "xtick.labelsize": 10,
+        "ytick.labelsize": 10,
+        "legend.fontsize": 10,
+        "axes.grid": True,
+        "grid.linestyle": "--",
+        "grid.linewidth": 0.4,
+        "axes.spines.top": False,
+        "axes.spines.right": False,
+    })
+    sns.set_style("whitegrid")
+
+def savefig(path: str, fig=None):
+    (fig or plt.gcf()).savefig(path, bbox_inches="tight", pad_inches=0.02)
+
+def plot_gene_distributions(
+    df: pd.DataFrame,
+    genes: Sequence[str],
+    bins: int = 50,
+    cols: int = 4,
+    use_log1p: bool = True,
+    kde: bool = True,
+    clip_quantiles: Tuple[float, float] = (0.0, 0.995),  # trim extreme tails consistently
+    figsize: Optional[Tuple[int, int]] = None,
+    suptitle: str = "Per-gene expression distributions (hist + KDE)",
+    show_zero_fraction: bool = True,
+    show_iqr: bool = True,
+    show_median: bool = True,
+    hist_alpha: float = 0.5,
+    kde_lw: float = 1.6,
+    dpi: int = 120,
+    save_path: Optional[str] = None,
+):
+    """
+    Plot histogram + KDE for a set of genes.
+
+    Args:
+        df (pd.DataFrame): Expression DataFrame (cells x genes).
+        genes (Sequence[str]): List of gene column names to plot.
+        bins (int): Number of histogram bins.
+        cols (int): Number of subplot columns.
+        title (str): Figure title.
+        figsize (tuple, optional): (width, height) in inches.
+            Defaults to (4*cols, 3.2*rows).
+        show (bool): Whether to display the plot.
+        save_path (str, optional): If provided, save the figure to this path.
+
+    Returns:
+        matplotlib.figure.Figure: The created figure.
+    """
+    arrays = []
+    present = [g for g in genes if g in df.columns]
+    if not present:
+        raise ValueError("None of the requested genes are present in the dataframe.")
+
+    for g in present:
+        x = df[g].to_numpy(dtype=float)
+        if use_log1p:
+            x = np.log1p(x)
+        x = x[np.isfinite(x)]
+        arrays.append(x)
+
+    # Global clip to remove extreme tails consistently (optional but helps aesthetics)
+    all_vals = np.concatenate(arrays) if len(arrays) else np.array([])
+    if all_vals.size == 0:
+        raise ValueError("No finite values to plot.")
+    lo = np.quantile(all_vals, clip_quantiles[0])
+    hi = np.quantile(all_vals, clip_quantiles[1])
+    # Avoid degenerate ranges
+    if not np.isfinite(lo) or not np.isfinite(hi) or hi <= lo:
+        lo, hi = float(np.nanmin(all_vals)), float(np.nanmax(all_vals))
+
+    # Build common bin edges
+    bin_edges = np.linspace(lo, hi, bins + 1)
+
+    # --- layout ---
+    n = len(present)
+    rows = (n + cols - 1) // cols
+    if figsize is None:
+        figsize = (4.2 * cols, 3.2 * rows)
+
+    plt.rcParams.update({
+        "figure.dpi": dpi, "savefig.dpi": 300,
+        "axes.spines.top": False, "axes.spines.right": False,
+        "axes.grid": True, "grid.linestyle": "--", "grid.linewidth": 0.4,
+        "axes.titlesize": 11, "axes.labelsize": 10,
+        "xtick.labelsize": 9, "ytick.labelsize": 9,
+    })
+
+    fig, axes = plt.subplots(rows, cols, figsize=figsize)
+    axes = np.atleast_1d(axes).ravel()
+
+    # --- draw panels ---
+    for ax, gene in zip(axes, present, strict=False):
+        x = df[gene].to_numpy(dtype=float)
+        if use_log1p:
+            x = np.log1p(x)
+        x = x[np.isfinite(x)]
+        if x.size == 0:
+            ax.text(0.5, 0.5, "No data", ha="center", va="center")
+            ax.axis("off")
+            continue
+
+        # Histogram on common bins
+        counts, _, _ = ax.hist(x, bins=bin_edges, density=True, alpha=hist_alpha, color="#4C78A8", edgecolor="none")
+
+        # KDE on positives if enough nonzeros; else on all x
+        if kde and x.size > 5:
+            x_pos = x[x > 0]
+            x_kde = x_pos if x_pos.size > 5 else x
+            try:
+                xs = np.linspace(lo, hi, 400)
+                pdf = gaussian_kde(x_kde)(xs)
+                ax.plot(xs, pdf, lw=kde_lw, color="#1F77B4", label="KDE")
+            except Exception:
+                pass
+
+        # Median & IQR markers (for distributions; more informative than SEM here)
+        if show_median or show_iqr:
+            q25, q50, q75 = np.quantile(x, [0.25, 0.50, 0.75])
+            ymax = np.nanmax(counts) if np.isfinite(counts).any() else ax.get_ylim()[1]
+            if show_iqr:
+                ax.axvspan(q25, q75, color="0.85", alpha=0.6, zorder=0, label="IQR")
+            if show_median:
+                ax.axvline(q50, color="#E45756", ls="--", lw=1.2, label="Median")
+
+        # Zero fraction (helpful with zero-inflated genes)
+        if show_zero_fraction:
+            if use_log1p:
+                zero_frac = np.mean(df[gene].to_numpy(dtype=float) <= 0.0)  # original values before log1p
+            else:
+                zero_frac = np.mean(df[gene].to_numpy(dtype=float) == 0.0)
+            ax.text(0.98, 0.95, f"zeros: {zero_frac*100:.1f}%", transform=ax.transAxes,
+                    ha="right", va="top", fontsize=8, color="0.3")
+
+        # Cosmetics
+        ax.set_xlim(lo, hi)
+        ax.set_title(gene)
+        ax.set_xlabel("Expression (log₁₊ counts)" if use_log1p else "Expression (counts)")
+        ax.set_ylabel("Density")
+
+    # Hide unused axes
+    for k in range(n, len(axes)):
+        axes[k].axis("off")
+
+    fig.suptitle(suptitle, y=0.995, fontsize=12)
+    plt.tight_layout(rect=[0, 0, 1, 0.98])
+
+    if save_path:
+        fig.savefig(save_path, bbox_inches="tight")
+    plt.show()
+    return fig
+
+
+def plot_weird_gene_panels(
+    df: pd.DataFrame,
+    genes: Sequence[str],
+    *,
+    bins: int = 50,
+    cols: int = 4,
+    # aesthetics / behavior aligned with plot_gene_distributions:
+    clip_quantiles: Tuple[float, float] = (0.0, 1.0),  # (0, 1) = full range; set to (0, 0.995) to trim tails
+    kde: bool = True,
+    show_zero_fraction: bool = True,
+    show_iqr: bool = True,
+    show_median: bool = True,
+    hist_alpha: float = 0.5,
+    kde_lw: float = 1.6,
+    dpi: int = 120,
+    linear_title: str = "Weirdest genes — linear scale (counts)",
+    log_title: str = "Weirdest genes — log₁₊ scale",
+    figsize: Optional[Tuple[int, int]] = None,
+    show: bool = True,
+    save_linear_path: Optional[str] = None,
+    save_log_path: Optional[str] = None,
+):
+    """
+    Publication-ready panels for 'weird' genes using log1p(expression)
+    (histogram + KDE + median + IQR + zero %).
+    """
+
+    
+    present = [g for g in genes if g in df.columns]
+    if not present:
+        raise ValueError("None of the requested genes are present in the dataframe.")
+
+    # ---- gather arrays for global axis limits (linear and log1p separately)
+    X_lin = []
+    X_log = []
+    for g in present:
+        x = df[g].to_numpy(dtype=float)
+        x = x[np.isfinite(x) & (x >= 0)]
+        if x.size:
+            X_lin.append(x)
+            X_log.append(np.log1p(x))
+    if not X_lin:
+        raise ValueError("No finite, non-negative values to plot.")
+
+    all_lin = np.concatenate(X_lin)
+    all_log = np.concatenate(X_log)
+
+    def _limits(arr, q=(0.0, 1.0)):
+        lo = np.quantile(arr, q[0])
+        hi = np.quantile(arr, q[1])
+        if not np.isfinite(lo) or not np.isfinite(hi) or hi <= lo:
+            lo, hi = float(np.nanmin(arr)), float(np.nanmax(arr))
+        # ensure non-degenerate limits
+        if hi == lo:
+            hi = lo + 1.0
+        return lo, hi
+
+    lo_lin, hi_lin = _limits(all_lin, clip_quantiles)
+    lo_log, hi_log = _limits(all_log, clip_quantiles)
+
+    # pre-compute shared bin edges
+    bins_lin = np.linspace(lo_lin, hi_lin, bins + 1)
+    bins_log = np.linspace(lo_log, hi_log, bins + 1)
+
+    # ---- shared rcParams for both figures
+    plt.rcParams.update({
+        "figure.dpi": dpi, "savefig.dpi": 300,
+        "axes.spines.top": False, "axes.spines.right": False,
+        "axes.grid": True, "grid.linestyle": "--", "grid.linewidth": 0.4,
+        "axes.titlesize": 11, "axes.labelsize": 10,
+        "xtick.labelsize": 9, "ytick.labelsize": 9,
+    })
+
+    n = len(present)
+    rows = (n + cols - 1) // cols
+    if figsize is None:
+        figsize = (4.2 * cols, 3.2 * rows)
+
+    # ---------------- Linear (counts) ----------------
+    fig_lin, axes_lin = plt.subplots(rows, cols, figsize=figsize)
+    axes_lin = np.atleast_1d(axes_lin).ravel()
+
+    for ax, g in zip(axes_lin, present, strict=False):
+        x = df[g].to_numpy(dtype=float)
+        x = x[np.isfinite(x) & (x >= 0)]
+        if x.size == 0:
+            ax.axis("off")
+            continue
+
+        # hist
+        counts, _, _ = ax.hist(x, bins=bins_lin, density=True,
+                               alpha=hist_alpha, color="#4C78A8", edgecolor="none")
+
+        # kde (positive support preferred)
+        if kde and x.size > 5:
+            x_pos = x[x > 0]
+            x_kde = x_pos if x_pos.size > 5 else x
+            try:
+                xs = np.linspace(lo_lin, hi_lin, 400)
+                pdf = gaussian_kde(x_kde)(xs)
+                ax.plot(xs, pdf, lw=kde_lw, color="#1F77B4")
+            except Exception:
+                pass
+
+        # median & IQR
+        if show_median or show_iqr:
+            q25, q50, q75 = np.quantile(x, [0.25, 0.50, 0.75])
+            if show_iqr:
+                ax.axvspan(q25, q75, color="0.85", alpha=0.6, zorder=0, label="IQR")
+            if show_median:
+                ax.axvline(q50, color="#E45756", ls="--", lw=1.2, label="Median")
+
+        # zeros
+        if show_zero_fraction:
+            zf = (x == 0).mean() * 100.0
+            ax.text(0.98, 0.95, f"zeros: {zf:.1f}%", transform=ax.transAxes,
+                    ha="right", va="top", fontsize=8, color="0.3")
+
+        ax.set_xlim(lo_lin, hi_lin)
+        ax.set_title(g)
+        ax.set_xlabel("Expression (counts)")
+        ax.set_ylabel("Density")
+
+    for k in range(n, len(axes_lin)):
+        axes_lin[k].axis("off")
+
+    fig_lin.suptitle(linear_title, y=0.995, fontsize=12)
+    fig_lin.tight_layout(rect=[0, 0, 1, 0.98])
+    if save_linear_path:
+        fig_lin.savefig(save_linear_path, bbox_inches="tight")
+
+    # ---------------- Log1p ----------------
+    fig_log, axes_log = plt.subplots(rows, cols, figsize=figsize)
+    axes_log = np.atleast_1d(axes_log).ravel()
+
+    for ax, g in zip(axes_log, present, strict=False):
+        x = df[g].to_numpy(dtype=float)
+        x = x[np.isfinite(x) & (x >= 0)]
+        if x.size == 0:
+            ax.axis("off")
+            continue
+        xlog = np.log1p(x)
+
+        counts, _, _ = ax.hist(xlog, bins=bins_log, density=True,
+                               alpha=hist_alpha, color="#4C78A8", edgecolor="none")
+
+        if kde and xlog.size > 5:
+            x_pos = xlog[x > 0]  # keep positives based on raw
+            x_kde = x_pos if x_pos.size > 5 else xlog
+            try:
+                xs = np.linspace(lo_log, hi_log, 400)
+                pdf = gaussian_kde(x_kde)(xs)
+                ax.plot(xs, pdf, lw=kde_lw, color="#1F77B4")
+            except Exception:
+                pass
+
+        if show_median or show_iqr:
+            q25, q50, q75 = np.quantile(xlog, [0.25, 0.50, 0.75])
+            if show_iqr:
+                ax.axvspan(q25, q75, color="0.85", alpha=0.6, zorder=0)
+            if show_median:
+                ax.axvline(q50, color="#E45756", ls="--", lw=1.2)
+
+        if show_zero_fraction:
+            zf = (x == 0).mean() * 100.0
+            ax.text(0.98, 0.95, f"zeros: {zf:.1f}%", transform=ax.transAxes,
+                    ha="right", va="top", fontsize=8, color="0.3")
+
+        ax.set_xlim(lo_log, hi_log)
+        ax.set_title(g)
+        ax.set_xlabel("Expression (log₁₊ counts)")
+        ax.set_ylabel("Density")
+
+    for k in range(n, len(axes_log)):
+        axes_log[k].axis("off")
+
+    fig_log.suptitle(log_title, y=0.995, fontsize=12)
+    fig_log.tight_layout(rect=[0, 0, 1, 0.98])
+    if save_log_path:
+        fig_log.savefig(save_log_path, bbox_inches="tight")
+
+    if show:
+        plt.show()
+    else:
+        plt.close(fig_lin); plt.close(fig_log)
+
+    return fig_lin, fig_log
 
 
 def plot_model_performance(results_df):
@@ -903,7 +1259,7 @@ def cell_type_prop_by_dist(props):
     plt.show()
 
 
-def cell_type_comp_by_dist(props):
+def plot_cell_type_comp_by_dist(props):
     """
     Plot bar chart of cell type composition by distance bin.
     """
@@ -922,7 +1278,7 @@ def cell_type_comp_by_dist(props):
     plt.show()
 
 
-def mean_exp_dist(mean_melt):
+def plot_mean_exp_dist(mean_melt):
     """
     Plot mean expression per distance bin for PIG genes."""
     g = sns.catplot(
@@ -940,7 +1296,7 @@ def mean_exp_dist(mean_melt):
     plt.show()
 
 
-def pig_expr_by_dist(mean_by_bin, pig_cols):
+def plot_pig_expr_by_dist(mean_by_bin, pig_cols):
     plt.figure(figsize=(9, 5))
     x = np.arange(len(mean_by_bin))
     for g in pig_cols:
@@ -954,7 +1310,7 @@ def pig_expr_by_dist(mean_by_bin, pig_cols):
     plt.show()
 
 
-def pig_comp_heatmap(pig_mat, prop_mat, pig_cols):
+def plot_pig_comp_heatmap(pig_mat, prop_mat, pig_cols):
     corrs = pd.DataFrame(index=pig_cols, columns=prop_mat.columns, dtype=float)
     pvals = pd.DataFrame(index=pig_cols, columns=prop_mat.columns, dtype=float)
     for g in pig_cols:
@@ -1102,7 +1458,7 @@ def draw_figures(plot_func, img_pth="std.png", *args, **kwargs):
     fig.show()
 
 
-def cellular_comp_by_dist(pivot_prop):
+def plot_cellular_comp_by_dist(pivot_prop):
     ax = pivot_prop.plot(kind="bar", stacked=True, figsize=(8, 5), width=0.85, colormap="tab20")
     ax.set_xlabel("Distance to plaque (µm)")
     ax.set_ylabel("Proportion")
@@ -1110,3 +1466,801 @@ def cellular_comp_by_dist(pivot_prop):
     ax.legend(bbox_to_anchor=(1.02, 1), loc="upper left", frameon=False, ncol=1)
     plt.tight_layout()
     plt.show()
+
+def plot_top_genes_by_distance(
+    anova_df: pd.DataFrame,
+    combined_df_normalized: pd.DataFrame,
+    *,
+    top_k: int = 8,
+    n_cols: int = 4,
+    gene_col: str = "gene",
+    qval_col: str = "qval",
+    distance_col: str = "distance_bin",
+    y_label: str = "Expression (log1p)",
+    palette: str = "viridis",
+    max_points: int = 1000,
+    jitter: bool = True,
+    jitter_size: float = 2.0,
+    jitter_alpha: float = 0.3,
+    random_state: int = 0,
+    sharey: bool = False,
+    fig_width: float = 14.0,
+    fig_height_per_row: float = 3.0,
+    suptitle: str = "Expression by Distance Bin for Top Plaque-Responsive Genes",
+    show: bool = True,
+    preselected_genes: list[str] | None = None,
+) -> tuple[Figure, list[Axes], list[str]]:
+    """
+    Plot expression distributions by distance bins for the top genes from an ANOVA table.
+
+    This function:
+      1) Selects the top `top_k` genes from `anova_df` by ascending `qval_col`
+         (or uses `preselected_genes` if provided),
+      2) Creates a grid of boxplots across `distance_col` for each gene,
+      3) Overlays a jittered strip of up to `max_points` nonzero observations per gene.
+
+    Parameters
+    ----------
+    anova_df : pd.DataFrame
+        DataFrame containing at least the columns specified by `gene_col` and `qval_col`.
+    combined_df_normalized : pd.DataFrame
+        Long or wide expression matrix that includes `distance_col` and one column per gene to plot.
+        Each gene column should be numeric and represent log1p-normalized expression values.
+    top_k : int, optional
+        Number of top genes (by `qval_col`) to plot. Ignored if `preselected_genes` is provided.
+    n_cols : int, optional
+        Number of columns in the subplot grid.
+    gene_col : str, optional
+        Column in `anova_df` that contains gene names.
+    qval_col : str, optional
+        Column in `anova_df` that contains q-values for ranking genes.
+    distance_col : str, optional
+        Column in `combined_df_normalized` indicating distance bins (categorical or discrete).
+    y_label : str, optional
+        Y-axis label for expression.
+    palette : str, optional
+        Seaborn palette for the boxplots (e.g., "viridis").
+    max_points : int, optional
+        Maximum number of nonzero points to overlay per gene for the stripplot.
+    jitter : bool, optional
+        Whether to jitter the overlaid points.
+    jitter_size : float, optional
+        Marker size for the overlaid points.
+    jitter_alpha : float, optional
+        Transparency for the overlaid points.
+    random_state : int, optional
+        Random seed for sampling overlaid points.
+    sharey : bool, optional
+        Whether subplots share the y-axis scale.
+    fig_width : float, optional
+        Total figure width in inches.
+    fig_height_per_row : float, optional
+        Figure height per row in inches.
+    suptitle : str, optional
+        Figure title shown above all subplots.
+    show : bool, optional
+        If True, calls `plt.show()` before returning.
+    preselected_genes : list of str, optional
+        If provided, use this exact list of genes instead of picking from `anova_df`.
+
+    Returns
+    -------
+    fig : matplotlib.figure.Figure
+        The created figure.
+    axes_list : list of matplotlib.axes.Axes
+        Flattened list of axes corresponding to the subplots (unused axes are hidden).
+    top_genes : list of str
+        The list of genes that were plotted, in order.
+
+    Raises
+    ------
+    ValueError
+        If required columns are missing, or if `top_k` <= 0 and no `preselected_genes` provided,
+        or if no genes are available to plot.
+    """
+     # ---- Basic validation (unchanged) ----
+    for col, df_name, df in [
+        (gene_col, "anova_df", anova_df),
+        (qval_col, "anova_df", anova_df),
+        (distance_col, "combined_df_normalized", combined_df_normalized),
+    ]:
+        if col not in df.columns:
+            raise ValueError(f"Required column '{col}' not found in {df_name}.")
+
+    if preselected_genes is not None:
+        top_genes = list(preselected_genes)
+    else:
+        if top_k <= 0:
+            raise ValueError("`top_k` must be > 0 when `preselected_genes` is not provided.")
+        if gene_col not in anova_df.columns or qval_col not in anova_df.columns:
+            raise ValueError(f"`anova_df` must contain '{gene_col}' and '{qval_col}'.")
+        top_genes = (
+            anova_df.sort_values(qval_col, ascending=True)
+            .head(top_k)[gene_col]
+            .astype(str)
+            .tolist()
+        )
+
+    if len(top_genes) == 0:
+        raise ValueError("No genes available to plot. Check inputs or `preselected_genes`.")
+
+    # Ensure all genes exist in data
+    missing = [g for g in top_genes if g not in combined_df_normalized.columns]
+    if missing:
+        raise ValueError(
+            f"The following genes are missing from `combined_df_normalized`: {missing}"
+        )
+
+    # --- NEW: compute a consistent order + rounded labels for the distance bins
+    order, labels = _sorted_bins_and_labels(combined_df_normalized[distance_col])
+
+    # ---- Layout (unchanged) ----
+    n_rows = max(1, math.ceil(len(top_genes) / n_cols))
+    fig_height = n_rows * float(fig_height_per_row)
+    fig, axes = plt.subplots(n_rows, n_cols, figsize=(float(fig_width), fig_height), sharey=sharey)
+
+    if isinstance(axes, np.ndarray):
+        axes_flat = axes.ravel().tolist()
+    else:
+        axes_flat = [axes]
+
+    # ---- Plot each gene ----
+    for i, g in enumerate(top_genes):
+        ax = axes_flat[i]
+
+        # Base boxplot with ordered bins
+        sns.boxplot(
+            data=combined_df_normalized,
+            x=distance_col,
+            y=g,
+            ax=ax,
+            order=order,                # NEW
+            showfliers=False,
+            palette=palette,
+        )
+
+        # Overlay nonzero points (sampled), with same order
+        nonzero = combined_df_normalized.loc[combined_df_normalized[g] > 0, [distance_col, g]]
+        if len(nonzero) > 0 and max_points > 0:
+            sample_n = min(int(max_points), len(nonzero))
+            sample = nonzero.sample(sample_n, random_state=random_state)
+            sns.stripplot(
+                data=sample,
+                x=distance_col,
+                y=g,
+                ax=ax,
+                order=order,            # NEW
+                color="black",
+                size=jitter_size,
+                alpha=jitter_alpha,
+                jitter=jitter,
+            )
+
+        ax.set_title(str(g))
+        ax.set_xlabel("")
+        ax.set_ylabel(y_label)
+        ax.set_xticklabels(labels, rotation=45, ha="right")   # NEW
+
+    # Hide any unused axes
+    for j in range(len(top_genes), len(axes_flat)):
+        axes_flat[j].axis("off")
+
+    fig.suptitle(suptitle, fontsize=14)
+    plt.tight_layout(rect=[0, 0, 1, 0.96])
+
+    if show:
+        plt.show()
+
+    return fig, axes_flat, top_genes
+
+def _sorted_bins_and_labels(series):
+    """
+    Return (order, labels) for a distance-bin column that may contain
+    Interval categories. Falls back to string labels if not Intervals.
+    """
+    vals = series.dropna()
+    # Keep category order if it's categorical, otherwise use unique values
+    cats = list(vals.cat.categories) if pd.api.types.is_categorical_dtype(vals) else list(pd.unique(vals))
+
+    def _mid(v):
+        # Use midpoint for sorting if it looks like an Interval
+        try:
+            return float(v.mid)
+        except Exception:
+            return float("inf")
+
+    def _label(v):
+        # Pretty rounded bounds if Interval, otherwise str()
+        try:
+            return f"{int(round(v.left))}-{int(round(v.right))}"
+        except Exception:
+            return str(v)
+
+    order = sorted(cats, key=_mid)
+    labels = [_label(v) for v in order]
+    return order, labels
+
+def plot_expression_heatmap(
+    summary_df: pd.DataFrame,
+    *,
+    index_col: str = "gene",
+    column_col: str = "distance_bin",
+    value_col: str = "mean_expr",
+    title: str = "PIG Expression by Distance to Plaque (TgCRND8 17.9m)",
+    figsize: tuple[float, float] = (8, 6),
+    cmap: str = "mako_r",
+    cbar_label: str = "Mean log1+ expression",
+    xlabel: str | None = "Distance to plaque (µm, binned)",
+    ylabel: str | None = "Gene",
+    ax: Axes | None = None,
+    show: bool = True
+) -> Axes:
+    """
+    Plot a heatmap of mean expression by distance bin using a pivot of `summary_df`.
+
+    This refactors:
+        plt.figure(figsize=(8, 6))
+        heatmap_df = summary_df.pivot(index="gene", columns="distance_bin", values="mean_expr")
+        sns.heatmap(heatmap_df, cmap="mako_r", cbar_kws={"label": "Mean log-expression"})
+        plt.title("PIG Expression by Distance to Plaque (TgCRND8 17.9m)")
+        plt.xlabel("Distance bin")
+        plt.ylabel("Gene")
+        plt.tight_layout()
+        plt.show()
+
+    Args:
+        summary_df: Input DataFrame containing at least `index_col`, `column_col`, and `value_col`.
+        index_col: Column to use for the heatmap's y-axis (rows of the pivot).
+        column_col: Column to use for the heatmap's x-axis (columns of the pivot).
+        value_col: Column providing cell values in the heatmap.
+        title: Figure title.
+        figsize: Figure size when creating a new Axes.
+        cmap: Colormap for the heatmap.
+        cbar_label: Label for the colorbar.
+        xlabel: Optional custom x-axis label. Defaults to a title-cased version of `column_col`.
+        ylabel: Optional custom y-axis label. Defaults to a title-cased version of `index_col`.
+        ax: Optional existing Matplotlib Axes to draw on. If None, a new figure/Axes is created.
+        show: If True, calls `plt.show()` at the end.
+        tight_layout: If True and a new figure is created, applies `plt.tight_layout()`.
+        cbar_kws: Extra kwargs for the colorbar; merged with the label provided in `cbar_label`.
+        **heatmap_kwargs: Additional keyword arguments forwarded to `sns.heatmap`.
+
+    Returns:
+        The Matplotlib Axes containing the heatmap.
+
+    Raises:
+        ValueError: If required columns are missing from `summary_df`.
+    """
+    # Pivot to genes x distance bins
+    heatmap_df = summary_df.pivot(index=index_col, columns=column_col, values=value_col)
+
+    # --- Build a robust order + label set for ANY column type ---
+    cols_list = list(heatmap_df.columns)
+
+    def _mid(x):
+        # Midpoint key for sorting
+        try:
+            # pd.Interval has .mid; if categorical w/ interval categories, items are Intervals too
+            return float(x.mid)
+        except Exception:
+            return np.inf  # non-intervals (e.g., 'NA') go to the end
+
+    def _label(x):
+        # Rounded label for ticks
+        try:
+            return f"{int(round(x.left))}-{int(round(x.right))}"
+        except Exception:
+            return str(x)
+
+    order_idx = np.argsort([_mid(c) for c in cols_list])
+    cols_sorted = [cols_list[i] for i in order_idx]
+    labels = [_label(c) for c in cols_sorted]
+
+    # Reorder columns by midpoint
+    heatmap_df = heatmap_df[cols_sorted]
+
+    # --- Plot ---
+    plt.figure(figsize=figsize)
+    ax = sns.heatmap(
+        heatmap_df,
+        cmap=cmap,
+        cbar_kws={"label": cbar_label},
+        #linewidths=0.2,
+        #linecolor="white",
+    )
+
+    # Apply the rounded bin labels on the x-axis
+    ax.set_xticklabels(labels, rotation=35, ha="right")
+
+    # Titles & axes
+    ax.set_title(title, pad=8)
+    ax.set_xlabel(xlabel, fontsize=12)
+    ax.set_ylabel(ylabel, fontsize=12)
+
+    plt.tight_layout()
+    if show:
+        plt.show()
+    return ax
+
+
+def plot_gene_expression_by_distance(
+    summary_df: pd.DataFrame,
+    pig_genes: Sequence[str],
+    *,
+    n_cols: int = 4,
+    title: str = "Expression of Plaque-Induced Genes vs Distance to Plaque (TgCRND8 17.9m)",
+    x_label: str = "Distance bin",
+    y_label: str = "Mean log-expression (± SEM)",
+    row_height: float = 2.5,
+    base_width: float = 14.0,
+    sharey: bool = True,
+    style: str = "whitegrid",
+    distance_col: str = "distance_bin",
+    mean_col: str = "mean_expr",
+    sem_col: str = "sem_expr",
+    gene_col: str = "gene",
+    marker: str = "o",
+    capsize: float = 3.0,
+    linewidth: float = 1.0,
+    rotate_xticks: int = 45,
+    tight_rect: Sequence[float] = (0.03, 0.03, 1, 0.95),
+    show: bool = True,
+) -> tuple[Figure, NDArray[Axes]]:
+    """
+    Plot mean gene expression (± SEM) against distance-to-plaque bins for a set of genes.
+
+    This function filters the provided `pig_genes` to those present in `summary_df`,
+    lays out small multiples in a grid, and draws errorbar plots for each gene.
+    Global titles and axis labels are added at the figure level.
+
+    Parameters
+    ----------
+    summary_df : pd.DataFrame
+        Long-form dataframe containing at least the columns specified by
+        `gene_col`, `distance_col`, `mean_col`, and `sem_col`.
+    pig_genes : Sequence[str]
+        List or sequence of gene names to include. Only genes present in
+        `summary_df[gene_col]` will be plotted.
+    n_cols : int, optional
+        Number of subplot columns. Defaults to 4.
+    title : str, optional
+        Figure-level title. Defaults to a descriptive title.
+    x_label : str, optional
+        Global x-axis label. Defaults to "Distance bin".
+    y_label : str, optional
+        Global y-axis label. Defaults to "Mean log-expression (± SEM)".
+    row_height : float, optional
+        Height (inches) of each subplot row. Defaults to 2.5.
+    base_width : float, optional
+        Figure width in inches. Defaults to 14.0.
+    sharey : bool, optional
+        Whether to share the y-axis across subplots. Defaults to True.
+    style : str, optional
+        Seaborn style to apply. Defaults to "whitegrid".
+    distance_col : str, optional
+        Column name for the distance/bin x-values. Defaults to "distance_bin".
+    mean_col : str, optional
+        Column name for the mean expression values. Defaults to "mean_expr".
+    sem_col : str, optional
+        Column name for the SEM values. Defaults to "sem_expr".
+    gene_col : str, optional
+        Column name for gene identifiers. Defaults to "gene".
+    marker : str, optional
+        Marker style for errorbar points. Defaults to "o".
+    capsize : float, optional
+        Capsize for error bars. Defaults to 3.0.
+    linewidth : float, optional
+        Line width for error bars. Defaults to 1.0.
+    rotate_xticks : int, optional
+        Rotation (degrees) for x-tick labels in each subplot. Defaults to 45.
+    tight_rect : Sequence[float], optional
+        Rect parameter for `plt.tight_layout`. Defaults to (0.03, 0.03, 1, 0.95).
+    show : bool, optional
+        Whether to call `plt.show()` at the end. Defaults to True.
+
+    Returns
+    -------
+    (Figure, np.ndarray[Axes])
+        The Matplotlib figure and a flattened NumPy array of Axes.
+
+    Raises
+    ------
+    ValueError
+        If none of the requested genes are present in `summary_df`.
+    """
+    # Filter genes to those present in the dataframe
+    available_genes = set(summary_df[gene_col].unique())
+    genes_to_plot = [g for g in pig_genes if g in available_genes]
+
+    if not genes_to_plot:
+        raise ValueError("None of the requested genes were found in the dataframe.")
+
+    n_genes = len(genes_to_plot)
+    n_rows = math.ceil(n_genes / n_cols)
+
+    # Styling
+    sns.set(style=style)
+
+    # Create subplots
+    fig, axes = plt.subplots(
+        n_rows,
+        n_cols,
+        figsize=(base_width, n_rows * row_height),
+        sharey=sharey,
+    )
+
+    # Normalize axes to a flat array for easy indexing
+    axes = np.atleast_1d(axes).flatten()
+
+    # Plot per-gene panels
+    for i, g in enumerate(genes_to_plot):
+        df_g = summary_df[summary_df[gene_col] == g]
+        ax = axes[i]
+        ax.errorbar(
+            df_g[distance_col],
+            df_g[mean_col],
+            yerr=df_g[sem_col],
+            marker=marker,
+            capsize=capsize,
+            linewidth=linewidth,
+        )
+        ax.set_title(g)
+        ax.set_xlabel("")
+        ax.set_ylabel("")
+        ax.tick_params(axis="x", rotation=rotate_xticks)
+
+    # Hide any unused axes if grid is larger than number of genes
+    for j in range(n_genes, len(axes)):
+        axes[j].set_visible(False)
+
+    # Global labels and title
+    fig.suptitle(title, fontsize=14)
+    fig.text(0.5, 0.04, x_label, ha="center", fontsize=12)
+    fig.text(0.04, 0.5, y_label, va="center", rotation="vertical", fontsize=12)
+
+    plt.tight_layout(rect=tight_rect)
+
+    if show:
+        plt.show()
+
+    return fig, axes
+
+def plot_top_spatial_genes(
+    stats_df: pd.DataFrame,
+    top_n: int = 20,
+    metric: str = "spearman_r",
+    figsize: tuple = (6, 6),
+    pig_genes: list[str] | None = None,
+) -> None:
+    """Bar plot of genes most associated with plaque distance.
+       Adds '*' to PIGs and ensures consistent matching.
+    """
+    import matplotlib.pyplot as plt
+    import seaborn as sns
+    import numpy as np
+
+    if metric not in stats_df.columns:
+        raise ValueError(f"Metric '{metric}' not found in stats_df columns.")
+
+    # Normalize PIG list for safe matching
+    if pig_genes is None:
+        pig_genes = []
+    pig_set = {g.strip().upper() for g in pig_genes}
+
+    # Pick top genes
+    top = stats_df.nlargest(top_n, metric).copy()
+
+    # Normalize df gene names for matching
+    top["_gene_norm"] = top["gene"].astype(str).str.strip().str.upper()
+
+    # Mark PIGs
+    top["is_pig"] = top["_gene_norm"].isin(pig_set)
+    top["gene_label"] = top.apply(
+        lambda r: f"{r['gene']} *" if r["is_pig"] else r["gene"],
+        axis=1
+    )
+
+    # Warn if no PIGs marked
+    if not top["is_pig"].any() and len(pig_genes) > 0:
+        print("None of the top genes match provided PIG list. "
+              "Check naming (e.g., symbol vs Ensembl).")
+
+    # Plotting
+    order = top["gene_label"]
+
+    plt.figure(figsize=figsize)
+    sns.set_style("whitegrid")
+    ax = sns.barplot(
+        data=top,
+        x=metric,
+        y="gene_label",
+        order=order,
+        palette="vlag" if "spearman" in metric.lower() else "crest",
+    )
+
+    # Axis labels with units
+    if "spearman" in metric.lower():
+        xlabel = "Spearman ρ (unitless)"
+    elif "slope" in metric.lower():
+        xlabel = "OLS slope (Δ log₁₊ expression per µm)"
+    else:
+        xlabel = metric
+
+    ax.set_xlabel(xlabel)
+    ax.set_ylabel("Gene")
+    ax.set_title(f"Top {len(top)} genes by {metric}")
+
+    # Zero reference
+    if top[metric].min() < 0 < top[metric].max():
+        ax.axvline(0, color="0.4", lw=1, ls="--")
+
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
+    plt.tight_layout()
+    plt.show()
+
+
+def plot_cell_to_plaque_map_visible(
+    cells_df,
+    plaques_gdf,
+    x_col="x_centroid",
+    y_col="y_centroid",
+    dist_col="distance_to_plaque",
+    cmap="plasma",
+    figsize=(7, 6),
+    clip_quantiles=(0.01, 0.99),
+    vmin=None,
+    vmax=None,
+    max_points=None,
+    point_size=4,
+    point_alpha=0.85,
+    plaque_edgecolor="cyan",
+    plaque_linewidth=1.0,
+    invert_y=False,  # <- changed default (set True if image needs flipping)
+    show_scalebar=True,
+    scalebar_um=100,
+    title="Cell–plaque distance map (µm)",
+):
+    """
+    Spatial map showing distance to plaque.
+    """
+    import numpy as np
+    import matplotlib.pyplot as plt
+    from matplotlib.colors import Normalize
+    from matplotlib.lines import Line2D
+    from matplotlib.ticker import MaxNLocator
+
+    C = cells_df
+    if max_points and len(C) > max_points:
+        C = C.sample(n=max_points, random_state=0)
+
+    dvals = C[dist_col].astype(float)
+    lo = np.quantile(dvals, clip_quantiles[0]) if vmin is None else vmin
+    hi = np.quantile(dvals, clip_quantiles[1]) if vmax is None else vmax
+    norm = Normalize(vmin=lo, vmax=hi)
+
+    fig, ax = plt.subplots(figsize=figsize)
+
+    sc = ax.scatter(
+        C[x_col], C[y_col],
+        c=C[dist_col], cmap=cmap, norm=norm,
+        s=point_size, alpha=point_alpha,
+        edgecolors="none", rasterized=True
+    )
+
+    if plaques_gdf is not None and len(plaques_gdf):
+        plaques_gdf.plot(
+            ax=ax, facecolor="none",
+            edgecolor=plaque_edgecolor, linewidth=plaque_linewidth,
+            zorder=10
+        )
+
+    ax.set_aspect("equal")
+    if invert_y:
+        ax.invert_yaxis()
+
+    ax.set_xlabel("X (µm)")
+    ax.set_ylabel("Y (µm)")
+    ax.set_title(title)
+
+    cbar = plt.colorbar(sc, ax=ax)
+    cbar.set_label("Distance to plaque (µm)")
+    cbar.ax.yaxis.set_major_locator(MaxNLocator(nbins=6, prune="both"))
+
+    # Legend outside to avoid covering tissue
+    handles = [
+        Line2D([0], [0], marker="o", markersize=6, linestyle="None",
+               markerfacecolor="gray", alpha=0.8, label="Cells"),
+        Line2D([0], [0], color=plaque_edgecolor, lw=plaque_linewidth, label="Plaque boundary"),
+    ]
+    ax.legend(
+    handles=handles,
+    loc="upper right",
+    bbox_to_anchor=(0.98, 0.98),  # inside border
+    frameon=True,
+    facecolor="white",
+    edgecolor="0.85",
+    borderpad=0.3,
+    handlelength=1.2,
+    handletextpad=0.4,
+    fontsize=9
+)
+
+
+    # Scalebar
+    if show_scalebar:
+        x0, x1 = ax.get_xlim()
+        y0, y1 = ax.get_ylim()
+        xb = x0 + 0.05*(x1-x0)
+        yb = y1 - 0.05*(y1-y0)
+        ax.plot([xb, xb + scalebar_um], [yb, yb], color="k", lw=2)
+        ax.text(xb + scalebar_um/2, yb, f"{int(scalebar_um)} µm",
+                ha="center", va="bottom", fontsize=9)
+
+    plt.tight_layout()
+    plt.show()
+    return fig, ax
+
+def plot_gene_trends(
+    mean_expr: pd.DataFrame,
+    genes: list[str],
+    *,
+    sem_expr: pd.DataFrame | None = None,   # <- pass SEM per bin here (optional)
+    ci: str = "95ci",                       # "95ci" (1.96*SEM) or "sem"
+    xlabel: str = "Distance to plaque (µm, binned)",
+    ylabel: str = "Mean expression (log₁₊)",
+    title: str = "Spatial gene expression gradients (mean ± CI)",
+    figsize: tuple = (8.5, 5),
+    legend_loc: str = "best",
+    min_visible_err: float | None = None,   # e.g., 0.003 to avoid invisible caps (optional)
+) -> None:
+    """
+    Plot mean expression across distance bins for selected genes,
+    with optional SEM-based uncertainty ribbons.
+
+    mean_expr: index = distance_bin (Interval), columns = genes (log1p means)
+    sem_expr:  same index/columns as mean_expr (SEM on log1p scale)
+    """
+    import numpy as np
+    import matplotlib.pyplot as plt
+
+    if mean_expr.empty:
+        raise ValueError("mean_expr is empty; check your inputs")
+
+    # x-coordinates & tick labels from IntervalIndex
+    bins = list(mean_expr.index)
+    x = np.arange(len(bins))
+    xticklabels = [f"{b.left:.0f}-{b.right:.0f}" for b in bins]
+
+    # scale for CI
+    if sem_expr is not None:
+        if ci.lower() == "95ci":
+            scale = 1.96
+        elif ci.lower() == "sem":
+            scale = 1.0
+        else:
+            raise ValueError("ci must be '95ci' or 'sem'")
+
+    plt.rcParams.update({
+        "axes.spines.top": False, "axes.spines.right": False,
+        "axes.grid": True, "grid.linestyle": "--", "grid.linewidth": 0.4,
+    })
+
+    plt.figure(figsize=figsize)
+    color_cycle = plt.rcParams["axes.prop_cycle"].by_key()["color"]
+
+    any_plotted = False
+    for i, g in enumerate(genes):
+        if g not in mean_expr.columns:
+            logger.warning(f"[WARN] Gene '{g}' not in mean_expr; skipping.")
+            continue
+
+        y = mean_expr[g].to_numpy(dtype=float)
+        c = color_cycle[i % len(color_cycle)]
+
+        # shaded ribbon + error bars if SEM provided
+        if sem_expr is not None and g in sem_expr.columns:
+            e = sem_expr[g].to_numpy(dtype=float) * scale
+            if min_visible_err is not None:
+                e = np.maximum(e, float(min_visible_err))
+
+            # ribbon
+            plt.fill_between(x, y - e, y + e, color=c, alpha=0.18, linewidth=0)
+            # line with caps
+            plt.errorbar(x, y, yerr=e, color=c, marker="o", lw=1.6, capsize=4, label=g)
+        else:
+            plt.plot(x, y, color=c, marker="o", lw=1.8, label=g)
+
+        any_plotted = True
+
+    if not any_plotted:
+        plt.text(0.5, 0.5, "No valid genes found", ha="center", va="center")
+        plt.axis("off")
+        plt.show()
+        return
+
+    plt.xticks(x, xticklabels, rotation=35, ha="right")
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
+    plt.title(title, pad=6)
+    plt.legend(title="Genes", frameon=False, loc=legend_loc, ncol=1)
+    plt.tight_layout()
+    plt.show()
+
+
+def plot_mean_heatmap(
+    mean_expr: pd.DataFrame,
+    top_n: int = 25,
+    *,
+    zscore: bool = True,
+    pig_genes: list[str] | None = None,
+    title: str | None = None,
+    figsize: tuple = (9, 6),
+) -> None:
+    """
+    Visualize top N genes with strongest spatial variation across plaque distance.
+    Marks PIG genes with ★.
+    """
+    non_gene_cols = {
+        "cell_id","x_centroid","y_centroid","cell_area","nucleus_area",
+        "total_counts","transcript_counts","distance_to_plaque","distance_bin",
+    }
+    gene_cols = [c for c in mean_expr.columns if c not in non_gene_cols]
+    M = mean_expr[gene_cols].copy()
+
+    if isinstance(M.index, pd.IntervalIndex):
+        M = M.sort_index(key=lambda x: x.map(lambda i: i.mid))
+
+    grad = M.diff().abs().sum().sort_values(ascending=False)
+    top_genes = grad.head(top_n).index
+    sub_df = M[top_genes]
+
+    if zscore:
+        sub_df = sub_df.apply(lambda s: (s - s.mean()) / (s.std(ddof=1) + 1e-12))
+
+    # clean rounded distance labels
+    if isinstance(sub_df.index, pd.IntervalIndex):
+        xticklabels = [f"{int(round(b.left))}-{int(round(b.right))}" for b in sub_df.index]
+    else:
+        xticklabels = [str(x) for x in sub_df.index]
+
+    pigs = set(pig_genes or [])
+    row_labels = [f"{g} ★" if g in pigs else g for g in sub_df.columns]
+
+    plt.figure(figsize=figsize)
+    xticklabels = _format_bin_labels(sub_df.index)
+
+    ax = sns.heatmap(
+        sub_df.T,
+        cmap="vlag" if zscore else "magma",
+        center=0 if zscore else None,
+        cbar_kws={"label": "Z-scored mean expression" if zscore else "Mean expression (log₁₊)"},
+        linewidths=0.2, linecolor="white",
+    )
+
+    ax.set_xlabel("Distance to plaque (µm, binned)")
+    ax.set_ylabel("Gene")
+    ax.set_xticklabels(xticklabels, rotation=35, ha="right")
+    ax.set_yticklabels(row_labels, rotation=0)
+
+    for tk in ax.get_yticklabels():
+        if tk.get_text().endswith("★"):
+            tk.set_fontweight("bold")
+
+    if title is None:
+        title = f"Top {top_n} genes varying with plaque distance (★ = PIG)"
+    ax.set_title(title, pad=8)
+
+    plt.tight_layout()
+    plt.show()
+
+def _format_bin_labels(index):
+    """Return pretty 'low–high' labels for an index whose values may be Intervals."""
+    vals = list(index)
+    def _fmt(v):
+        # Works for Interval and prints fallback for plain values
+        if hasattr(v, "left") and hasattr(v, "right"):
+            # round to ints; change to round(v.left, 1) if you want 0.1 precision
+            return f"{int(round(v.left))}-{int(round(v.right))}"
+        return str(v)
+    return [ _fmt(v) for v in vals ]

@@ -56,26 +56,4 @@ def compute_gene_spatial_stats(
     return res_df
 
 
-def plot_top_spatial_genes(
-    stats_df: pd.DataFrame,
-    top_n: int = 20,
-    metric: str = "spearman_r",
-    figsize: tuple = (6, 6),
-) -> None:
-    """Bar plot of genes most correlated with plaque distance."""
-    import matplotlib.pyplot as plt
-    import seaborn as sns
 
-    top = stats_df.nlargest(top_n, metric)
-    plt.figure(figsize=figsize)
-    sns.barplot(
-        data=top,
-        x=metric,
-        y="gene",
-        palette="vlag" if metric == "spearman_r" else "crest",
-    )
-    plt.title(f"Top {top_n} genes by {metric}")
-    plt.xlabel(metric)
-    plt.ylabel("Gene")
-    plt.tight_layout()
-    plt.show()

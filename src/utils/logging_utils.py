@@ -105,3 +105,9 @@ def setup_logging(
     logger.debug("Logging configured (level=%s, tz=%s)", level_name, tzname)
     root.info("Log file: %s", log_file)
     return log_file
+
+
+def log_runtime(start_time: datetime, end_time: datetime) -> None:
+    """Log the total runtime given start and end timestamps."""
+    elapsed = end_time - start_time
+    print(f"Total runtime: {elapsed:.1f} seconds")
