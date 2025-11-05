@@ -75,7 +75,7 @@ Thus, plaque effects reflect both cell type changes and intrinsic transcriptiona
 
 We modeled plaque distance from 347-gene expression using **LASSO,
 Elastic Net, RF, and XGBoost.** - Best model: **XGBoost (Test R² ≈
-0.25)** - Top predictors: *Gfap, Lyz2, Apoe, Spag16, Igf2*\
+0.25)** - Top predictors: *Gfap, Lyz2, Apoe, Spag16, Igf2*
 - Oligodendrocyte genes (*Mbp, Plp1*) show weak coupling
 
 <p align="center">
@@ -95,11 +95,14 @@ specificity in P3.
 
 ## Dataset Description and Feasibility
 
-  -----------------------------------------------------------------------
-  Aspect             Procedure                    Outcome
-  ------------------ ---------------------------- -----------------------
-  **Source**         Xenium V1 FFPE TgCRND8 (17.9 Public 10x Genomics
-                     m)                           dataset
+| **Aspect**          | **Procedure**                       | **Outcome**                 |
+|----------------------|-------------------------------------|-----------------------------|
+| **Source**           | Xenium V1 FFPE TgCRND8 (17.9 m)     | Public 10x Genomics dataset |
+| **Size**             | ~57 k cells × 357 genes             | <16 GB RAM                  |
+| **QC**               | Remove bottom 5% cells by transcripts/area | ~89% retained              |
+| **Plaque Alignment** | 26 control points + RANSAC          | 3 µm RMS error              |
+| **Distance Computation** | Shapely STRtree nearest boundary | <1 min                      |
+| **Integration**      | Merge expression + morphology + distance | Unified ~50k × 370 frame  |
 
   **Size**           \~61 k cells × 357 genes     \<16 GB RAM
 
@@ -152,12 +155,12 @@ Distributions: cell areas ≈ log-normal (120 µm² median); distances
 0--350 µm (median 95); PIG ρ ≈ -0.3 with distance.\
 Visual overlays confirm correct alignment and anatomical structure.
 
-<td style="width:45%; text-align:center;">
+<div align="center">
+  <img src="src/data/figures/cell-plaque-dist.png" width="360">
+  <br>
+  <em>Cells colored by plaque proximity (cool = near plaque)</em>
+</div>
 
-<img src="src/data/figures/cell-plaque-dist.png" width="360"><br>
-<em>Cells colored by plaque proximity (cool = near plaque)</em>
-
-</td>
 
 ------------------------------------------------------------------------
 
@@ -183,8 +186,8 @@ Visual overlays confirm correct alignment and anatomical structure.
 
 1.  **Enhanced Regression Features** (due November 13, 2025)
     -   Add plaque area, orientation, multi-plaque proximity, and
-        neighborhood gene expression\
-    -   Restrict to amygdala to reduce anatomical noise\
+        neighborhood gene expression
+    -   Restrict to amygdala to reduce anatomical noise
     -   Quantify gains via ΔR² and cross-validation
 2.  **Personalized Detection of Subject-Specific Signatures** (due November 20, 2025)
     -   Extend to multiple mice (WT + Tg, 2.5--17.9 m)\
@@ -193,7 +196,7 @@ Visual overlays confirm correct alignment and anatomical structure.
     -   Assess generalization and within-subject consistency
 3.  **Multimodal Embeddings (Expression + Morphology + Spatial)** (due November 27, 2025)
     -   Learn joint representations with interpretable autoencoders /
-        contrastive models\
+        contrastive models
     -   Evaluate latent structure via UMAP and marker coherence
 4.  **Morphology-Encoded Expression Prediction** (due December 4, 2025)
     -   Regress gene expression on morphological + neighbor features\
@@ -204,28 +207,18 @@ Visual overlays confirm correct alignment and anatomical structure.
 
 ## Team Organization (Milestone 2)
 
-  -------------------------------------------------------------------------------
-  Role                Member(s)               Responsibilities
-  ------------------- ----------------------- -----------------------------------
-  **Preprocessing**   Alexander, Sogand,      Data acquisition, QC, plaque
-                      Zayed, Walid            alignment, distance computation,
-                                              integration
+| **Role**            | **Member(s)**              | **Responsibilities**                                                                 |
+|----------------------|----------------------------|---------------------------------------------------------------------------------------|
+| **Preprocessing**    | Alexander, Sogand, Zayed, Walid | Data acquisition, QC, plaque alignment, distance computation, integration              |
+| **Modeling**         | Sogand, Rosa               | Statistical regressions, clustering, predictive models, feature enrichment             |
+| **Visualization**    | Rosa, Sogand               | Heatmaps, regression trends, interactive figures, readability                          |
+| **Documentation**    | Alexander, Sogand, Rosa    | Code organization, repo structure, README, clean scripts                               |
 
-  **Modeling**        Sogand, Rosa            Statistical regressions,
-                                              clustering, predictive models,
-                                              feature enrichment
-
-  **Visualization**   Rosa, Sogand            Heatmaps, regression trends,
-                                              interactive figures, readability
-
-  **Documentation**   Alexander, Sogand, Rosa Code organization, repo structure,
-                                              README, clean scripts
-  -------------------------------------------------------------------------------
 
 **Timeline:**\
 For Milestone P3, team members will work in parallel on complementary
-directions:\
-- **Walid & Zayed** → Regression enrichment, regional modeling\
-- **Sogand** → Subject-specific detection and fine-tuning\
-- **Alexander** → Multimodal embeddings\
+directions:
+- **Walid & Zayed** → Regression enrichment, regional modeling
+- **Sogand** → Subject-specific detection and fine-tuning
+- **Alexander** → Multimodal embeddings
 - **Rosa + team** → Morphology-encoded prediction & GitHub Pages site
