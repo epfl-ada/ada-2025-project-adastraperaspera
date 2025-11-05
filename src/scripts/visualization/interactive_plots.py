@@ -23,7 +23,7 @@ from typing import Optional, List
 def plot_gene_trends_interactive(
     mean_expr: pd.DataFrame,
     genes: List[str],
-    ylabel: str = "Mean expression (log₁₊ normalized)",
+    ylabel: str = "Mean expression (log1p normalized)",
     xlabel: str = "Distance to plaque (µm, binned)",
     title: str = "Spatial gene expression gradients",
     line_width: int = 2,
@@ -599,12 +599,14 @@ def interactive_comp_pig_regression(agg, PIGS, bin_order):
     btypes = agg["broad_type"].unique().tolist()
     fig = go.Figure()
 
-    # We’ll add 2 traces per broad type per gene: line (mean) + band (±SEM).
-    # Use legendgroup and showlegend only once to avoid duplicate legend entries.
-    traces_per_gene = 2 * len(btypes)  # band + line for each type
+    # We’ll add 2 traces per broad type per gene: line (mean) + band (± 1.96×SEM).
+    # We'll store indices of the "line" traces per gene to control legend visibility per dropdown.
+    traces_per_gene = 2 * len(btypes)  # band + line for each type (upper bound)
+    line_idxs_per_gene: list[list[int]] = []
 
     for gi, gene in enumerate(PIGS):
         sub = agg[agg["gene"] == gene]
+        line_idxs_for_gene: list[int] = []
         for bi, bt in enumerate(btypes):
             dsub = sub[sub["broad_type"] == bt]
             if dsub.empty:
@@ -613,15 +615,18 @@ def interactive_comp_pig_regression(agg, PIGS, bin_order):
 
             xcats = dsub["distance_bin"].astype(str)
 
-            # Error band (invisible in legend)
+            # Error band (invisible in legend) — use ~95% CI via 1.96×SEM
             fig.add_trace(
                 go.Scatter(
                     x=pd.concat([xcats, xcats[::-1]]),
-                    y=pd.concat([dsub["mean"] + dsub["sem"], (dsub["mean"] - dsub["sem"])[::-1]]),
+                    y=pd.concat([
+                        dsub["mean"] + 1.96 * dsub["sem"],
+                        (dsub["mean"] - 1.96 * dsub["sem"])[::-1],
+                    ]),
                     mode="lines",
                     fill="toself",
                     line=dict(width=0),
-                    name=f"{bt} ± SEM",
+                    name=f"{bt} ± 1.96×SEM",
                     legendgroup=bt,
                     showlegend=False,  # <-- avoid legend clutter
                     visible=(gi == 0),
@@ -645,27 +650,33 @@ def interactive_comp_pig_regression(agg, PIGS, bin_order):
                     ),
                 )
             )
+            # Record index of the just-added line trace for legend control
+            line_idxs_for_gene.append(len(fig.data) - 1)
+
+        line_idxs_per_gene.append(line_idxs_for_gene)
 
     # Dropdown buttons (toggle visibility blocks per gene)
     buttons = []
     total_traces = len(fig.data)
     for gi, gene in enumerate(PIGS):
         vis = [False] * total_traces
-        # find how many traces actually exist for this gene
-        # we added traces sequentially: groups of traces per gene in the same order
+        showlegend = [False] * total_traces
+        # Turn on visibility for traces that belong to this gene block
+        # We added traces sequentially per gene; however, some may be missing.
         start = gi * traces_per_gene
-        # But some btypes may be missing for a gene; safer approach: toggle by name in data slice
-        # Simple approach if your dataset is dense:
         for idx in range(traces_per_gene):
             k = start + idx
             if k < total_traces:
                 vis[k] = True
+        # Ensure legend entries for the visible gene's line traces
+        for k in line_idxs_per_gene[gi]:
+            showlegend[k] = True
         buttons.append(
             dict(
                 label=gene,
                 method="update",
                 args=[
-                    {"visible": vis},
+                    {"visible": vis, "showlegend": showlegend},
                     {"title": f"{gene} expression by distance and cell type"},
                 ],
             )
@@ -719,13 +730,13 @@ def plot_gene_expression_by_distance_interactive(
     gene_col: str = "gene",
     mean_col: str = "mean_expr",
     sem_col: str = "sem_expr",
-    title: str = "Plaque-Induced Gene Expression vs Distance (mean ± SEM, log₁₊)",
+    title: str = "Plaque-Induced Gene Expression vs Distance (mean ± 95% CI ≈ 1.96×SEM, log1p)",
     x_label: str = "Distance to Plaque (µm, binned)",
-    y_label: str = "Mean log₁₊ Expression",
+    y_label: str = "Mean log1p Expression",
     use_ci95: bool = True,   # multiply SEM by 1.96
 ):
     """
-    Interactive line plot with gene selector and SEM bands.
+    Interactive line plot with gene selector and CI bands (±1.96×SEM ≈ 95% CI).
     """
 
     df = summary_df.copy()

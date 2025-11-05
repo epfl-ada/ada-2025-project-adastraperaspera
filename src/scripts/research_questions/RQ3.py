@@ -15,6 +15,7 @@ def analyze_plaque_distance_effects(
     pig_genes: Iterable[str],
     *,
     apoe_gene: str = "Apoe",
+    baseline_broad_type: str | None = "Unlabeled",
     predicted_label_col: str = "predicted_label",
     unknown_label_value: int = 34,
     cell_type_col: str = "cell_type",
@@ -26,18 +27,19 @@ def analyze_plaque_distance_effects(
 ) -> tuple[str, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     """
     Run OLS models relating gene expression to distance from plaque while controlling
-    for broad cell type, and compute binned summary stats for PIG genes.
+    for broad cell type (with a configurable baseline level), and compute binned
+    summary stats for PIG genes.
 
     Steps performed:
       1) If `predicted_label_col` exists, mark cells with `unknown_label_value` as unlabeled
          by setting their `cell_type_col` to NA.
       2) Ensure `broad_type_col` exists by simplifying `cell_type_col` into:
          {"Glutamatergic", "GABAergic", "Glial", "Unlabeled", "Other"}.
-      3) Fit an OLS for `apoe_gene`:
-             Q(apoe_gene) ~ distance + C(broad_type)
+      3) Fit an OLS for `apoe_gene` (treatment coding for broad_type with chosen baseline):
+             Q(apoe_gene) ~ distance + C(broad_type, Treatment(reference=...))
          and log the model summary.
       4) For each gene in `pig_genes` present in the data, fit:
-             Q(gene) ~ distance + C(broad_type)
+             Q(gene) ~ distance + C(broad_type, Treatment(reference=...))
          and collect coefficients and p-values into a tidy DataFrame.
       5) Produce mean, SEM, and counts per (gene, broad_type, distance_bin). If
          `distance_bin_col` is missing and `create_distance_bins=True`, create it from
@@ -52,6 +54,10 @@ def analyze_plaque_distance_effects(
         Collection of PIG gene names to analyze.
     apoe_gene : str, optional
         Name of the Apoe column (default "Apoe").
+    baseline_broad_type : str | None, optional
+        Desired baseline level for treatment coding of `broad_type`.
+        Defaults to "Unlabeled". If not present, falls back to a sensible
+        available level (tries "Other" next, then the most frequent level).
     predicted_label_col : str, optional
         Column indicating predicted label class (default "predicted_label").
     unknown_label_value : int, optional
@@ -140,13 +146,32 @@ def analyze_plaque_distance_effects(
         )
         cells[distance_bin_col] = pd.qcut(cells[distance_col].astype(float), q=5, duplicates="drop")
 
+    # --- Determine baseline level for broad_type treatment coding
+    observed_levels = set(cells[broad_type_col].dropna().astype(str).unique())
+    ref = baseline_broad_type
+    if ref is None or ref not in observed_levels:
+        for candidate in ("Unlabeled", "Other"):
+            if candidate in observed_levels:
+                ref = candidate
+                break
+        else:
+            # Fallback: use the most frequent observed level
+            ref = (
+                cells[broad_type_col]
+                .dropna()
+                .astype(str)
+                .value_counts()
+                .idxmax()
+            )
     # --- Apoe model
     if apoe_gene not in cells.columns:
         raise ValueError(f"Column '{apoe_gene}' not found in `cells` for the Apoe model.")
     apoe_df = cells[[apoe_gene, distance_col, broad_type_col]].dropna()
     if apoe_df.empty:
         raise ValueError("No rows available for the Apoe model after dropping NAs.")
-    apoe_formula = f"Q('{apoe_gene}') ~ {distance_col} + C({broad_type_col})"
+    apoe_formula = (
+        f"Q('{apoe_gene}') ~ {distance_col} + C({broad_type_col}, Treatment(reference='{ref}'))"
+    )
     apoe_res = smf.ols(apoe_formula, data=apoe_df).fit()
     apoe_summary_text = apoe_res.summary().as_text()
     logger.info("\n%s", apoe_summary_text)
@@ -166,7 +191,9 @@ def analyze_plaque_distance_effects(
         df_gene = cells[[distance_col, gene, broad_type_col]].dropna()
         if df_gene.empty:
             continue
-        formula = f"Q('{gene}') ~ {distance_col} + C({broad_type_col})"
+        formula = (
+            f"Q('{gene}') ~ {distance_col} + C({broad_type_col}, Treatment(reference='{ref}'))"
+        )
         res = smf.ols(formula, data=df_gene).fit()
         for var in res.params.index:
             results.append(

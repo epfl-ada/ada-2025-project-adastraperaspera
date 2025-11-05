@@ -171,7 +171,7 @@ def plot_gene_distributions(
         # Cosmetics
         ax.set_xlim(lo, hi)
         ax.set_title(gene)
-        ax.set_xlabel("Expression (log₁₊ counts)" if use_log1p else "Expression (counts)")
+        ax.set_xlabel("Expression (log1p counts)" if use_log1p else "Expression (counts)")
         ax.set_ylabel("Density")
 
     # Hide unused axes
@@ -203,7 +203,7 @@ def plot_weird_gene_panels(
     kde_lw: float = 1.6,
     dpi: int = 120,
     linear_title: str = "Weirdest genes — linear scale (counts)",
-    log_title: str = "Weirdest genes — log₁₊ scale",
+    log_title: str = "Weirdest genes — log1p scale",
     figsize: Optional[Tuple[int, int]] = None,
     show: bool = True,
     save_linear_path: Optional[str] = None,
@@ -214,7 +214,7 @@ def plot_weird_gene_panels(
     (histogram + KDE + median + IQR + zero %).
     """
 
-    
+
     present = [g for g in genes if g in df.columns]
     if not present:
         raise ValueError("None of the requested genes are present in the dataframe.")
@@ -357,7 +357,7 @@ def plot_weird_gene_panels(
 
         ax.set_xlim(lo_log, hi_log)
         ax.set_title(g)
-        ax.set_xlabel("Expression (log₁₊ counts)")
+        ax.set_xlabel("Expression (log1p counts)")
         ax.set_ylabel("Density")
 
     for k in range(n, len(axes_log)):
@@ -431,6 +431,9 @@ def plot_spatial_overlay(df, gene, alpha=0.7, sample_size=20000):
     import matplotlib.pyplot as plt
 
     data = df.sample(min(sample_size, len(df)), random_state=42)
+    # Plot raw expression
+    # Undo the log1p transformation
+    data[gene] = np.expm1(data[gene])
     plt.figure(figsize=(6, 6))
     sc = plt.scatter(
         data["x_centroid"],
@@ -444,7 +447,7 @@ def plot_spatial_overlay(df, gene, alpha=0.7, sample_size=20000):
     plt.gca().invert_yaxis()
     plt.axis("off")
     plt.title(f"{gene} spatial expression map")
-    plt.colorbar(sc, label="Expression (log₁₊)")
+    plt.colorbar(sc, label="Expression")
     plt.tight_layout()
     plt.show()
 
@@ -534,7 +537,7 @@ def plot_gene_near_plaques(df, gene, dist_thresh=30.0, sample_size=20000):
     plt.gca().invert_yaxis()
     plt.axis("off")
     plt.title(f"{gene}: Expression near plaques (≤ {dist_thresh} µm)")
-    cbar = plt.colorbar(sc, label="Expression (log₁₊)")
+    cbar = plt.colorbar(sc, label="Expression (log1p)")
     plt.tight_layout()
     plt.show()
 
@@ -725,7 +728,7 @@ def plot_residual_figure(
     axes[0].set_xlabel("True distance (µm)")
     axes[0].set_ylabel("Predicted distance (µm)")
     axes[0].set_title(f"(A) Predicted vs True (colored by {oligo_marker})\nR² = {r2:.3f}")
-    fig.colorbar(sc, ax=axes[0], label=f"{oligo_marker} expression (log₁₊)")
+    fig.colorbar(sc, ax=axes[0], label=f"{oligo_marker} expression (log1p)")
 
     res = data["residual"]
     sc2 = axes[1].scatter(
@@ -1331,10 +1334,21 @@ def plot_pig_comp_heatmap(pig_mat, prop_mat, pig_cols):
     q = pvals.copy()
     q.values[mask] = qvals
 
+    # Black out non‑significant cells at 0.01 FDR by setting them to NaN
+    sig = (q <= 0.01)
+    corrs_masked = corrs.astype(float).where(sig)
+
+    # The colormap then renders NaNs as black
+    cmap = sns.color_palette("coolwarm", as_cmap=True)
+    try:
+        cmap.set_bad("black")
+    except Exception:
+        pass
+
     plt.figure(figsize=(min(14, 6 + 0.25 * len(corrs.columns)), 8))
     sns.heatmap(
-        corrs.astype(float),
-        cmap="coolwarm",
+        corrs_masked,
+        cmap=cmap,
         center=0,
         annot=True,
         fmt=".2f",
@@ -1790,7 +1804,7 @@ def plot_gene_expression_by_distance(
     n_cols: int = 4,
     title: str = "Expression of Plaque-Induced Genes vs Distance to Plaque (TgCRND8 17.9m)",
     x_label: str = "Distance bin",
-    y_label: str = "Mean log-expression (± SEM)",
+    y_label: str = "Mean log-expression (± 95% CI ≈ 1.96×SEM)",
     row_height: float = 2.5,
     base_width: float = 14.0,
     sharey: bool = True,
@@ -1807,7 +1821,7 @@ def plot_gene_expression_by_distance(
     show: bool = True,
 ) -> tuple[Figure, NDArray[Axes]]:
     """
-    Plot mean gene expression (± SEM) against distance-to-plaque bins for a set of genes.
+    Plot mean gene expression (± 95% CI ≈ 1.96×SEM) against distance-to-plaque bins for a set of genes.
 
     This function filters the provided `pig_genes` to those present in `summary_df`,
     lays out small multiples in a grid, and draws errorbar plots for each gene.
@@ -1828,7 +1842,7 @@ def plot_gene_expression_by_distance(
     x_label : str, optional
         Global x-axis label. Defaults to "Distance bin".
     y_label : str, optional
-        Global y-axis label. Defaults to "Mean log-expression (± SEM)".
+        Global y-axis label. Defaults to "Mean log-expression (± 95% CI ≈ 1.96×SEM)".
     row_height : float, optional
         Height (inches) of each subplot row. Defaults to 2.5.
     base_width : float, optional
@@ -1899,7 +1913,7 @@ def plot_gene_expression_by_distance(
         ax.errorbar(
             df_g[distance_col],
             df_g[mean_col],
-            yerr=df_g[sem_col],
+            yerr=(1.96 * df_g[sem_col]),
             marker=marker,
             capsize=capsize,
             linewidth=linewidth,

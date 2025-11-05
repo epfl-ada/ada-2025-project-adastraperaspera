@@ -1,26 +1,12 @@
 # Team ADAstraPerAspera: Milestone P2
 
-# Spatial Transcriptomics in Alzheimer's Disease
-
-### Modeling Gene Expression and Morphology Around Amyloid-β Plaques
+# Spatial Analysis in Alzheimer's Disease: Modeling Gene Expression and Morphology Around Amyloid-β Plaques
 
 ## Abstract
 
-This project investigates how amyloid-β (Aβ) plaques reshape local gene
-expression and cell composition in Alzheimer's disease using 10x
-Genomics Xenium V1 FFPE TgCRND8 (17.9 months) spatial transcriptomics
-data. We developed an end-to-end pipeline that downloads, preprocesses,
-and integrates plaque geometry, cellular morphology, and molecular
-expression for \~54 k cells.
+This project investigates how Aβ plaques impact the surrounding microenvironment. We aim to develop a quantitative model to precisely describe the influence of the plaques on the surrounding tissue. Knowing which genes and cells are impacted at different plaque distances can refine our understanding of Alzheimer's development. Further, the developers of new drugs can use our model to select realistic targets within the plaque regions accessible from the vasculature.
 
-Our analyses confirm the expected glial activation---up-regulation of
-Gfap, Apoe, Cst3, Hexb near plaques---and neuronal depletion distally,
-validating both biological signal and computational feasibility.
-
-For Milestone 3, we will expand toward: 1. Richer contextual predictors
-for regression 2. Personalized detection of subject-specific molecular
-signatures 3. Multimodal modeling combining morphology, expression, and
-spatial context
+Our story explores how plaque proximity impacts the cellular, molecular, and tissue environments. We aim to analyze the cell‑to‑plaque distances and apply rigorous statistical tests to describe the spatial trends in gene expression and cell composition. Further, we look at the interplay between gene expression and cell composition, asking ourselves which of the two phenomena is the underlying cause. Finally, we flip the perspective and benchmark predictive models to infer plaque distance from multigene expression.
 
 ------------------------------------------------------------------------
 
@@ -32,8 +18,8 @@ Expression of 16 Plaque-Induced Genes (PIGs) was regressed on plaque
 distance and compared across bins.\
 Most PIGs (Gfap, Cst3, Apoe, B2m, Hexb) show significantly negative
 slopes (FDR \< 0.01), confirming decreasing expression with distance.\
-*Gfap* decays fastest (half-distance ≈ 130 µm). Sparse genes (*Cxcl10,
-Ifit3, Nrep*) show weaker trends.
+Gfap decays fastest (half-distance ≈ 130 µm). Sparse genes (Cxcl10,
+Ifit3, Nrep) show weaker trends.
 
 <p align="center">
   <img src="src/data/figures/rq1_expr_by_dist_bin.png" width="480">
@@ -42,41 +28,48 @@ Ifit3, Nrep*) show weaker trends.
 
 ### **RQ2 -- How do cell-type frequencies vary with distance?**
 
-Leiden clustering on 347 genes (\~57 k cells) identified 22 clusters
-mapped to canonical cell types (*Apoe, Gfap, Mbp, Nrep* markers).
+Leiden clustering on 347 genes (\~54 k cells) identified 22 clusters
+mapped to canonical cell types (Apoe, Gfap, Mbp, Nrep markers).
 
--   Microglia / reactive astrocytes enriched within \<30 µm\
+<p align="center">
+  <table>
+    <tr>
+      <td align="center" style="border: none;">
+        <img src="src/data/figures/rq2_clusters.png" width="300" alt="Leiden clusters"><br>
+        <em>Leiden clusters</em>
+      </td>
+      <td align="center" style="border: none;">
+        <img src="src/data/figures/cell_type_v_distance.png" width="300" alt="Cell type composition by distance to plaque"><br>
+        <em>Cell type composition by distance to plaque</em>
+      </td>
+    </tr>
+  </table>
+</p>
+
+-   Microglia, reactive astrocytes, and immune cells are enriched within \<30 µm
 -   Neurons and oligodendrocytes decline near plaques
-
-This forms a **glial activation shell** surrounded by a **neuronal loss
-zone**, matching known pathology.
-
-<p align="center">
-<img src="src/data/figures/rq2_cell_dist_near_plaque.png" width="300">
-<img src="src/data/figures/rq2_distr_log.png" width="300">
-<br>
-<em>Linear vs Log scale distribution of cell distances to nearest plaque.</em>
-</p>
-
-<p align="center">
-  <img src="src/data/figures/rq2_clusters.png" width="300">
-  <br><em>Leiden clusters</em>
-</p>
 
 
 ### **RQ3 -- How do gene-expression gradients relate to cell-composition shifts?**
 
-Integrating cell-type annotations with plaque distances shows that mean
-PIG expression and glial proportions co-vary strongly (ρ ≈ 0.7), but
-several genes (*Apoe, C4b, Hexb*) remain distance-dependent after
-controlling for composition.\
-Thus, plaque effects reflect both **glial accumulation** and **intrinsic
-transcriptional activation**---a dual mechanism of spatial gliosis.
+Integrating cell-type annotations with plaque distances shows that the mean expression of 14 out of 16 PIGs and neural and astrocyte proportions co-vary strongly (absolute value ofSpearman correlation ≈ 1.00), but Cd63 remains distance-dependent after controlling for composition.\
+Thus, plaque effects reflect both cell type changes and intrinsic transcriptional activation, a dual mechanism of spatial gliosis.
 
 <p align="center">
-  <img src="src/data/figures/apoe_expr_by_dist.png" width="400">
-  <br><em>Apoe regression by distance and cell type</em>
+  <table>
+    <tr>
+      <td align="center" style="border: none;">
+        <img src="src/data/figures/Apoe_vs_dist.png" width="400" alt="Apoe regression by distance and cell type"><br>
+        <em>Apoe regression by distance and cell type</em>
+      </td>
+      <td align="center" style="border: none;">
+        <img src="src/data/figures/pig_type_correlation.png" width="400" alt="Spearman correlation between PIGs and cell types"><br>
+        <em>Spearman correlation between PIGs and cell types</em>
+      </td>
+    </tr>
+  </table>
 </p>
+
 
 ### **RQ4 -- Which genes predict a cell's plaque proximity?**
 
@@ -86,7 +79,7 @@ Elastic Net, RF, and XGBoost.** - Best model: **XGBoost (Test R² ≈
 - Oligodendrocyte genes (*Mbp, Plp1*) show weak coupling
 
 <p align="center">
-  <img src="src/data/figures/rq4_res.png" width="600">
+  <img src="src/data/figures/results_q4.png" width="600">
   <br><em>Residual structure and cell-type bias</em>
 </p>
 
@@ -95,7 +88,7 @@ Elastic Net, RF, and XGBoost.** - Best model: **XGBoost (Test R² ≈
 and neighborhood gene expression\
 2. Restrict to one brain region (e.g., amygdala)
 
-These additions should raise explanatory power and biological
+These additions should raise explanatory power, reduce heteroscedasticity, and increase biological
 specificity in P3.
 
 ------------------------------------------------------------------------
@@ -108,18 +101,18 @@ specificity in P3.
   **Source**         Xenium V1 FFPE TgCRND8 (17.9 Public 10x Genomics
                      m)                           dataset
 
-  **Size**           \~57 k cells × 357 genes     \<16 GB RAM
+  **Size**           \~61 k cells × 357 genes     \<16 GB RAM
 
   **QC**             Remove bottom 5% cells by    \~89% retained
-                     transcripts/area             
+                     transcripts/area
 
   **Plaque           26 control points + RANSAC   3 µm RMS error
-  Alignment**                                     
+  Alignment**
 
   **Distance         Shapely STRtree nearest      \<1 min
-  Computation**      boundary                     
+  Computation**      boundary
 
-  **Integration**    Merge expression +           Unified \~50k × 370
+  **Integration**    Merge expression +           Unified \~54k × 370
                      morphology + distance        frame
   -----------------------------------------------------------------------
 
@@ -129,14 +122,14 @@ Feasible on MacBook Pro (M4, 16 GB); full pipeline \<10 min.
 
 ## Methods
 
-**Preprocessing:** Automatic download → QC filtering → log₁₊
+**Preprocessing:** Automatic download → QC filtering → log1p
 normalization → plaque alignment → distance computation → merged
 dataset.
 
-**Analyses include:** - Gene-wise stats (mean, var, skew, zero
-fraction)\
+**Analyses include:** - Gene-wise stats (mean, var, skew, zero and NaN
+fractions)\
 - "Weirdness" score (dispersion + shape metrics)\
-- Quantile-binned spatial trends (5 bins ± SEM)\
+- Quantile-binned spatial trends (5 bins ± 1.96×SEM)\
 - Spearman ρ, OLS slopes (BH-FDR correction)\
 - Leiden clustering → cell-type enrichment by distance\
 - Predictive models (R², feature importance)
@@ -150,13 +143,13 @@ Jupyter notebook.
 
   Category        Description
   --------------- ---------------------------------------------------------
-  Morphological   Cell area, nucleus area, eccentricity, circularity
-  Spatial         (x,y) centroid, distance to plaque, nearest plaque area
-  Molecular       357 genes (incl. 16 PIGs)
-  Derived         Cluster ID, cell-type, distance bin
+  Morphological   Cell area, nucleus area
+  Spatial         (x,y) centroid
+  Molecular       347 genes (incl. 16 PIGs)
+  Derived         Cluster ID, cell-type, distance bin, distance to plaque, nearest plaque area
 
 Distributions: cell areas ≈ log-normal (120 µm² median); distances
-0--350 µm (median 95); PIG ρ ≈ --0.3 with distance.\
+0--350 µm (median 95); PIG ρ ≈ -0.3 with distance.\
 Visual overlays confirm correct alignment and anatomical structure.
 
 <td style="width:45%; text-align:center;">
@@ -170,15 +163,12 @@ Visual overlays confirm correct alignment and anatomical structure.
 
 ## Initial Analyses Completed
 
--   QC and filtering (\<10% loss)\
+-   QC and filtering \
 -   Plaque geometry cleanup and alignment\
--   Distance integration for all cells\
+-   Nearest plaque distance computationfor all cells\
 -   PIG spatial gradients and heatmaps (proximal glial activation)\
 -   Cell-type composition vs distance (microglia ↑, neurons ↓)\
--   Predictive modeling (XGB R² ≈ 0.25)
-
-**Outcome:** Data recapitulates canonical Alzheimer's features,
-confirming feasibility for advanced modeling.
+-   Predictive modeling
 
 <p align="center">
 <img src="src/data/figures/gene_trend.png" width="380">
@@ -189,29 +179,26 @@ confirming feasibility for advanced modeling.
 
 ------------------------------------------------------------------------
 
-## Planned Analyses for Milestone 3
+## Planned Analyses and Proposed Timelinefor Milestone 3
 
-1.  **Enhanced Regression Features**
+1.  **Enhanced Regression Features** (due November 13, 2025)
     -   Add plaque area, orientation, multi-plaque proximity, and
         neighborhood gene expression\
     -   Restrict to amygdala to reduce anatomical noise\
     -   Quantify gains via ΔR² and cross-validation
-2.  **Personalized Detection of Subject-Specific Signatures**
+2.  **Personalized Detection of Subject-Specific Signatures** (due November 20, 2025)
     -   Extend to multiple mice (WT + Tg, 2.5--17.9 m)\
     -   Train pooled models → fine-tune per-mouse\
     -   Identify biomarkers deviating from baseline\
     -   Assess generalization and within-subject consistency
-3.  **Multimodal Embeddings (Expression + Morphology + Spatial)**
+3.  **Multimodal Embeddings (Expression + Morphology + Spatial)** (due November 27, 2025)
     -   Learn joint representations with interpretable autoencoders /
         contrastive models\
     -   Evaluate latent structure via UMAP and marker coherence
-4.  **Morphology-Encoded Expression Prediction**
+4.  **Morphology-Encoded Expression Prediction** (due December 4, 2025)
     -   Regress gene expression on morphological + neighbor features\
     -   Rank genes by predictability; assess Moran's I\
     -   Test contextual feature gains in explained variance
-
-All models will emphasize **validation and interpretability** over
-complexity.
 
 ------------------------------------------------------------------------
 
@@ -242,6 +229,3 @@ directions:\
 - **Sogand** → Subject-specific detection and fine-tuning\
 - **Alexander** → Multimodal embeddings\
 - **Rosa + team** → Morphology-encoded prediction & GitHub Pages site
-
-Final integration, validation, and polishing will occur during the last
-two weeks before submission.
