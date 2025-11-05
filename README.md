@@ -45,7 +45,7 @@ Ifit3, Nrep*) show weaker trends.
 Leiden clustering on 347 genes (\~57 k cells) identified 22 clusters
 mapped to canonical cell types (*Apoe, Gfap, Mbp, Nrep* markers).
 
--   Microglia / reactive astrocytes enriched within \<30 µm\
+-   Microglia / reactive astrocytes enriched within \<30 µm
 -   Neurons and oligodendrocytes decline near plaques
 
 This forms a **glial activation shell** surrounded by a **neuronal loss
@@ -71,7 +71,7 @@ PIG expression and glial proportions co-vary strongly (ρ ≈ 0.7), but
 several genes (*Apoe, C4b, Hexb*) remain distance-dependent after
 controlling for composition.\
 Thus, plaque effects reflect both **glial accumulation** and **intrinsic
-transcriptional activation**---a dual mechanism of spatial gliosis.
+transcriptional activation**, a dual mechanism of spatial gliosis.
 
 <p align="center">
   <img src="src/data/figures/apoe_expr_by_dist.png" width="400">
@@ -82,7 +82,7 @@ transcriptional activation**---a dual mechanism of spatial gliosis.
 
 We modeled plaque distance from 347-gene expression using **LASSO,
 Elastic Net, RF, and XGBoost.** - Best model: **XGBoost (Test R² ≈
-0.25)** - Top predictors: *Gfap, Lyz2, Apoe, Spag16, Igf2*\
+0.25)** - Top predictors: *Gfap, Lyz2, Apoe, Spag16, Igf2*
 - Oligodendrocyte genes (*Mbp, Plp1*) show weak coupling
 
 <p align="center">
@@ -102,26 +102,15 @@ specificity in P3.
 
 ## Dataset Description and Feasibility
 
-  -----------------------------------------------------------------------
-  Aspect             Procedure                    Outcome
-  ------------------ ---------------------------- -----------------------
-  **Source**         Xenium V1 FFPE TgCRND8 (17.9 Public 10x Genomics
-                     m)                           dataset
+| **Aspect**          | **Procedure**                       | **Outcome**                 |
+|----------------------|-------------------------------------|-----------------------------|
+| **Source**           | Xenium V1 FFPE TgCRND8 (17.9 m)     | Public 10x Genomics dataset |
+| **Size**             | ~57 k cells × 357 genes             | <16 GB RAM                  |
+| **QC**               | Remove bottom 5% cells by transcripts/area | ~89% retained              |
+| **Plaque Alignment** | 26 control points + RANSAC          | 3 µm RMS error              |
+| **Distance Computation** | Shapely STRtree nearest boundary | <1 min                      |
+| **Integration**      | Merge expression + morphology + distance | Unified ~50k × 370 frame  |
 
-  **Size**           \~57 k cells × 357 genes     \<16 GB RAM
-
-  **QC**             Remove bottom 5% cells by    \~89% retained
-                     transcripts/area             
-
-  **Plaque           26 control points + RANSAC   3 µm RMS error
-  Alignment**                                     
-
-  **Distance         Shapely STRtree nearest      \<1 min
-  Computation**      boundary                     
-
-  **Integration**    Merge expression +           Unified \~50k × 370
-                     morphology + distance        frame
-  -----------------------------------------------------------------------
 
 Feasible on MacBook Pro (M4, 16 GB); full pipeline \<10 min.
 
@@ -134,12 +123,12 @@ normalization → plaque alignment → distance computation → merged
 dataset.
 
 **Analyses include:** - Gene-wise stats (mean, var, skew, zero
-fraction)\
-- "Weirdness" score (dispersion + shape metrics)\
-- Quantile-binned spatial trends (5 bins ± SEM)\
-- Spearman ρ, OLS slopes (BH-FDR correction)\
-- Leiden clustering → cell-type enrichment by distance\
-- Predictive models (R², feature importance)
+fraction)
+- "Weirdness" score (dispersion + shape metrics)
+- Quantile-binned spatial trends (5 bins ± SEM)
+- Spearman ρ, OLS slopes (BH-FDR correction)
+- Leiden clustering → cell-type enrichment by distance
+- Predictive models (R², feature importance
 
 All code modularized under `src/scripts/` and executed via a single
 Jupyter notebook.
@@ -159,22 +148,22 @@ Distributions: cell areas ≈ log-normal (120 µm² median); distances
 0--350 µm (median 95); PIG ρ ≈ --0.3 with distance.\
 Visual overlays confirm correct alignment and anatomical structure.
 
-<td style="width:45%; text-align:center;">
+<div align="center">
+  <img src="src/data/figures/cell-plaque-dist.png" width="360">
+  <br>
+  <em>Cells colored by plaque proximity (cool = near plaque)</em>
+</div>
 
-<img src="src/data/figures/cell-plaque-dist.png" width="360"><br>
-<em>Cells colored by plaque proximity (cool = near plaque)</em>
-
-</td>
 
 ------------------------------------------------------------------------
 
 ## Initial Analyses Completed
 
--   QC and filtering (\<10% loss)\
--   Plaque geometry cleanup and alignment\
--   Distance integration for all cells\
--   PIG spatial gradients and heatmaps (proximal glial activation)\
--   Cell-type composition vs distance (microglia ↑, neurons ↓)\
+-   QC and filtering (\<10% loss)
+-   Plaque geometry cleanup and alignment
+-   Distance integration for all cells
+-   PIG spatial gradients and heatmaps (proximal glial activation)
+-   Cell-type composition vs distance (microglia ↑, neurons ↓)
 -   Predictive modeling (XGB R² ≈ 0.25)
 
 **Outcome:** Data recapitulates canonical Alzheimer's features,
@@ -193,21 +182,21 @@ confirming feasibility for advanced modeling.
 
 1.  **Enhanced Regression Features**
     -   Add plaque area, orientation, multi-plaque proximity, and
-        neighborhood gene expression\
-    -   Restrict to amygdala to reduce anatomical noise\
+        neighborhood gene expression
+    -   Restrict to amygdala to reduce anatomical noise
     -   Quantify gains via ΔR² and cross-validation
 2.  **Personalized Detection of Subject-Specific Signatures**
-    -   Extend to multiple mice (WT + Tg, 2.5--17.9 m)\
-    -   Train pooled models → fine-tune per-mouse\
-    -   Identify biomarkers deviating from baseline\
+    -   Extend to multiple mice (WT + Tg, 2.5--17.9 m)
+    -   Train pooled models → fine-tune per-mouse
+    -   Identify biomarkers deviating from baseline
     -   Assess generalization and within-subject consistency
 3.  **Multimodal Embeddings (Expression + Morphology + Spatial)**
     -   Learn joint representations with interpretable autoencoders /
-        contrastive models\
+        contrastive models
     -   Evaluate latent structure via UMAP and marker coherence
 4.  **Morphology-Encoded Expression Prediction**
-    -   Regress gene expression on morphological + neighbor features\
-    -   Rank genes by predictability; assess Moran's I\
+    -   Regress gene expression on morphological + neighbor features
+    -   Rank genes by predictability; assess Moran's I
     -   Test contextual feature gains in explained variance
 
 All models will emphasize **validation and interpretability** over
@@ -217,30 +206,20 @@ complexity.
 
 ## Team Organization (Milestone 2)
 
-  -------------------------------------------------------------------------------
-  Role                Member(s)               Responsibilities
-  ------------------- ----------------------- -----------------------------------
-  **Preprocessing**   Alexander, Sogand,      Data acquisition, QC, plaque
-                      Zayed, Walid            alignment, distance computation,
-                                              integration
+| **Role**            | **Member(s)**              | **Responsibilities**                                                                 |
+|----------------------|----------------------------|---------------------------------------------------------------------------------------|
+| **Preprocessing**    | Alexander, Sogand, Zayed, Walid | Data acquisition, QC, plaque alignment, distance computation, integration              |
+| **Modeling**         | Sogand, Rosa               | Statistical regressions, clustering, predictive models, feature enrichment             |
+| **Visualization**    | Rosa, Sogand               | Heatmaps, regression trends, interactive figures, readability                          |
+| **Documentation**    | Alexander, Sogand, Rosa    | Code organization, repo structure, README, clean scripts                               |
 
-  **Modeling**        Sogand, Rosa            Statistical regressions,
-                                              clustering, predictive models,
-                                              feature enrichment
-
-  **Visualization**   Rosa, Sogand            Heatmaps, regression trends,
-                                              interactive figures, readability
-
-  **Documentation**   Alexander, Sogand, Rosa Code organization, repo structure,
-                                              README, clean scripts
-  -------------------------------------------------------------------------------
 
 **Timeline:**\
 For Milestone P3, team members will work in parallel on complementary
-directions:\
-- **Walid & Zayed** → Regression enrichment, regional modeling\
-- **Sogand** → Subject-specific detection and fine-tuning\
-- **Alexander** → Multimodal embeddings\
+directions:
+- **Walid & Zayed** → Regression enrichment, regional modeling
+- **Sogand** → Subject-specific detection and fine-tuning
+- **Alexander** → Multimodal embeddings
 - **Rosa + team** → Morphology-encoded prediction & GitHub Pages site
 
 Final integration, validation, and polishing will occur during the last
