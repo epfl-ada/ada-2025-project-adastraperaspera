@@ -6,7 +6,7 @@
 
 This project investigates how Aβ plaques impact the surrounding microenvironment. We aim to develop a quantitative model to precisely describe the influence of the plaques on the surrounding tissue. Knowing which genes and cells are impacted at different plaque distances can refine our understanding of Alzheimer's development. Further, the developers of new drugs can use our model to select realistic targets within the plaque regions accessible from the vasculature.
 
-Our story explores how plaque proximity impacts the cellular, molecular, and tissue environments. We aim to analyze the cell‑to‑plaque distances and apply rigorous statistical tests to describe the spatial trends in gene expression and cell composition. Further, we look at the interplay between gene expression and cell composition, asking ourselves which of the two phenomena is the underlying cause. Finally, we flip the perspective and benchmark predictive models to infer plaque distance from multigene expression.
+Our story explores how plaque proximity impacts the cellular, molecular, and tissue environments. We aim to analyze the cell‑to‑plaque distances and apply rigorous statistical tests to describe the spatial trends in gene expression and cell composition. Finally, we flip the perspective and benchmark predictive models to infer plaque distance from multigene expression.
 
 ------------------------------------------------------------------------
 
@@ -46,14 +46,10 @@ mapped to canonical cell types (Apoe, Gfap, Mbp, Nrep markers).
   </table>
 </p>
 
--   Microglia, reactive astrocytes, and immune cells are enriched within \<30 µm
--   Neurons and oligodendrocytes decline near plaques
-
 
 ### **RQ3 -- How do gene-expression gradients relate to cell-composition shifts?**
 
-Integrating cell-type annotations with plaque distances shows that the mean expression of 14 out of 16 PIGs and neural and astrocyte proportions co-vary strongly (absolute value ofSpearman correlation ≈ 1.00), but Cd63 remains distance-dependent after controlling for composition.\
-Thus, plaque effects reflect both cell type changes and intrinsic transcriptional activation, a dual mechanism of spatial gliosis.
+Integrating cell-type annotations with plaque distances shows that the mean expression of 14 out of 16 PIGs and neural and astrocyte proportions co-vary strongly (absolute value ofSpearman correlation ≈ 1.00), but Cd63 remains distance-dependent after controlling for composition.
 
 <p align="center">
   <table>
