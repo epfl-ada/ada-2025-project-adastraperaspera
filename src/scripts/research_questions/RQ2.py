@@ -180,6 +180,7 @@ class LeidenAnalysisResult:
     adata: AnnData  # AnnData object used by Scanpy
     gene_cols: list[str]  # Detected numeric gene-expression columns
     freq_df: pd.DataFrame  # Cluster frequency by distance bin (with midpoints & percentages)
+    freq_trend_df: pd.DataFrame  # OLS coefficients for frequency trends per cluster
     logit_df: (
         pd.DataFrame
     )  # Logistic regression summary per cluster (with Bonferroni adj. p-values)
@@ -407,6 +408,62 @@ def analyze_leiden_spatial(
     freq_df["bin_mid"] = freq_df["distance_bin_cont"].apply(
         lambda x: x.mid if pd.notna(x) else np.nan
     )
+    # Proportion in [0,1] for OLS trends
+    freq_df["prop"] = freq_df["pct"].astype(float) / 100.0
+
+    # -----------------------------------------------
+    # 6) OLS trends per cluster: prop ~ bin_mid
+    # -----------------------------------------------
+    ols_rows: list[dict] = []
+    for cl in sorted(freq_df["cluster_leiden"].dropna().unique(), key=str):
+        sub = freq_df.loc[
+            freq_df["cluster_leiden"] == cl, ["prop", "bin_mid", "total_cells"]
+        ].dropna()
+        if len(sub) < 2:
+            ols_rows.append(
+                {
+                    "cluster": str(cl),
+                    "intercept": np.nan,
+                    "slope": np.nan,
+                    "stderr_slope": np.nan,
+                    "pval_slope": np.nan,
+                    "r2": np.nan,
+                    "n_bins": int(len(sub)),
+                }
+            )
+            continue
+        try:
+            model = smf.ols("prop ~ bin_mid", data=sub).fit()
+            intercept = float(model.params.get("Intercept", np.nan))
+            slope = float(model.params.get("bin_mid", np.nan))
+            stderr_slope = float(model.bse.get("bin_mid", np.nan))
+            pval_slope = float(model.pvalues.get("bin_mid", np.nan))
+            r2 = float(model.rsquared)
+            ols_rows.append(
+                {
+                    "cluster": str(cl),
+                    "intercept": intercept,
+                    "slope": slope,
+                    "stderr_slope": stderr_slope,
+                    "pval_slope": pval_slope,
+                    "r2": r2,
+                    "n_bins": int(model.nobs),
+                }
+            )
+        except Exception as e:
+            ols_rows.append(
+                {
+                    "cluster": str(cl),
+                    "intercept": np.nan,
+                    "slope": np.nan,
+                    "stderr_slope": np.nan,
+                    "pval_slope": np.nan,
+                    "r2": np.nan,
+                    "n_bins": int(len(sub)),
+                    "error": str(e),
+                }
+            )
+    freq_trend_df = pd.DataFrame(ols_rows)
 
     if plot and not freq_df.empty:
         plt.figure(figsize=(10, 6))
@@ -439,13 +496,49 @@ def analyze_leiden_spatial(
 
         try:
             model = smf.logit("in_cluster ~ distance_to_plaque", data=df_cl).fit(disp=0)
+            intercept = float(model.params.get("Intercept", np.nan))
             slope = float(model.params.get("distance_to_plaque", np.nan))
+            se_intercept = float(model.bse.get("Intercept", np.nan))
+            se_slope = float(model.bse.get("distance_to_plaque", np.nan))
+            z_slope = float(model.tvalues.get("distance_to_plaque", np.nan))
             pval = float(model.pvalues.get("distance_to_plaque", np.nan))
+            ci = model.conf_int()
+            ci_lo = (
+                float(ci.loc["distance_to_plaque", 0])
+                if "distance_to_plaque" in ci.index
+                else np.nan
+            )
+            ci_hi = (
+                float(ci.loc["distance_to_plaque", 1])
+                if "distance_to_plaque" in ci.index
+                else np.nan
+            )
         except Exception as e:
             log.warning("Logit failed for cluster %s (%s). Setting slope/pval = NaN.", cl, e)
-            slope, pval = np.nan, np.nan
+            intercept, slope, se_intercept, se_slope, z_slope, pval, ci_lo, ci_hi = (
+                np.nan,
+                np.nan,
+                np.nan,
+                np.nan,
+                np.nan,
+                np.nan,
+                np.nan,
+                np.nan,
+            )
 
-        results.append({"cluster": str(cl), "slope": slope, "pval": pval})
+        results.append(
+            {
+                "cluster": str(cl),
+                "intercept": intercept,
+                "slope": slope,
+                "se_intercept": se_intercept,
+                "se_slope": se_slope,
+                "z_slope": z_slope,
+                "pval": pval,
+                "ci95_lo_slope": ci_lo,
+                "ci95_hi_slope": ci_hi,
+            }
+        )
 
     logit_df = pd.DataFrame(results)
     if not logit_df.empty and "pval" in logit_df:
@@ -499,6 +592,7 @@ def analyze_leiden_spatial(
         adata=adata,
         gene_cols=gene_cols,
         freq_df=freq_df,
+        freq_trend_df=freq_trend_df,
         logit_df=logit_df,
         expr_z=expr_z,
         top_z=top_z,

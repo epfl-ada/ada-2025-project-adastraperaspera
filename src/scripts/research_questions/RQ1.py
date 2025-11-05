@@ -2,17 +2,10 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 import logging
-import math
 import re
-from typing import Any
 
-from matplotlib.axes import Axes
-from matplotlib.figure import Figure
-import matplotlib.pyplot as plt
 import numpy as np
-from numpy.typing import NDArray
 import pandas as pd
-import seaborn as sns
 import statsmodels.api as sm
 import statsmodels.formula.api as smf
 from statsmodels.stats.multitest import multipletests
@@ -82,12 +75,8 @@ def summarize_gene_stats(
         )
 
     # --- Rename overlapping columns to avoid collisions
-    reg_renamed = reg_df.rename(
-        columns={"pval": "pval_continuous", "qval": "qval_continuous"}
-    )
-    anova_renamed = anova_df.rename(
-        columns={"pval": "anova_pval", "qval": "qval_anova"}
-    )
+    reg_renamed = reg_df.rename(columns={"pval": "pval_continuous", "qval": "qval_continuous"})
+    anova_renamed = anova_df.rename(columns={"pval": "anova_pval", "qval": "qval_anova"})
 
     # --- Merge
     summary_stats = reg_renamed.merge(anova_renamed, on="gene", how="left")
@@ -121,9 +110,7 @@ def summarize_gene_stats(
 
     # --- Optional logging/display
     if logger is not None:
-        logger.info(
-            "=== Top plaque-proximal genes (negative slope, smallest q-values) ==="
-        )
+        logger.info("=== Top plaque-proximal genes (negative slope, smallest q-values) ===")
         logger.info(top_df.head())
 
     if logger is not None:
@@ -240,11 +227,58 @@ def compute_genewise_categorical_anova(
     anova_df["qval"] = qvals
 
     # Sort by raw p-value, placing NaNs at the end
-    anova_df = anova_df.sort_values("anova_pval", na_position="last").reset_index(
-        drop=True
-    )
+    anova_df = anova_df.sort_values("anova_pval", na_position="last").reset_index(drop=True)
 
     return anova_df
+
+
+def compute_group_means_for_gene(
+    data: pd.DataFrame,
+    gene: str,
+    group_col: str = "distance_bin",
+) -> pd.DataFrame:
+    """
+    Compute per-group mean and SEM of a gene across levels of a categorical column.
+
+    Parameters
+    ----------
+    data : pd.DataFrame
+        Input DataFrame containing the gene column and the grouping column.
+    gene : str
+        Gene (column) name to summarize.
+    group_col : str, default "distance_bin"
+        Name of the categorical grouping column.
+
+    Returns
+    -------
+    pd.DataFrame
+        Table with columns [group_col, "mean_expr", "sem_expr", "n"], ordered by
+        the categorical order of `group_col` if it is categorical, otherwise by
+        the group labels' sorted order.
+    """
+    if group_col not in data.columns:
+        raise KeyError(f"`group_col` '{group_col}' not found in `data`.")
+    if gene not in data.columns:
+        raise KeyError(f"Gene '{gene}' not found in `data`.")
+
+    df = data[[gene, group_col]].dropna().copy()
+
+    # Aggregate
+    grouped = (
+        df.groupby(group_col)[gene]
+        .agg(["mean", "sem", "count"])  # yields columns: mean, sem, count
+        .rename(columns={"mean": "mean_expr", "sem": "sem_expr", "count": "n"})
+    )
+
+    # Respect categorical order if present
+    if pd.api.types.is_categorical_dtype(df[group_col]):
+        categories = df[group_col].cat.categories
+        grouped = grouped.reindex(categories)
+    else:
+        grouped = grouped.sort_index()
+
+    result = grouped.reset_index()
+    return result
 
 
 def regress_expression_vs_distance(
@@ -404,29 +438,21 @@ def summarize_pig_expression_by_distance(
 
     pig_cols = [g for g in pig_genes if g in df.columns]
     if not pig_cols:
-        raise ValueError(
-            "None of the specified `pig_genes` are present in the DataFrame."
-        )
+        raise ValueError("None of the specified `pig_genes` are present in the DataFrame.")
 
     # Work on a copy to avoid mutating the caller's DataFrame
     tmp = df.copy()
 
     # Assign distance bins via equal quantiles
-    tmp["distance_bin"] = pd.qcut(
-        tmp[distance_col].astype(float), q=q, duplicates="drop"
-    )
+    tmp["distance_bin"] = pd.qcut(tmp[distance_col].astype(float), q=q, duplicates="drop")
 
     # Compute mean and SEM for each distance bin
     mean_expr = tmp.groupby("distance_bin")[pig_cols].mean().reset_index()
     sem_expr = tmp.groupby("distance_bin")[pig_cols].sem().reset_index()
 
     # Melt to long-form and merge mean/sem
-    summary_df = mean_expr.melt(
-        id_vars="distance_bin", var_name="gene", value_name="mean_expr"
-    )
-    sem_melted = sem_expr.melt(
-        id_vars="distance_bin", var_name="gene", value_name="sem_expr"
-    )
+    summary_df = mean_expr.melt(id_vars="distance_bin", var_name="gene", value_name="mean_expr")
+    sem_melted = sem_expr.melt(id_vars="distance_bin", var_name="gene", value_name="sem_expr")
     summary_df = summary_df.merge(sem_melted, on=["distance_bin", "gene"], how="left")
 
     # Cell counts per bin (sorted by categorical order)
