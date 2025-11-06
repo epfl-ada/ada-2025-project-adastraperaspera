@@ -2,17 +2,16 @@
 ## Spatial Analysis in Alzheimer's Disease: Modeling Gene Expression and Morphology Around Amyloid-β Plaques
 
 ## Abstract
-
 This project investigates how Aβ plaques impact the surrounding microenvironment. We aim to develop a quantitative model to precisely describe the influence of the plaques on the surrounding tissue. Knowing which genes and cells are impacted at different plaque distances can refine our understanding of Alzheimer's development. Further, the developers of new drugs can use our model to select realistic targets within the plaque regions accessible from the vasculature.
 
-Our story explores how plaque proximity impacts the cellular, molecular, and tissue environments. We aim to analyze the cell‑to‑plaque distances and apply rigorous statistical tests to describe the spatial trends in gene expression and cell composition. Further, we look at the interplay between gene expression and cell composition, asking ourselves which of the two phenomena is the underlying cause. Finally, we flip the perspective and benchmark predictive models to infer plaque distance from multigene expression.
+Our story explores how plaque proximity impacts the cellular, molecular, and tissue environments. We aim to analyze the cell-to-plaque distances and apply rigorous statistical tests to describe the spatial trends in gene expression and cell composition. Further, we look at the interplay between gene expression and cell composition, asking ourselves which of the two phenomena is the underlying cause. Finally, we flip the perspective and benchmark predictive models to infer plaque distance from multigene expression.
 
 ## Research Questions and Key Findings
 
 ### **RQ1 — How does gene expression change with distance from plaques?**
 Expression of 16 Plaque-Induced Genes (PIGs) was regressed on plaque distance and compared across bins.
 Most PIGs (*Gfap, Cst3, Apoe, B2m, Hexb*) show significantly negative slopes (FDR < 0.01), confirming decreasing expression with distance.
-*Gfap* decays fastest (half-distance ~130 μm). Sparse genes (*Cxcl10, Ifit3, Nrep*) show weaker trends.
+*Gfap* decays fastest (half-distance ≈ 130 µm). Sparse genes (*Cxcl10, Ifit3, Nrep*) show weaker trends.
 
 <p align="center">
   <img src="src/data/figures/rq1_expr_by_dist_bin.png" width="480">
@@ -26,12 +25,12 @@ Leiden clustering on **347 genes (~54 k cells)** identified 22 clusters mapped t
   <table>
     <tr>
       <td align="center" style="border: none;">
-        <img src="src/data/figures/rq2_clusters.png" width="300" alt="Leiden clusters"><br>
+        <img src="src/data/figures/rq2_clusters.png" width="300"><br>
         <em>Leiden clusters</em>
       </td>
       <td align="center" style="border: none;">
-        <img src="src/data/figures/cell_type_v_distance.png" width="300" alt="Cell type composition by distance to plaque"><br>
-        <em>Cell type composition by distance to plaque</em>
+        <img src="src/data/figures/cell_type_v_distance.png" width="300"><br>
+        <em>Cell-type composition by distance to plaque</em>
       </td>
     </tr>
   </table>
@@ -48,11 +47,11 @@ Thus, plaque effects reflect both **cell-type redistribution** and **intrinsic t
   <table>
     <tr>
       <td align="center" style="border: none;">
-        <img src="src/data/figures/Apoe_vs_dist.png" width="400" alt="Apoe regression by distance and cell type"><br>
-        <em>Apoe regression by distance and cell type</em>
+        <img src="src/data/figures/Apoe_vs_dist.png" width="400"><br>
+        <em><em>Apoe</em> regression by distance and cell type</em>
       </td>
       <td align="center" style="border: none;">
-        <img src="src/data/figures/pig_type_correlation.png" width="400" alt="Spearman correlation between PIGs and cell types"><br>
+        <img src="src/data/figures/pig_type_correlation.png" width="400"><br>
         <em>Spearman correlation between PIGs and cell types</em>
       </td>
     </tr>
@@ -88,8 +87,6 @@ These additions should raise explanatory power, reduce heteroscedasticity, and i
 
 Feasible on MacBook Pro (M4, 16 GB); full pipeline < 10 min.
 
----
-
 ## Methods
 
 **Preprocessing:** Automatic download → QC filtering → log₁₊ normalization → plaque alignment → distance computation → merged dataset.
@@ -104,8 +101,6 @@ Feasible on MacBook Pro (M4, 16 GB); full pipeline < 10 min.
 
 All core logic modularized under `src/scripts/` and executed via a single Jupyter notebook.
 
----
-
 ## Data Understanding
 
 | Category       | Description                                                                 |
@@ -115,7 +110,7 @@ All core logic modularized under `src/scripts/` and executed via a single Jupyte
 | Molecular      | **347 genes** (incl. 16 PIGs)                                               |
 | Derived        | Cluster ID, cell-type, distance bin, distance to plaque, nearest plaque area                                         |
 
-Distributions: cell areas are log-normal (median ≈ 120 µm²); distances 0–350 µm (median ≈ 95 µm); PIG ρ ≈ −0.3 with distance.
+Distributions: median cell area 120 µm²; distances 0–350 µm (median ≈ 95 µm); PIG ρ ≈ −0.3 with distance.
 Visual overlays confirm correct alignment and anatomical structure.
 
 <div align="center">
