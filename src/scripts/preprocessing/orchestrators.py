@@ -84,6 +84,8 @@ def preprocess_cells_and_expression(
     """
     # 1. Download the dataset if not already downloaded
     logger.info("\nDownloading the dataset...\n")
+    os.makedirs(output_dir, exist_ok=True)
+    os.makedirs(PATH_TO_DATA_FOLDER, exist_ok=True)
     xenium_path = download_xenium_dataset(url, output_dir)
 
     # 2. Load the data and combine the cells with the expression matrix
