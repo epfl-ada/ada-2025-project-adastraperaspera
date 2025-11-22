@@ -176,3 +176,4 @@ xenium_data/
 xenium_data/
 .env
 src/data/figures/*.html
+src/data/Xenium_V1_FFPE_TgCRND8_17_9_months/annotations_for_tg_17_with_plaque_data.csv
