@@ -9,9 +9,376 @@ from anndata import AnnData
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+from pandas.api.types import is_numeric_dtype
 import scanpy as sc
+import scanpy.external as sce
 import seaborn as sns
 import statsmodels.formula.api as smf
+
+
+@dataclass
+class LeidenClusteringResult:
+    """
+    Outputs for clustering-only pipeline.
+    """
+
+    df: pd.DataFrame  # Copy of the input with added 'cluster_leiden'
+    adata: AnnData  # AnnData object used by Scanpy (with UMAP computed)
+    gene_cols: list[str]  # Detected numeric gene-expression columns
+
+
+def cluster_cells_leiden(
+    combined_df: pd.DataFrame,
+    *,
+    meta_columns: Iterable[str] | None = None,
+    leiden_resolution: float = 0.6,
+    n_neighbors: int = 15,
+    n_pcs: int = 30,
+    logger: logging.Logger | None = None,
+) -> LeidenClusteringResult:
+    """
+    Run Scanpy clustering (scale → PCA → neighbors → Leiden → UMAP) on a single-cell dataframe.
+    Only clustering is performed; no plaque analysis or plotting.
+
+    Parameters
+    ----------
+    combined_df : pd.DataFrame
+        Input dataframe with at least a 'cell_id' column and numeric gene-expression columns.
+    meta_columns : Iterable[str], optional
+        Column names to exclude from gene detection. If None, a sensible default set is used.
+    leiden_resolution : float, default=0.6
+        Resolution parameter for `sc.tl.leiden`.
+    n_neighbors : int, default=15
+        Number of neighbors for `sc.pp.neighbors`.
+    n_pcs : int, default=30
+        Number of principal components to use for neighbors/UMAP.
+    logger : logging.Logger, optional
+        Logger for progress messages. If None, a module logger is used.
+
+    Returns
+    -------
+    LeidenClusteringResult
+        Dataclass holding the augmented dataframe, AnnData, and detected gene columns.
+    """
+    log = logger or logging.getLogger(__name__)
+    df = combined_df.copy()
+
+    # Defaults for metadata (exclude from gene detection)
+    default_meta = {
+        "cell_id",
+        "x_centroid",
+        "y_centroid",
+        "transcript_counts",
+        "control_probe_counts",
+        "control_codeword_counts",
+        "unassigned_codeword_counts",
+        "total_counts",
+        "cell_area",
+        "nucleus_area",
+        "distance_to_plaque",
+        "nearest_plaque_center_dist",
+        "inside_any_plaque",
+        "nearest_plaque_id",
+        "nearest_plaque_area",
+        "distance_bin",
+        "dist_bin_simple",
+    }
+    meta_cols = set(meta_columns) if meta_columns is not None else default_meta
+
+    # 1) Detect numeric gene columns
+    gene_cols: list[str] = [
+        c for c in df.columns if c not in meta_cols and pd.api.types.is_numeric_dtype(df[c])
+    ]
+    if len(gene_cols) == 0:
+        raise ValueError("No numeric gene columns detected. Check `meta_columns` or input dtypes.")
+
+    log.info("Detected %d gene columns", len(gene_cols))
+
+    # 2) Build AnnData for Scanpy
+    adata = sc.AnnData(df[gene_cols].to_numpy())
+    # Minimal obs
+    adata.obs = pd.DataFrame(
+        {
+            "cell_id": df["cell_id"].astype(str).values,
+        },
+        index=df["cell_id"].astype(str).values,
+    )
+    adata.obs_names = df["cell_id"].astype(str).values
+    adata.var_names = pd.Index(gene_cols, name="genes")
+
+    log.info("AnnData created with shape %s", adata.shape)
+    log.info("=== PCA → Neighbors → Leiden Clustering ===")
+
+    # 3) Scanpy pipeline
+    sc.pp.scale(adata, max_value=10)
+    sc.tl.pca(adata, n_comps=n_pcs, svd_solver="arpack")
+    sc.pp.neighbors(adata, n_neighbors=n_neighbors, n_pcs=n_pcs)
+    sc.tl.leiden(adata, resolution=leiden_resolution, key_added="leiden")
+    sc.tl.umap(adata)
+
+    log.info("Leiden cluster counts:\n%s", adata.obs["leiden"].value_counts())
+
+    # 4) Add cluster labels back to df
+    df["cluster_leiden"] = adata.obs["leiden"].reindex(df["cell_id"].astype(str)).values
+    log.info("Added 'cluster_leiden' column to dataframe.")
+
+    return LeidenClusteringResult(df=df, adata=adata, gene_cols=gene_cols)
+
+
+def plot_leiden_umap_grid(
+    adata_by_mouse: Mapping[str, AnnData],
+    order: Sequence[str],
+    *,
+    n_cols: int = 3,
+    figsize: tuple[float, float] = (12.0, 8.0),
+    legend_loc: str | None = "on data",
+    suptitle: str | None = "Leiden clusters across mice",
+) -> None:
+    """
+    Plot a grid of UMAPs colored by Leiden clusters for a given mouse order.
+    """
+    n = len(order)
+    n_cols = max(1, n_cols)
+    n_rows = (n + n_cols - 1) // n_cols
+
+    fig, axes = plt.subplots(n_rows, n_cols, figsize=figsize, squeeze=False)
+    for i, mouse in enumerate(order):
+        r, c = divmod(i, n_cols)
+        ax = axes[r][c]
+        if mouse not in adata_by_mouse:
+            ax.axis("off")
+            ax.text(0.5, 0.5, f"{mouse}\n(no data)", ha="center", va="center", fontsize=10)
+            continue
+        adata = adata_by_mouse[mouse]
+        sc.pl.umap(
+            adata,
+            color=["leiden"],
+            legend_loc=legend_loc,
+            frameon=False,
+            title=str(mouse),
+            show=False,
+            ax=ax,
+        )
+    # Hide any unused axes
+    for j in range(n, n_rows * n_cols):
+        r, c = divmod(j, n_cols)
+        axes[r][c].axis("off")
+    if suptitle:
+        fig.suptitle(suptitle)
+    fig.tight_layout()
+    plt.show()
+
+
+def plot_leiden_spatial_grid(
+    df_by_mouse: Mapping[str, pd.DataFrame],
+    order: Sequence[str],
+    *,
+    n_cols: int = 3,
+    figsize: tuple[float, float] = (12.0, 8.0),
+    sample_for_scatter: int | None = 20_000,
+    random_state: int = 0,
+    suptitle: str | None = "Spatial map of Leiden clusters across mice",
+) -> None:
+    """
+    Plot a grid of spatial scatterplots colored by Leiden clusters for a given mouse order.
+    """
+    n = len(order)
+    n_cols = max(1, n_cols)
+    n_rows = (n + n_cols - 1) // n_cols
+
+    fig, axes = plt.subplots(n_rows, n_cols, figsize=figsize, squeeze=False)
+    for i, mouse in enumerate(order):
+        r, c = divmod(i, n_cols)
+        ax = axes[r][c]
+        if mouse not in df_by_mouse or df_by_mouse[mouse] is None:
+            ax.axis("off")
+            ax.text(0.5, 0.5, f"{mouse}\n(no data)", ha="center", va="center", fontsize=10)
+            continue
+        df = df_by_mouse[mouse]
+        required = {"x_centroid", "y_centroid", "cluster_leiden"}
+        if not required.issubset(df.columns):
+            ax.axis("off")
+            ax.text(
+                0.5,
+                0.5,
+                f"{mouse}\n(missing {sorted(required - set(df.columns))})",
+                ha="center",
+                va="center",
+                fontsize=10,
+            )
+            continue
+        plot_df = df
+        if sample_for_scatter is not None and sample_for_scatter < len(df):
+            plot_df = df.sample(sample_for_scatter, random_state=random_state)
+        sns.scatterplot(
+            data=plot_df,
+            x="x_centroid",
+            y="y_centroid",
+            hue="cluster_leiden",
+            palette="tab20",
+            s=6,
+            linewidth=0,
+            alpha=0.7,
+            ax=ax,
+            legend=False,
+        )
+        ax.invert_yaxis()
+        ax.set_title(str(mouse))
+        ax.set_xlabel("X coordinate (µm)")
+        ax.set_ylabel("Y coordinate (µm)")
+    # Hide any unused axes
+    for j in range(n, n_rows * n_cols):
+        r, c = divmod(j, n_cols)
+        axes[r][c].axis("off")
+    if suptitle:
+        fig.suptitle(suptitle)
+    fig.tight_layout()
+    plt.show()
+
+
+@dataclass
+class JointLeidenClusteringResult:
+    """
+    Outputs for joint clustering across multiple mice.
+    """
+
+    df_by_mouse: dict[str, pd.DataFrame]
+    adata: AnnData
+    adata_by_mouse: dict[str, AnnData]
+    gene_cols: list[str]
+
+
+def cluster_cells_leiden_joint(
+    df_by_mouse: Mapping[str, pd.DataFrame],
+    *,
+    meta_columns: Iterable[str] | None = None,
+    leiden_resolution: float = 0.6,
+    n_neighbors: int = 15,
+    n_pcs: int = 30,
+    logger: logging.Logger | None = None,
+) -> JointLeidenClusteringResult:
+    """
+    Joint Scanpy Leiden clustering across multiple mice with optional BBKNN integration.
+    Cluster labels are global and comparable across mice.
+    """
+    log = logger or logging.getLogger(__name__)
+    if not df_by_mouse:
+        raise ValueError("`df_by_mouse` is empty – nothing to cluster.")
+
+    default_meta = {
+        "cell_id",
+        "x_centroid",
+        "y_centroid",
+        "transcript_counts",
+        "control_probe_counts",
+        "control_codeword_counts",
+        "unassigned_codeword_counts",
+        "total_counts",
+        "cell_area",
+        "nucleus_area",
+        "distance_to_plaque",
+        "nearest_plaque_center_dist",
+        "inside_any_plaque",
+        "nearest_plaque_id",
+        "nearest_plaque_area",
+        "distance_bin",
+        "dist_bin_simple",
+        "mouse",
+        "mouse_id",
+    }
+    meta_cols = set(meta_columns) if meta_columns is not None else default_meta
+
+    per_mouse_gene_cols: dict[str, list[str]] = {}
+    per_mouse_dfs: list[pd.DataFrame] = []
+    for mouse, df in df_by_mouse.items():
+        if df is None or df.empty:
+            log.warning("Mouse %s has empty DataFrame; skipping.", mouse)
+            continue
+        df_local = df.copy()
+        if "cell_id" not in df_local.columns:
+            raise KeyError(f"DataFrame for mouse '{mouse}' is missing a 'cell_id' column.")
+        df_local["cell_id"] = df_local["cell_id"].astype(str)
+        df_local["mouse"] = str(mouse)
+        gene_cols_mouse = [
+            c for c in df_local.columns if c not in meta_cols and is_numeric_dtype(df_local[c])
+        ]
+        if not gene_cols_mouse:
+            raise ValueError(f"No numeric gene columns detected for mouse '{mouse}'.")
+        per_mouse_gene_cols[mouse] = gene_cols_mouse
+        per_mouse_dfs.append(df_local)
+    if not per_mouse_dfs:
+        raise ValueError("All DataFrames were empty – no cells to cluster.")
+
+    gene_sets = [set(cols) for cols in per_mouse_gene_cols.values()]
+    gene_cols = sorted(set.intersection(*gene_sets))
+    if not gene_cols:
+        raise ValueError(
+            "No overlapping gene columns across mice. "
+            "Check that all DataFrames share the same gene panel and `meta_columns`."
+        )
+    if any(set(cols) != gene_sets[0] for cols in gene_sets[1:]):
+        log.warning(
+            "Gene columns differ between mice; using intersection of %d genes.", len(gene_cols)
+        )
+
+    log.info(
+        "Joint clustering across %d mice using %d gene columns.", len(per_mouse_dfs), len(gene_cols)
+    )
+
+    combined_df = pd.concat(per_mouse_dfs, axis=0, ignore_index=False)
+    combined_df["cell_uid"] = (
+        combined_df["mouse"].astype(str) + "__" + combined_df["cell_id"].astype(str)
+    )
+    combined_df = combined_df.set_index("cell_uid", drop=False)
+    if combined_df.index.has_duplicates:
+        raise ValueError(
+            "Non-unique 'cell_uid' index after concatenation. "
+            "Check that 'cell_id' is unique per mouse."
+        )
+
+    X = combined_df[gene_cols].to_numpy(dtype=np.float32)
+    adata = sc.AnnData(X)
+    adata.obs = combined_df[["cell_id", "mouse"]].copy()
+    adata.obs_names = combined_df.index.astype(str)
+    adata.var_names = pd.Index(gene_cols, name="genes")
+
+    log.info("Global AnnData created with shape %s", adata.shape)
+    log.info("=== Joint PCA → Neighbors (batch-aware) → Leiden → UMAP ===")
+
+    sc.pp.scale(adata, max_value=10)
+    sc.tl.pca(adata, n_comps=n_pcs, svd_solver="arpack")
+    sce.pp.bbknn(adata, batch_key="mouse", n_pcs=n_pcs, neighbors_within_batch=n_neighbors)
+    sc.tl.leiden(adata, resolution=leiden_resolution, key_added="leiden")
+    sc.tl.umap(adata)
+
+    log.info("Global Leiden cluster counts:\n%s", adata.obs["leiden"].value_counts())
+
+    combined_df["cluster_leiden"] = adata.obs["leiden"].reindex(combined_df.index).values
+
+    df_out: dict[str, pd.DataFrame] = {}
+    adata_out: dict[str, AnnData] = {}
+    for mouse in df_by_mouse.keys():
+        mask = combined_df["mouse"] == str(mouse)
+        if not mask.any():
+            log.warning("No cells for mouse '%s' in combined data.", mouse)
+            continue
+        df_mouse = combined_df.loc[mask].copy()
+        df_out[mouse] = df_mouse
+        adata_mouse = adata[adata.obs["mouse"] == str(mouse)].copy()
+        adata_out[mouse] = adata_mouse
+        log.info(
+            "Mouse %s: %d cells, Leiden clusters: %s",
+            mouse,
+            adata_mouse.n_obs,
+            adata_mouse.obs["leiden"].value_counts().to_dict(),
+        )
+
+    return JointLeidenClusteringResult(
+        df_by_mouse=df_out,
+        adata=adata,
+        adata_by_mouse=adata_out,
+        gene_cols=gene_cols,
+    )
 
 
 def analyze_plaque_distance(
@@ -262,73 +629,34 @@ def analyze_leiden_spatial(
     if missing:
         raise ValueError(f"Input dataframe is missing required columns: {missing}")
 
-    default_meta = {
-        "cell_id",
-        "x_centroid",
-        "y_centroid",
-        "transcript_counts",
-        "control_probe_counts",
-        "control_codeword_counts",
-        "unassigned_codeword_counts",
-        "total_counts",
-        "cell_area",
-        "nucleus_area",
-        "distance_to_plaque",
-        "nearest_plaque_center_dist",
-        "inside_any_plaque",
-        "nearest_plaque_id",
-        "nearest_plaque_area",
-        "distance_bin",
-        "dist_bin_simple",
-    }
-    meta_cols = set(meta_columns) if meta_columns is not None else default_meta
-
     # -----------------------------
-    # 1) Detect numeric gene columns
+    # 1–3) Clustering
     # -----------------------------
-    gene_cols: list[str] = [
-        c for c in df.columns if c not in meta_cols and pd.api.types.is_numeric_dtype(df[c])
-    ]
-    log.info("Detected %d gene columns", len(gene_cols))
-
-    if len(gene_cols) == 0:
-        raise ValueError("No numeric gene columns detected. Check `meta_columns` or input dtypes.")
-
-    # -----------------------------
-    # 2) Build AnnData for Scanpy
-    # -----------------------------
-    adata = sc.AnnData(df[gene_cols].to_numpy())
-    # Minimal obs; 'dist_bin_simple' optional
-    adata.obs = pd.DataFrame(
-        {
-            "cell_id": df["cell_id"].astype(str).values,
-            "distance_to_plaque": pd.to_numeric(df["distance_to_plaque"], errors="coerce").values,
-            "dist_bin_simple": (
-                df["dist_bin_simple"].astype(str).values
-                if "dist_bin_simple" in df.columns
-                else pd.Series([""] * len(df)).values
-            ),
-        },
-        index=df["cell_id"].astype(str).values,
+    clustering = cluster_cells_leiden(
+        df,
+        meta_columns=meta_columns,
+        leiden_resolution=leiden_resolution,
+        n_neighbors=n_neighbors,
+        n_pcs=n_pcs,
+        logger=log,
     )
-    adata.obs_names = df["cell_id"].astype(str).values
-    adata.var_names = pd.Index(gene_cols, name="genes")
+    df = clustering.df
+    adata = clustering.adata
+    gene_cols = clustering.gene_cols
 
-    log.info("AnnData created with shape %s", adata.shape)
-    log.info("=== PCA → Neighbors → Leiden Clustering ===")
+    # Align by cell_id to be robust to any ordering differences
+    if "cell_id" in df.columns:
+        df_idx = df["cell_id"].astype(str)
+        if "distance_to_plaque" in df.columns:
+            dist_series = pd.to_numeric(df["distance_to_plaque"], errors="coerce")
+            dist_aligned = pd.Series(dist_series.values, index=df_idx).reindex(adata.obs_names)
+            adata.obs["distance_to_plaque"] = dist_aligned.values
+        if "dist_bin_simple" in df.columns:
+            bin_series = df["dist_bin_simple"].astype(str)
+            bin_aligned = pd.Series(bin_series.values, index=df_idx).reindex(adata.obs_names)
+            adata.obs["dist_bin_simple"] = bin_aligned.values
 
-    # -----------------------------
-    # 3) Scanpy pipeline
-    # -----------------------------
-    sc.pp.scale(adata, max_value=10)
-    sc.tl.pca(adata, n_comps=n_pcs, svd_solver="arpack")
-    sc.pp.neighbors(adata, n_neighbors=n_neighbors, n_pcs=n_pcs)
-    sc.tl.leiden(adata, resolution=leiden_resolution, key_added="leiden")
-
-    log.info("Leiden cluster counts:\n%s", adata.obs["leiden"].value_counts())
-
-    # UMAP (for visualization)
-    sc.tl.umap(adata)
+    # UMAP plot of clusters
     if plot:
         sc.pl.umap(
             adata,
@@ -338,12 +666,6 @@ def analyze_leiden_spatial(
             title="Leiden clusters",
             show=True,
         )
-
-    # -----------------------------
-    # 4) Add cluster labels to df
-    # -----------------------------
-    df["cluster_leiden"] = adata.obs["leiden"].reindex(df["cell_id"].astype(str)).values
-    log.info("Added 'cluster_leiden' column to dataframe.")
 
     # -----------------------------
     # 5) Spatial distribution plot
