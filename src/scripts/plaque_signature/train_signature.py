@@ -21,7 +21,7 @@ import numpy as np
 import pandas as pd
 import time
 
-from sklearn.linear_model import Ridge, Lasso
+from sklearn.linear_model import Ridge, Lasso, LinearRegression
 from sklearn.metrics import r2_score
 from sklearn.cross_decomposition import PLSRegression
 from sklearn.ensemble import HistGradientBoostingRegressor
@@ -47,6 +47,12 @@ except ImportError:
 # ---------------------------------------------------------
 #                   MODEL TRAINERS
 # ---------------------------------------------------------
+
+def train_linear(X_train, y_train):
+    """Ordinary least squares regression."""
+    model = LinearRegression()
+    model.fit(X_train, y_train)
+    return model
 
 def train_ridge(X_train, y_train):
     model = Ridge(alpha=1.0)
@@ -79,9 +85,7 @@ def train_xgboost(X_train, y_train):
         subsample=0.8,
         colsample_bytree=0.8,
         reg_lambda=1.0,
-        random_state=42,
-        predictor="gpu_predictor",
-    )
+        random_state=42    )
     model.fit(X_train, y_train)
     return model
 
