@@ -41,11 +41,10 @@ repos:
     hooks:
       - id: note-geojson-lfs
         name: Note large GeoJSON in data/, consider Git LFS
-        entry: bash
+        entry: python .pre-commit/check_geojson.py
         language: system
         pass_filenames: false
         always_run: true
-        args: ["-c", "if ls data/*.geojson >/dev/null 2>&1; then echo 'Note: GeoJSON files detected in data/. Consider Git LFS if large.'; fi"]
 
 default_language_version:
   python: python3.11
