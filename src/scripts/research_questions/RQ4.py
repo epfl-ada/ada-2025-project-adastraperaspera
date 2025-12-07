@@ -71,10 +71,20 @@ def run_gene_distance_modeling(
     plot_residual_figure: (
         Callable[[pd.DataFrame, pd.Series, np.ndarray, Sequence[str], Any], None] | None
     ) = None,
+    # NEW:
+    plot_bivariate_resid_dist_spatial: (
+        Callable[[pd.DataFrame, pd.Series, np.ndarray, str], None] | None
+    ) = None,
+    plot_radius_color_spatial: (
+        Callable[[pd.DataFrame, pd.Series, np.ndarray, str], None] | None
+    ) = None,
+    plot_true_pred_kde: Callable[[pd.Series, np.ndarray, str], None] | None = None,
+    plot_residual_vs_distance: Callable[[pd.Series, np.ndarray, str], None] | None = None,
     plaques_poly: Any | None = None,
     logger: logging.Logger | None = None,
     dropna: bool = True,
 ) -> GeneModelingOutput:
+
     """
     Train several models to predict plaque distance from gene expression, collect results,
     compute residual-based diagnostics, and (optionally) run plotting callbacks.
@@ -252,7 +262,7 @@ def run_gene_distance_modeling(
     residuals = y_true - y_pred
     abs_resid = residuals.abs()
 
-    # Optional residual plots
+    """# Optional residual plots
     if plot_pred_vs_true is not None:
         plot_pred_vs_true(y_true, y_pred, model_name=best_model_name)
     if plot_residual_hist is not None:
@@ -261,6 +271,81 @@ def run_gene_distance_modeling(
         plot_spatial_residual_map(cells_with_distances, y_true, y_pred, model_name=best_model_name)
     if plot_residual_figure is not None:
         plot_residual_figure(cells_with_distances, y_true, y_pred, gene_cols, plaques_poly)
+    
+    if plot_resid_distance_bivariate is not None:
+        plot_resid_distance_bivariate(
+            cells_with_distances, y_true, y_pred,
+            x_col="x_centroid", y_col="y_centroid"
+        )
+
+    if plot_spatial_bubble_resid_distance is not None:
+        plot_spatial_bubble_resid_distance(
+            cells_with_distances, y_true, y_pred,
+            x_col="x_centroid", y_col="y_centroid"
+        )
+
+    if plot_kde_true_pred_distance is not None:
+        plot_kde_true_pred_distance(y_true, y_pred, model_name=best_model_name)
+
+    if plot_resid_vs_distance_scatter is not None:
+        plot_resid_vs_distance_scatter(y_true, residuals, model_name=best_model_name)"""
+    # Optional residual plots
+    if plot_pred_vs_true is not None:
+        plot_pred_vs_true(y_true, y_pred, model_name=best_model_name)
+    if plot_residual_hist is not None:
+        plot_residual_hist(y_true, y_pred, model_name=best_model_name)
+    if plot_spatial_residual_map is not None:
+        plot_spatial_residual_map(
+            cells_with_distances, y_true, y_pred, model_name=best_model_name
+        )
+    if plot_residual_figure is not None:
+        plot_residual_figure(
+            cells_with_distances, y_true, y_pred, gene_cols, plaques_poly
+        )
+
+    import matplotlib.pyplot as plt
+
+    # --- NEW plots (combined spatial figure + separate KDE / scatter) ---
+
+    # 1) Combined spatial residual figure (two panels in one figure)
+    if (plot_bivariate_resid_dist_spatial is not None) or (
+        plot_radius_color_spatial is not None
+    ):
+        fig, axes = plt.subplots(1, 2, figsize=(12, 6))
+
+        if plot_bivariate_resid_dist_spatial is not None:
+            plot_bivariate_resid_dist_spatial(
+                cells_with_distances,
+                y_true,
+                y_pred,
+                model_name=best_model_name,
+                ax=axes[0],
+            )
+
+        if plot_radius_color_spatial is not None:
+            plot_radius_color_spatial(
+                cells_with_distances,
+                y_true,
+                y_pred,
+                model_name=best_model_name,
+                ax=axes[1],
+            )
+
+        fig.suptitle(
+            f"{best_model_name.upper()}: residual structure around plaques",
+            fontsize=14,
+        )
+        plt.tight_layout(rect=[0, 0, 1, 0.95])
+
+    # 2) KDE of true vs predicted distance
+    if plot_true_pred_kde is not None:
+        plot_true_pred_kde(y_true, y_pred, model_name=best_model_name)
+
+    # 3) Residual vs true distance scatter with Pearson r in legend
+    if plot_residual_vs_distance is not None:
+        plot_residual_vs_distance(y_true, y_pred, model_name=best_model_name)
+
+
 
     # Pearson correlations (guard against zero variance)
     pearson_corrs: list[tuple[str, float]] = []
