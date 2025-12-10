@@ -13,7 +13,7 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       {/* 👇 IMPORTANT: basename for GitHub Pages project site */}
-      <BrowserRouter basename="/adastraperaspera.io">
+      <BrowserRouter basename="/ada-2025-project-adastraperaspera">
         <Routes>
           <Route path="/" element={<Index />} />
 
