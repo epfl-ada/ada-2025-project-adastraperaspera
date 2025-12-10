@@ -5,7 +5,7 @@ import { componentTagger } from "lovable-tagger";
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
-  base: 'epfl-ada/ada-2025-project-adastraperaspera',
+  base: '/ada-2025-project-adastraperaspera/',
   server: {
     host: "::",
     port: 8080,
