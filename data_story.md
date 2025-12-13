@@ -39,7 +39,7 @@ The induced mutation forces the murine cells to express the amyloid precursor pr
 // 2. Make background transparent so that it blends into the dark theme of the website
 // Current plot was obtained with: src.scripts.visualization.plots.make_image_grid; exact inputs can be found in results.ipynb
 <p align="center">
-  <img src="figures/microscopy_6_mice.png" width="480">
+  <img src="frontend/src/figures/microscopy_6_mice.png" width="480">
   <br><em>Microscopy images of 6 mice</em>
 </p>
 
@@ -50,7 +50,7 @@ The induced mutation forces the murine cells to express the amyloid precursor pr
 \\ Current plot was obtained with: src.scripts.visualization.plots.plot_plaques; exact inputs can be found in results.ipynb
 
 <p align="center">
-  <img src="figures/plaque_geometries.png" width="160">
+  <img src="frontend/src/figures/plaque_geometries.png" width="160">
   <br><em>1736 Aβ plaques visualized in the morphology image</em>
 </p>
 
@@ -61,7 +61,7 @@ Next, for each cell, we computed the distance to the nearest plaque. Namely, we 
 // Make background transparent so that it blends into the dark theme of the website
 
 <p align="center">
-  <img src="figures/cell_to_plaque_distance.png" width="160">
+  <img src="frontend/src/figures/cell_to_plaque_distance.png" width="160">
   <br><em>Brain regions colored by plaque proximity (cool = near plaque)</em>
 </p>
 
@@ -70,11 +70,11 @@ Next, for each cell, we computed the distance to the nearest plaque. Namely, we 
 // Zoom in, transparent background
 
 <p align="center">
-  <img src="figures/cell_distance_distribution.png" width="160">
+  <img src="frontend/src/figures/cell_distance_distribution.png" width="160">
   <br><em>Distribution of cell-to-plaque distance</em>
 </p>
 
-We can see that the maximum distance from any plaque is 457 µm; however, over 99% of all cells are located at most 200 µm from the nearest plaque, with the median being 61 µm.
+We can see that the maximum distance from any plaque is 457 µm; however, over 99% of all cells are located at most 200 µm from the nearest plaque, with the median being 61 µm. The standard deviation is very significant at 44.4 µm. This is supported by the previous figure showing the brain regions by distance to the nearest plaque - some regions are very close, and some are very far. Further, we can observe that the distribution of cell-to-plaque distances is right-skewed, with a long tail of infrequent cells which are very far from the nearest plaque.
 
 ## Gene expression
 
@@ -87,7 +87,7 @@ Looking at the gene selection, out of 347 genes, 248 represent markers for 8 mai
 // 2. Make background transparent so that it blends into the dark theme of the website
 // Current plot was obtained with: src.scripts.visualization.plots.make_image_grid; exact inputs can be found in results.ipynb
 <p align="center">
-  <img src="figures/microscopy_cells_unified.png" width="480">
+  <img src="frontend/src/figures/microscopy_cells_unified.png" width="480">
   <br><em>Single cell images of 6 mice</em>
 </p>
 
@@ -98,7 +98,7 @@ First, let us explore the data by visualizing the distribution of log1p-transfor
 // 2. Make background transparent so that it blends into the dark theme of the website
 // Current plot was obtained with: src.scripts.visualization.plots.plot_gene_distributions; exact inputs can be found in results.ipynb
 <p align="center">
-  <img src="figures/Expression_Distribution.png" width="480">
+  <img src="frontend/src/figures/Expression_Distribution.png" width="480">
   <br><em>Probability distribution of log1p-transformed PIG transcript counts</em>
 </p>
 
@@ -125,12 +125,30 @@ We find that among the 5 most unusual PIGs, Cxcl10 and Cd74 clearly stand out. B
 
 ## Predicting Gene Expression
 
-// ToDo: improve the plot based on src.scripts.visualization.plots.plot_gene_trends; all 16 PIGs should be plotted
-// Zoom in, transparent background
+### Mean PIG expression at different plaque distances
 
+In this section, we investigate how the expression of the 16 plaque-induced genes changes with distance to the nearest plaque. To this end, we group the cells into 5 equal-count distance bins` and compute the mean log1p-normalized transcript count within each bin along with the 95% confidence interval.
+
+// ToDo: improve the plot based on src.scripts.visualization.plots.plot_gene_trends; all 16 PIGs should be plotted
+// One option: utilize src.scripts.visualization.plots.plot_gene_expression_by_distance_interactive, but add all genes at once, not just one at a time
+// Zoom in, transparent background
 <p align="center">
-  <img src="figures/PIG_expression_vs_distance.png" width="160">
+  <img src="frontend/src/figures/PIG_expression_vs_distance.png" width="160">
   <br><em>Expression of PIGs vs. distance to plaque</em>
 </p>
+
+From the figure above, we can see that Gfap shows the biggest difference in the log1p-transformed expression between the closest and furthest distance bin at 0.72. This corresponds to exp(0.72) = 2.05 times more expression in the closest bin compared to the furthest bin. Thus, Gfap shows the strongest spatial variation, as its expression quickly decays as we move away from the plaque. This is supported by the Gfap's role as an intermediate filament protein found predominantly in astrocytes
+
+The visualization also highlights consistent decreasing gradients for microglial (e.g., Hexb, Ctsd, Cst3, Apoe) and astrocytic (e.g., Gfap, Serpina3n, Vim) markers. In other words, the brain regions most proximal to plaques (up to 29 µm) show elevated microglial and astrocytic gene expression that fades with distance.
+
+// ToDo: Integrate this astrocyte image nicely into the website
+<p align="center">
+  <img src="frontend/src/figures/Human_astrocyte.png" width="160">
+  <br><em>Human astrocyte</em>
+</p>
+
+### Plaque distance by cell type
+
+// ToDo
 
 ## Predicting Plaque distance

@@ -13,6 +13,11 @@ export PATH="/my/path/to/ada-venv/bin:$PATH" # <- modify this to your venv path
 # install dependencies (includes Ruff and pre-commit)
 pip install -r pip_requirements.txt
 
+# Enable Jupyter Notebook Table of Contents (TOC)
+jupyter contrib nbextension install --sys-prefix
+jupyter nbextensions_configurator enable --sys-prefix
+jupyter nbextension enable toc2/main --sys-prefix
+
 # install git hooks
 pre-commit install
 
