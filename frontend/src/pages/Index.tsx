@@ -6,6 +6,7 @@ import CellClusteringSection from "@/components/CellClusteringSection";
 import SpatialMapSection from "@/components/SpatialMapSection";
 import MethodologySection from "@/components/MethodologySection";
 import ConclusionSection from "@/components/ConclusionSection";
+import MiscroscopySection from "@/components/MicroscopySection";
 import Footer from "@/components/Footer";
 
 const Index = () => {
@@ -14,6 +15,7 @@ const Index = () => {
       <HeroSection />
       <IntroductionSection />
       <MetricsSection />
+      <MiscroscopySection/>
       <GeneExpressionChart />
       <CellClusteringSection />
       <SpatialMapSection />
