@@ -24,12 +24,162 @@ from statsmodels.stats.multitest import multipletests
 from matplotlib.colors import Normalize
 import seaborn as sns
 from scipy.stats import gaussian_kde
+from matplotlib.ticker import MaxNLocator
+from scipy.stats import pearsonr
+from pathlib import Path
+from typing import Dict, Tuple, Iterable
 
 from src.utils.logging_utils import logger
 
 from ..preprocessing.partition import gaussian_kde
 
 Number = Union[int, float, np.number]
+
+def load_png_rgb(path: Path) -> np.ndarray:
+    """Load PNG as RGB array (H, W, 3)."""
+    if not path.exists():
+        raise FileNotFoundError(str(path))
+
+    img = plt.imread(str(path))
+
+    # Grayscale -> RGB
+    if img.ndim == 2:
+        img = np.repeat(img[..., None], 3, axis=2)
+
+    # RGBA -> RGB
+    if img.ndim == 3 and img.shape[2] == 4:
+        img = img[..., :3]
+
+    if img.ndim != 3 or img.shape[2] != 3:
+        raise ValueError(f"Unexpected image shape {img.shape} for {path}")
+
+    return img
+
+
+def pad_to_max(img: np.ndarray, target_h: int, target_w: int) -> np.ndarray:
+    """Center-pad with black margins up to (target_h, target_w)."""
+    h, w, c = img.shape
+    if c != 3:
+        raise ValueError("Expected RGB (H,W,3)")
+
+    pad_h = max(0, target_h - h)
+    pad_w = max(0, target_w - w)
+
+    top = pad_h // 2
+    bottom = pad_h - top
+    left = pad_w // 2
+    right = pad_w - left
+
+    return np.pad(
+        img,
+        pad_width=((top, bottom), (left, right), (0, 0)),
+        mode="constant",
+        constant_values=0,
+    )
+
+
+def _infer_grid_shape(key_to_pos: Dict[str, Tuple[int, int]]) -> Tuple[int, int]:
+    """Infer (n_rows, n_cols) from the maximum indices in key_to_pos."""
+    max_row = max(r for r, _ in key_to_pos.values())
+    max_col = max(c for _, c in key_to_pos.values())
+    return max_row + 1, max_col + 1
+
+
+def make_image_grid(
+    *,
+    files: Dict[str, Path],
+    key_to_pos: Dict[str, Tuple[int, int]],
+    col_ticks: Iterable[str],
+    row_ticks: Iterable[str],
+    flip_h_keys: Iterable[str] = (),
+    figsize: Tuple[float, float] = (15, 9),
+) -> None:
+    """
+    Create and display an image grid with unified axes.
+
+    Parameters
+    ----------
+    files
+        Mapping from logical key -> image path.
+    key_to_pos
+        Mapping from logical key -> (row, col) position in the grid.
+    col_ticks
+        Labels for columns (left to right).
+    row_ticks
+        Labels for rows (top to bottom).
+    flip_h_keys
+        Keys whose images should be horizontally flipped.
+    figsize
+        Matplotlib figure size.
+    """
+    flip_h_keys = set(flip_h_keys)
+
+    # 1) Load images
+    imgs: Dict[str, np.ndarray] = {}
+    shapes = []
+
+    for key, path in files.items():
+        img = load_png_rgb(path)
+        if key in flip_h_keys:
+            img = np.fliplr(img)
+        imgs[key] = img
+        shapes.append(img.shape[:2])
+
+    # 2) Target size
+    max_h = max(h for h, _ in shapes)
+    max_w = max(w for _, w in shapes)
+
+    # 3) Grid creation
+    n_rows, n_cols = _infer_grid_shape(key_to_pos)
+    fig, axes = plt.subplots(n_rows, n_cols, figsize=figsize)
+
+    if n_rows == 1 and n_cols == 1:
+        axes = np.array([[axes]])
+    elif n_rows == 1 or n_cols == 1:
+        axes = np.atleast_2d(axes)
+
+    for ax in axes.ravel():
+        ax.set_xticks([])
+        ax.set_yticks([])
+        ax.set_frame_on(False)
+
+    # 4) Plot images
+    for key, (r, c) in key_to_pos.items():
+        img = pad_to_max(imgs[key], target_h=max_h, target_w=max_w)
+        axes[r, c].imshow(img, aspect="equal", interpolation="nearest")
+
+    plt.subplots_adjust(
+        left=0.05, right=0.98, bottom=0.08, top=0.98, wspace=0.02, hspace=0.02
+    )
+
+    # 5) Unified axis overlay
+    positions = [ax.get_position() for ax in axes.ravel()]
+    left = min(p.x0 for p in positions)
+    right = max(p.x1 for p in positions)
+    bottom = min(p.y0 for p in positions)
+    top = max(p.y1 for p in positions)
+
+    big_ax = fig.add_axes(
+        [left, bottom, right - left, top - bottom], frameon=False
+    )
+    big_ax.set_zorder(10)
+    big_ax.patch.set_alpha(0)
+
+    big_ax.set_xlim(0, n_cols)
+    big_ax.set_ylim(0, n_rows)
+
+    big_ax.set_xticks(
+        [i + 0.5 for i in range(n_cols)], labels=list(col_ticks)
+    )
+    big_ax.set_yticks(
+        [n_rows - (i + 0.5) for i in range(n_rows)], labels=list(row_ticks)
+    )
+
+    big_ax.set_xlabel("Age (months)")
+    big_ax.set_ylabel("Type")
+    big_ax.tick_params(axis="both", which="both", length=0)
+
+    plt.show()
 
 
 def plot_kde_with_stats(
@@ -136,42 +286,41 @@ def savefig(path: str, fig=None):
 def plot_gene_distributions(
     df: pd.DataFrame,
     genes: Sequence[str],
+    all_genes: Sequence[str] | None = None,
     bins: int = 50,
     cols: int = 4,
     use_log1p: bool = True,
     kde: bool = True,
-    clip_quantiles: tuple[float, float] = (0.0, 0.995),  # trim extreme tails consistently
+    clip_quantiles: tuple[float, float] = (0.0, 0.995),
     figsize: tuple[int, int] | None = None,
-    suptitle: str = "Per-gene expression distributions (hist + KDE)",
+    suptitle: str | None = None,
     show_zero_fraction: bool = True,
     show_iqr: bool = True,
     show_median: bool = True,
-    hist_alpha: float = 0.5,
+    hist_alpha: float = 0.6,
     kde_lw: float = 1.6,
     dpi: int = 120,
     save_path: str | None = None,
 ):
-    """
-    Plot histogram + KDE for a set of genes.
 
-    Args:
-        df (pd.DataFrame): Expression DataFrame (cells x genes).
-        genes (Sequence[str]): List of gene column names to plot.
-        bins (int): Number of histogram bins.
-        cols (int): Number of subplot columns.
-        title (str): Figure title.
-        figsize (tuple, optional): (width, height) in inches.
-            Defaults to (4*cols, 3.2*rows).
-        show (bool): Whether to display the plot.
-        save_path (str, optional): If provided, save the figure to this path.
 
-    Returns:
-        matplotlib.figure.Figure: The created figure.
-    """
     arrays = []
     present = [g for g in genes if g in df.columns]
     if not present:
         raise ValueError("None of the requested genes are present in the dataframe.")
+
+    if all_genes is None:
+        all_genes = genes
+    all_present = [g for g in all_genes if g in df.columns]
+
+    avg_arrays = []
+    for g in all_present:
+        x = df[g].to_numpy(dtype=float)
+        if use_log1p:
+            x = np.log1p(x)
+        x = x[np.isfinite(x)]
+        if x.size:
+            avg_arrays.append(x)
 
     for g in present:
         x = df[g].to_numpy(dtype=float)
@@ -180,20 +329,86 @@ def plot_gene_distributions(
         x = x[np.isfinite(x)]
         arrays.append(x)
 
-    # Global clip to remove extreme tails consistently (optional but helps aesthetics)
-    all_vals = np.concatenate(arrays) if len(arrays) else np.array([])
+    all_vals = np.concatenate(arrays + avg_arrays) if (len(arrays) + len(avg_arrays)) else np.array([])
     if all_vals.size == 0:
         raise ValueError("No finite values to plot.")
     lo = np.quantile(all_vals, clip_quantiles[0])
     hi = np.quantile(all_vals, clip_quantiles[1])
-    # Avoid degenerate ranges
     if not np.isfinite(lo) or not np.isfinite(hi) or hi <= lo:
         lo, hi = float(np.nanmin(all_vals)), float(np.nanmax(all_vals))
 
-    # Build common bin edges
     bin_edges = np.linspace(lo, hi, bins + 1)
+    bw = float(bin_edges[1] - bin_edges[0]) if bins > 0 else 1.0
+    centers = 0.5 * (bin_edges[:-1] + bin_edges[1:])
 
-    # --- layout ---
+    gene_hist_color = "#4C78A8"
+    gene_kde_color = "#1F77B4"
+    gene_iqr_color = "#B3D9FF"
+
+    avg_hist_color = "#F4A261"
+    avg_kde_color = "#F28E2B"
+    avg_iqr_color = "#FFE0B2"
+
+    iqr_alpha = 0.45
+
+    avg_hist = None
+    avg_xs = None
+    avg_kde_counts = None
+    avg_q25 = avg_q75 = None
+    avg_mean = None
+    avg_zero_frac = None
+
+    if avg_arrays:
+        hists = []
+        q25s = []
+        q75s = []
+        means = []
+        for x in avg_arrays:
+            h, _ = np.histogram(x, bins=bin_edges, density=False)
+            hists.append(h.astype(float))
+            q25, q75 = np.quantile(x, [0.25, 0.75])
+            q25s.append(float(q25))
+            q75s.append(float(q75))
+            means.append(float(np.mean(x)))
+        avg_hist = np.mean(np.stack(hists, axis=0), axis=0) if hists else None
+        avg_q25 = float(np.mean(q25s)) if q25s else None
+        avg_q75 = float(np.mean(q75s)) if q75s else None
+        avg_mean = float(np.mean(means)) if means else None
+
+        if kde:
+            avg_xs = np.linspace(lo, hi, 400)
+            pdfs_counts = []
+            for x in avg_arrays:
+                if x.size > 5:
+                    x_pos = x[x > 0]
+                    x_kde = x_pos if x_pos.size > 5 else x
+                    try:
+                        pdf = gaussian_kde(x_kde)(avg_xs)
+                        pdfs_counts.append(pdf * float(x.size) * bw)
+                    except Exception:
+                        pass
+            if pdfs_counts:
+                avg_kde_counts = np.mean(np.stack(pdfs_counts, axis=0), axis=0)
+
+        if show_zero_fraction and all_present:
+            zfs = []
+            for g in all_present:
+                raw = df[g].to_numpy(dtype=float)
+                if use_log1p:
+                    zfs.append(float(np.mean(raw <= 0.0)))
+                else:
+                    zfs.append(float(np.mean(raw == 0.0)))
+            avg_zero_frac = float(np.mean(zfs)) if zfs else None
+
+    y_max_global = 1.0
+    for x in arrays:
+        if x.size:
+            y_max_global = max(y_max_global, float(np.max(np.histogram(x, bins=bin_edges, density=False)[0])))
+    if avg_hist is not None and np.isfinite(avg_hist).any():
+        y_max_global = max(y_max_global, float(np.nanmax(avg_hist)))
+    if avg_kde_counts is not None and np.isfinite(avg_kde_counts).any():
+        y_max_global = max(y_max_global, float(np.nanmax(avg_kde_counts)))
+
     n = len(present)
     rows = (n + cols - 1) // cols
     if figsize is None:
@@ -208,83 +423,230 @@ def plot_gene_distributions(
             "axes.grid": True,
             "grid.linestyle": "--",
             "grid.linewidth": 0.4,
+            "grid.alpha": 0.35,
             "axes.titlesize": 11,
-            "axes.labelsize": 10,
             "xtick.labelsize": 9,
             "ytick.labelsize": 9,
         }
     )
 
-    fig, axes = plt.subplots(rows, cols, figsize=figsize)
+    fig, axes = plt.subplots(rows, cols, figsize=figsize, sharex=True, sharey=True)
+    fig.set_facecolor("white")
     axes = np.atleast_1d(axes).ravel()
 
-    # --- draw panels ---
-    for ax, gene in zip(axes, present, strict=False):
-        x = df[gene].to_numpy(dtype=float)
+    bar_w = 0.44 * bw
+    shift = 0.23 * bw
+    bar_alpha = 1.0
+
+    for i, (ax, gene) in enumerate(zip(axes, present, strict=False)):
+        ax.set_facecolor("#FCFCFF")
+
+        x_raw = df[gene].to_numpy(dtype=float)
+        x = x_raw.copy()
         if use_log1p:
             x = np.log1p(x)
         x = x[np.isfinite(x)]
         if x.size == 0:
-            ax.text(0.5, 0.5, "No data", ha="center", va="center")
+            ax.text(0.5, 0.5, "No data", ha="center", va="center", color="black")
             ax.axis("off")
             continue
 
-        # Histogram on common bins
-        counts, _, _ = ax.hist(
-            x, bins=bin_edges, density=True, alpha=hist_alpha, color="#4C78A8", edgecolor="none"
+        if show_iqr and avg_q25 is not None and avg_q75 is not None:
+            ax.axvspan(
+                avg_q25,
+                avg_q75,
+                facecolor=avg_iqr_color,
+                edgecolor=avg_iqr_color,
+                alpha=iqr_alpha,
+                linewidth=0.6,
+                zorder=0.6,
+            )
+
+        q25 = q75 = None
+        if show_iqr:
+            q25, q75 = np.quantile(x, [0.25, 0.75])
+            ax.axvspan(
+                float(q25),
+                float(q75),
+                facecolor=gene_iqr_color,
+                edgecolor=gene_iqr_color,
+                alpha=iqr_alpha,
+                linewidth=0.6,
+                zorder=0.7,
+            )
+
+        gene_counts, _ = np.histogram(x, bins=bin_edges, density=False)
+
+        if avg_hist is not None:
+            ax.bar(
+                centers - shift,
+                avg_hist,
+                width=bar_w,
+                align="center",
+                alpha=bar_alpha,
+                color=avg_hist_color,
+                edgecolor=avg_hist_color,
+                linewidth=0.35,
+                zorder=1.0,
+            )
+
+        ax.bar(
+            centers + shift,
+            gene_counts,
+            width=bar_w,
+            align="center",
+            alpha=bar_alpha,
+            color=gene_hist_color,
+            edgecolor=gene_hist_color,
+            linewidth=0.35,
+            zorder=1.1,
         )
 
-        # KDE on positives if enough nonzeros; else on all x
+        gene_pdf_counts = None
         if kde and x.size > 5:
             x_pos = x[x > 0]
             x_kde = x_pos if x_pos.size > 5 else x
             try:
                 xs = np.linspace(lo, hi, 400)
-                pdf = gaussian_kde(x_kde)(xs)
-                ax.plot(xs, pdf, lw=kde_lw, color="#1F77B4", label="KDE")
+                gene_pdf_counts = gaussian_kde(x_kde)(xs) * float(x.size) * bw
+                ax.plot(xs, gene_pdf_counts, lw=kde_lw, color=gene_kde_color, zorder=2.2)
             except Exception:
-                pass
+                gene_pdf_counts = None
 
-        # Median & IQR markers (for distributions; more informative than SEM here)
-        if show_median or show_iqr:
-            q25, q50, q75 = np.quantile(x, [0.25, 0.50, 0.75])
-            ymax = np.nanmax(counts) if np.isfinite(counts).any() else ax.get_ylim()[1]
-            if show_iqr:
-                ax.axvspan(q25, q75, color="0.85", alpha=0.6, zorder=0, label="IQR")
-            if show_median:
-                ax.axvline(q50, color="#E45756", ls="--", lw=1.2, label="Median")
+        if avg_kde_counts is not None and avg_xs is not None:
+            ax.plot(avg_xs, avg_kde_counts, lw=kde_lw, color=avg_kde_color, zorder=2.1)
 
-        # Zero fraction (helpful with zero-inflated genes)
+        if show_median:
+            gene_mean = float(np.mean(x))
+            ax.axvline(gene_mean, color=gene_kde_color, ls="--", lw=1.2, zorder=2.35)
+            if avg_mean is not None:
+                ax.axvline(avg_mean, color=avg_kde_color, ls="--", lw=1.2, zorder=2.3)
+
         if show_zero_fraction:
+            gene_zero_frac = None
             if use_log1p:
-                zero_frac = np.mean(
-                    df[gene].to_numpy(dtype=float) <= 0.0
-                )  # original values before log1p
+                gene_zero_frac = float(np.mean(x_raw <= 0.0))
             else:
-                zero_frac = np.mean(df[gene].to_numpy(dtype=float) == 0.0)
-            ax.text(
-                0.98,
-                0.95,
-                f"zeros: {zero_frac*100:.1f}%",
-                transform=ax.transAxes,
-                ha="right",
-                va="top",
-                fontsize=8,
-                color="0.3",
-            )
+                gene_zero_frac = float(np.mean(x_raw == 0.0))
 
-        # Cosmetics
+            nz_gene = np.flatnonzero(gene_counts > 0)
+            if nz_gene.size:
+                jg = int(nz_gene[0])
+                ax.annotate(
+                    f"{gene_zero_frac*100:.1f}%",
+                    xy=(centers[jg] + shift, float(gene_counts[jg])),
+                    xytext=(8, 3),
+                    textcoords="offset points",
+                    ha="left",
+                    va="bottom",
+                    fontsize=8.5,
+                    color=gene_hist_color,
+                    zorder=3.0,
+                )
+
+            if avg_hist is not None and avg_zero_frac is not None:
+                nz_avg = np.flatnonzero(avg_hist > 0)
+                if nz_avg.size:
+                    ja = int(nz_avg[0])
+                    dy = 3 if (nz_gene.size and int(nz_gene[0]) != ja) else 10
+                    ax.annotate(
+                        f"{avg_zero_frac*100:.1f}%",
+                        xy=(centers[ja] - shift, float(avg_hist[ja])),
+                        xytext=(-8, dy),
+                        textcoords="offset points",
+                        ha="right",
+                        va="bottom",
+                        fontsize=8.5,
+                        color=avg_hist_color,
+                        zorder=3.0,
+                    )
+
         ax.set_xlim(lo, hi)
         ax.set_title(gene)
-        ax.set_xlabel("Expression (log1p counts)" if use_log1p else "Expression (counts)")
-        ax.set_ylabel("Density")
+        ax.grid(True, axis="y")
+        ax.grid(False, axis="x")
+        ax.yaxis.set_major_locator(MaxNLocator(nbins=4, integer=True))
 
-    # Hide unused axes
+        r = i // cols
+        c = i % cols
+        if r < rows - 1:
+            ax.tick_params(labelbottom=False)
+        if c > 0:
+            ax.tick_params(labelleft=False)
+
+        y_local = float(np.max(gene_counts)) if gene_counts.size else 1.0
+        if avg_hist is not None and np.isfinite(avg_hist).any():
+            y_local = max(y_local, float(np.nanmax(avg_hist)))
+        if gene_pdf_counts is not None and np.isfinite(gene_pdf_counts).any():
+            y_local = max(y_local, float(np.nanmax(gene_pdf_counts)))
+        if avg_kde_counts is not None and np.isfinite(avg_kde_counts).any():
+            y_local = max(y_local, float(np.nanmax(avg_kde_counts)))
+        y_max_global = max(y_max_global, y_local)
+
     for k in range(n, len(axes)):
         axes[k].axis("off")
 
-    fig.suptitle(suptitle, y=0.995, fontsize=12)
-    plt.tight_layout(rect=[0, 0, 1, 0.98])
+    for ax in axes[:n]:
+        ax.set_ylim(0, y_max_global * 1.10)
+
+    handles = []
+    labels = []
+
+    if avg_hist is not None:
+        handles.append(Patch(facecolor=avg_hist_color, edgecolor=avg_hist_color, alpha=1.0))
+        labels.append("Hist (avg)")
+
+    handles.append(Patch(facecolor=gene_hist_color, edgecolor=gene_hist_color, alpha=1.0))
+    labels.append("Hist (gene)")
+
+    if kde and avg_kde_counts is not None:
+        handles.append(Line2D([0], [0], color=avg_kde_color, lw=kde_lw))
+        labels.append("KDE (avg)")
+
+    if kde:
+        handles.append(Line2D([0], [0], color=gene_kde_color, lw=kde_lw))
+        labels.append("KDE (gene)")
+
+    if show_median and avg_mean is not None:
+        handles.append(Line2D([0], [0], color=avg_kde_color, lw=1.2, ls="--"))
+        labels.append("Mean (avg)")
+
+    if show_median:
+        handles.append(Line2D([0], [0], color=gene_kde_color, lw=1.2, ls="--"))
+        labels.append("Mean (gene)")
+
+    if show_iqr and avg_q25 is not None and avg_q75 is not None:
+        handles.append(Patch(facecolor=avg_iqr_color, edgecolor=avg_iqr_color, alpha=iqr_alpha))
+        labels.append("IQR (avg)")
+
+    if show_iqr:
+        handles.append(Patch(facecolor=gene_iqr_color, edgecolor=gene_iqr_color, alpha=iqr_alpha))
+        labels.append("IQR (gene)")
+
+    if handles:
+        fig.legend(
+            handles,
+            labels,
+            loc="upper center",
+            bbox_to_anchor=(0.5, 0.995),
+            ncol=4,
+            frameon=True,
+            fancybox=True,
+            framealpha=0.92,
+            edgecolor="0.85",
+            fontsize=9,
+            handlelength=2.2,
+            handletextpad=0.6,
+            columnspacing=1.2,
+        )
+
+    if suptitle:
+        fig.suptitle(suptitle, y=0.998, fontsize=12)
+
+    fig.supxlabel("log1p(counts)" if use_log1p else "counts", y=0.03, fontsize=11)
+    fig.supylabel("Frequency", x=0.01, fontsize=11)
+
+    plt.tight_layout(rect=[0.02, 0.05, 1, 0.94])
 
     if save_path:
         fig.savefig(save_path, bbox_inches="tight")
