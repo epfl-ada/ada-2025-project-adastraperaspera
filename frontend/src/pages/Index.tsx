@@ -1,4 +1,5 @@
 import HeroSection from "@/components/HeroSection";
+import IntroductionSection from "@/components/IntroductionSection";
 import MetricsSection from "@/components/MetricsSection";
 import GeneExpressionChart from "@/components/GeneExpressionChart";
 import CellClusteringSection from "@/components/CellClusteringSection";
@@ -11,6 +12,7 @@ const Index = () => {
   return (
     <main className="min-h-screen bg-background">
       <HeroSection />
+      <IntroductionSection />
       <MetricsSection />
       <GeneExpressionChart />
       <CellClusteringSection />

@@ -1,4 +1,4 @@
-import { Microscope, Database, BarChart3, Dna } from "lucide-react";
+import { Microscope, Database, BarChart3, Dna, HardDrive } from "lucide-react";
 
 const HeroSection = () => {
   return (
@@ -36,34 +36,38 @@ const HeroSection = () => {
         </div>
 
         <h1 className="animate-fade-up delay-100 text-5xl md:text-7xl font-bold text-primary-foreground mb-6 leading-tight">
-          Xenium Dataset
+          Aβ Plaque Impact on
           <br />
-          <span className="text-primary-foreground/80">Analysis Report</span>
+          <span className="text-primary-foreground/80">Brain Microenvironment</span>
         </h1>
 
         <p className="animate-fade-up delay-200 text-xl md:text-2xl text-primary-foreground/70 max-w-3xl mx-auto mb-12 leading-relaxed">
-          High-resolution spatial gene expression profiling revealing cellular architecture 
-          and molecular signatures at subcellular resolution
+          Investigating how amyloid-beta plaques influence the surrounding tissue 
+          through quantitative spatial transcriptomics modeling
         </p>
 
         <div className="animate-fade-up delay-300 flex flex-wrap justify-center gap-4 mb-16">
           <div className="flex items-center gap-2 px-5 py-3 rounded-xl bg-primary-foreground/10 backdrop-blur-sm border border-primary-foreground/20">
             <Database className="w-5 h-5 text-accent" />
-            <span className="text-primary-foreground font-medium">2.3M Transcripts</span>
+            <span className="text-primary-foreground font-medium">78.9M Transcripts</span>
           </div>
           <div className="flex items-center gap-2 px-5 py-3 rounded-xl bg-primary-foreground/10 backdrop-blur-sm border border-primary-foreground/20">
             <BarChart3 className="w-5 h-5 text-chart-3" />
-            <span className="text-primary-foreground font-medium">480 Genes</span>
+            <span className="text-primary-foreground font-medium">347 Genes</span>
           </div>
           <div className="flex items-center gap-2 px-5 py-3 rounded-xl bg-primary-foreground/10 backdrop-blur-sm border border-primary-foreground/20">
             <Dna className="w-5 h-5 text-chart-5" />
-            <span className="text-primary-foreground font-medium">156K Cells</span>
+            <span className="text-primary-foreground font-medium">351,714 Cells</span>
+          </div>
+          <div className="flex items-center gap-2 px-5 py-3 rounded-xl bg-primary-foreground/10 backdrop-blur-sm border border-primary-foreground/20">
+            <HardDrive className="w-5 h-5 text-chart-2" />
+            <span className="text-primary-foreground font-medium">34.7 GB</span>
           </div>
         </div>
 
         <div className="animate-fade-up delay-400">
           <a 
-            href="#overview" 
+            href="#introduction" 
             className="inline-flex items-center gap-2 text-primary-foreground/70 hover:text-primary-foreground transition-colors"
           >
             <span>Explore Analysis</span>

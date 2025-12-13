@@ -1,46 +1,42 @@
-import { TrendingUp, Target, Layers, Zap } from "lucide-react";
+import { Database, Dna, FlaskConical, HardDrive } from "lucide-react";
 
 const metrics = [
   {
-    icon: TrendingUp,
-    label: "Median Genes/Cell",
-    value: "245",
-    change: "+12%",
-    description: "Average gene detection per cell"
+    icon: Database,
+    label: "Transcripts",
+    value: "78.9M",
+    description: "Total transcript molecules detected"
   },
   {
-    icon: Target,
-    label: "Detection Rate",
-    value: "94.2%",
-    change: "+3.5%",
-    description: "Transcript assignment accuracy"
+    icon: Dna,
+    label: "Genes",
+    value: "347",
+    description: "Unique genes profiled"
   },
   {
-    icon: Layers,
-    label: "Cell Clusters",
-    value: "24",
-    change: "Identified",
-    description: "Distinct cell populations"
+    icon: FlaskConical,
+    label: "Cells",
+    value: "351,714",
+    description: "Individual cells analyzed"
   },
   {
-    icon: Zap,
-    label: "Spatial Resolution",
-    value: "200nm",
-    change: "Subcellular",
-    description: "Transcript localization precision"
+    icon: HardDrive,
+    label: "Dataset Size",
+    value: "34.7 GB",
+    description: "Total data volume"
   }
 ];
 
 const MetricsSection = () => {
   return (
-    <section id="overview" className="py-24 bg-background">
+    <section id="overview" className="py-24 bg-muted/30">
       <div className="container mx-auto px-6">
         <div className="text-center mb-16">
           <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
             Dataset Overview
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Key performance metrics from the Xenium spatial transcriptomics analysis
+            Xenium spatial transcriptomics dataset from 10X Genomics
           </p>
         </div>
 
@@ -61,7 +57,6 @@ const MetricsSection = () => {
                 <p className="text-sm text-muted-foreground mb-1">{metric.label}</p>
                 <div className="flex items-baseline gap-2 mb-2">
                   <span className="text-3xl font-bold text-foreground">{metric.value}</span>
-                  <span className="text-sm font-medium text-primary">{metric.change}</span>
                 </div>
                 <p className="text-xs text-muted-foreground">{metric.description}</p>
               </div>
