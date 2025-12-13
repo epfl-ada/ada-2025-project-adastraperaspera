@@ -15,8 +15,17 @@ const MiscroscopySection = () => {
           </p>
         </div>
 
-        {/* Content cards */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* NOTE:
+            Put your static assets in:
+              public/figures/*.png
+              public/plots/*.html
+            Then reference them as:
+              /figures/...
+              /plots/...
+        */}
+
+        {/* ROW 1: Card 1 - Plot */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start mb-12">
           {/* Card 1: Dataset description */}
           <div className="relative p-6 rounded-2xl bg-card border border-border">
             <div className="flex items-center gap-3 mb-4">
@@ -38,6 +47,54 @@ const MiscroscopySection = () => {
                 Three mice constitute healthy controls (wild type, no induced mutations)
                 at 2.5, 5.7, and 13.4 months of age. The remaining mice are mutated
                 (i.e., transgenic) at 2.5, 5.7, and 17.9 months of age.
+              </p>
+            </div>
+          </div>
+
+          {/* Plot 1 placeholder */}
+          <div className="relative p-6 rounded-2xl bg-muted/30 border border-dashed border-border">
+            <iframe
+              src="/plots/wt_tg_age_grid.html"
+              className="w-full h-[720px] rounded-xl border border-border"
+              loading="lazy"
+              title="WT vs TG spatial maps by age"
+            />
+            <div className="min-h-[300px] flex items-center justify-center rounded-xl">
+              <p className="mt-2 text-xs text-center text-muted-foreground">
+                Spatial distribution of cells in wild-type and transgenic mice across ages
+                (2.5, 5.7, and 13+ months). Interactive: pan and zoom enabled.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* ROW 2: Plot - Card 2 */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start mb-12">
+          {/* Plot 2 placeholder */}
+          <div className="relative p-6 rounded-2xl bg-muted/30 border border-dashed border-border">
+            {/* ✅ INSERT PLOT HERE
+                Put files in:
+                  public/figures/if_plaques.png   (if you have one)
+                  public/plots/if_plaques.html    (when available)
+
+                - Static PNG example:
+                  <img
+                    src="/figures/if_plaques.png"
+                    alt="IF staining / Aβ plaque visualization"
+                    className="w-full rounded-xl border border-border"
+                  />
+
+                - Interactive HTML example:
+                  <iframe
+                    src="/plots/if_plaques.html"
+                    className="w-full h-[420px] rounded-xl border border-border"
+                    loading="lazy"
+                    title="IF staining / Aβ plaque visualization"
+                  />
+            */}
+            <div className="min-h-[300px] flex items-center justify-center rounded-xl">
+              <p className="text-sm text-muted-foreground text-center">
+                Plot placeholder: IF staining / Aβ plaque visualization
               </p>
             </div>
           </div>
@@ -67,27 +124,12 @@ const MiscroscopySection = () => {
                 in transgenic mice at 17.9 months of age; in microscopy figures, plaques
                 appear in red.
               </p>
-
-              {/* ✅ INSERT FIGURE HERE (static PNG for now; later replace with interactive HTML plot)
-                  Example for PNG:
-                  <div className="mt-4">
-                    <img
-                      src="/figures/microscopy_6_mice.png"
-                      alt="Microscopy images of 6 mice"
-                      className="w-full rounded-xl border border-border"
-                    />
-                    <p className="mt-2 text-xs text-center text-muted-foreground">
-                      Microscopy images of 6 mice
-                    </p>
-                  </div>
-
-                  Example for interactive HTML (common options):
-                  - If you export a plotly HTML and want to embed it, you can use an iframe:
-                    <iframe src="/plots/microscopy_6_mice.html" className="w-full h-[420px] rounded-xl border" />
-              */}
             </div>
           </div>
+        </div>
 
+        {/* ROW 3: Card 3 - Plot */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
           {/* Card 3: Alignment / variation */}
           <div className="relative p-6 rounded-2xl bg-card border border-border">
             <div className="flex items-center gap-3 mb-4">
@@ -112,23 +154,38 @@ const MiscroscopySection = () => {
                 indicating that cross-mouse alignment is not reliable at the spatial scale
                 relevant for cell–plaque analyses.
               </p>
+            </div>
+          </div>
 
-              {/* ✅ INSERT ALIGNMENT FIGURE HERE (static PNG now; later interactive HTML)
-                  Example PNG:
-                  <div className="mt-4">
-                    <img
-                      src="/src/data/figures/Tg_17_Tg_5_alignment.png"
-                      alt="Alignment attempt of Tg 5.7 onto Tg 17.9"
-                      className="w-full max-w-[420px] mx-auto rounded-xl border border-border"
-                    />
-                    <p className="mt-2 text-xs text-center text-muted-foreground">
-                      Attempted alignment of Tg 5.7 months old mouse onto Tg 17.9 months old mouse
-                    </p>
-                  </div>
+          {/* Plot 3 placeholder */}
+          <div className="relative p-6 rounded-2xl bg-muted/30 border border-dashed border-border">
+            {/* ✅ INSERT PLOT HERE
+                Put files in:
+                  public/figures/Tg_17_Tg_5_alignment.png
+                  public/plots/Tg_17_Tg_5_alignment.html
 
-                  Example HTML:
-                  <iframe src="/plots/Tg_17_Tg_5_alignment.html" className="w-full h-[420px] rounded-xl border" />
-              */}
+                - Static PNG:
+                  <img
+                    src="/figures/Tg_17_Tg_5_alignment.png"
+                    alt="Attempted alignment of Tg 5.7 months onto Tg 17.9 months"
+                    className="w-full rounded-xl border border-border"
+                  />
+                  <p className="mt-2 text-xs text-center text-muted-foreground">
+                    Attempted alignment of Tg 5.7 months old mouse onto Tg 17.9 months old mouse
+                  </p>
+
+                - Interactive HTML (iframe):
+                  <iframe
+                    src="/plots/Tg_17_Tg_5_alignment.html"
+                    className="w-full h-[420px] rounded-xl border border-border"
+                    loading="lazy"
+                    title="Tg 5.7 → Tg 17.9 alignment attempt"
+                  />
+            */}
+            <div className="min-h-[300px] flex items-center justify-center rounded-xl">
+              <p className="text-sm text-muted-foreground text-center">
+                Plot placeholder: Tg 5.7 → Tg 17.9 alignment attempt
+              </p>
             </div>
           </div>
         </div>
