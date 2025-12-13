@@ -26,5 +26,5 @@
       "@/*": ["./src/*"]
     }
   },
-  "include": ["src", "pages", "lib", "hooks", "components"]
+  "include": ["src", "src/pages", "lib", "hooks", "components"]
 }
