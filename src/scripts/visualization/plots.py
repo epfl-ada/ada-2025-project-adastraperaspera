@@ -1,39 +1,36 @@
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Iterable, Sequence
 import math
+from pathlib import Path
 from typing import Union
 
 import geopandas as gpd
 import matplotlib as mpl
 from matplotlib.axes import Axes
+from matplotlib.colors import Normalize
 from matplotlib.figure import Figure
 from matplotlib.lines import Line2D
 from matplotlib.patches import Polygon as MplPoly
 import matplotlib.pyplot as plt
+from matplotlib.ticker import MaxNLocator
 import numpy as np
 from numpy.typing import NDArray
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
-from scipy.stats import spearmanr
+from scipy.stats import gaussian_kde, pearsonr, spearmanr
 import seaborn as sns
 from shapely.geometry import MultiPolygon, Polygon
 from sklearn.metrics import r2_score
 from statsmodels.stats.multitest import multipletests
-from matplotlib.colors import Normalize
-import seaborn as sns
-from scipy.stats import gaussian_kde
-from matplotlib.ticker import MaxNLocator
-from scipy.stats import pearsonr
-from pathlib import Path
-from typing import Dict, Tuple, Iterable
 
 from src.utils.logging_utils import logger
 
 from ..preprocessing.partition import gaussian_kde
 
 Number = Union[int, float, np.number]
+
 
 def load_png_rgb(path: Path) -> np.ndarray:
     """Load PNG as RGB array (H, W, 3)."""
@@ -78,7 +75,7 @@ def pad_to_max(img: np.ndarray, target_h: int, target_w: int) -> np.ndarray:
     )
 
 
-def _infer_grid_shape(key_to_pos: Dict[str, Tuple[int, int]]) -> Tuple[int, int]:
+def _infer_grid_shape(key_to_pos: dict[str, tuple[int, int]]) -> tuple[int, int]:
     """Infer (n_rows, n_cols) from the maximum indices in key_to_pos."""
     max_row = max(r for r, _ in key_to_pos.values())
     max_col = max(c for _, c in key_to_pos.values())
@@ -87,45 +84,42 @@ def _infer_grid_shape(key_to_pos: Dict[str, Tuple[int, int]]) -> Tuple[int, int]
 
 def make_image_grid(
     *,
-    files: Dict[str, Path],
-    key_to_pos: Dict[str, Tuple[int, int]],
+    files: dict[str, Path],
+    key_to_pos: dict[str, tuple[int, int]],
     col_ticks: Iterable[str],
     row_ticks: Iterable[str],
     flip_h_keys: Iterable[str] = (),
-    figsize: Tuple[float, float] = (15, 9),
+    figsize: tuple[float, float] = (15, 9),
 ) -> None:
     """
     Create and display an image grid with unified axes.
 
-    Parameters
-    ----------
-    files
-        Mapping from logical key -> image path.
-    key_to_pos
-        Mapping from logical key -> (row, col) position in the grid.
-    col_ticks
-        Labels for columns (left to right).
-    row_ticks
-        Labels for rows (top to bottom).
-    flip_h_keys
-        Keys whose images should be horizontally flipped.
-    figsize
-        Matplotlib figure size.
+    Notes
+    -----
+    - Each image is vertically cropped to remove the bottom 10% strip
+      before padding and plotting.
     """
     flip_h_keys = set(flip_h_keys)
 
-    # 1) Load images
-    imgs: Dict[str, np.ndarray] = {}
+    # 1) Load images and crop bottom 10%
+    imgs: dict[str, np.ndarray] = {}
     shapes = []
 
     for key, path in files.items():
         img = load_png_rgb(path)
         if key in flip_h_keys:
             img = np.fliplr(img)
+
+        # --- Crop bottom 10% strip ---
+        h = img.shape[0]
+        keep_h = max(1, int(round(h * 0.9)))  # keep the top 90%
+        img = img[:keep_h, ...]
+        # --------------------------------
+
         imgs[key] = img
         shapes.append(img.shape[:2])
 
-    # 2) Target size
+    # 2) Target size (based on cropped images)
     max_h = max(h for h, _ in shapes)
     max_w = max(w for _, w in shapes)
 
@@ -143,14 +137,12 @@ def make_image_grid(
         ax.set_yticks([])
         ax.set_frame_on(False)
 
-    # 4) Plot images
+    # 4) Plot images (after padding to a common size)
     for key, (r, c) in key_to_pos.items():
         img = pad_to_max(imgs[key], target_h=max_h, target_w=max_w)
         axes[r, c].imshow(img, aspect="equal", interpolation="nearest")
 
-    plt.subplots_adjust(
-        left=0.05, right=0.98, bottom=0.08, top=0.98, wspace=0.02, hspace=0.02
-    )
+    plt.subplots_adjust(left=0.05, right=0.98, bottom=0.08, top=0.98, wspace=0.02, hspace=0.02)
 
     # 5) Unified axis overlay
     positions = [ax.get_position() for ax in axes.ravel()]
@@ -159,21 +151,15 @@ def make_image_grid(
     bottom = min(p.y0 for p in positions)
     top = max(p.y1 for p in positions)
 
-    big_ax = fig.add_axes(
-        [left, bottom, right - left, top - bottom], frameon=False
-    )
+    big_ax = fig.add_axes([left, bottom, right - left, top - bottom], frameon=False)
     big_ax.set_zorder(10)
     big_ax.patch.set_alpha(0)
 
     big_ax.set_xlim(0, n_cols)
     big_ax.set_ylim(0, n_rows)
 
-    big_ax.set_xticks(
-        [i + 0.5 for i in range(n_cols)], labels=list(col_ticks)
-    )
-    big_ax.set_yticks(
-        [n_rows - (i + 0.5) for i in range(n_rows)], labels=list(row_ticks)
-    )
+    big_ax.set_xticks([i + 0.5 for i in range(n_cols)], labels=list(col_ticks))
+    big_ax.set_yticks([n_rows - (i + 0.5) for i in range(n_rows)], labels=list(row_ticks))
 
     big_ax.set_xlabel("Age (months)")
     big_ax.set_ylabel("Type")
@@ -302,8 +288,6 @@ def plot_gene_distributions(
     dpi: int = 120,
     save_path: str | None = None,
 ):
-
-
     arrays = []
     present = [g for g in genes if g in df.columns]
     if not present:
@@ -329,7 +313,9 @@ def plot_gene_distributions(
         x = x[np.isfinite(x)]
         arrays.append(x)
 
-    all_vals = np.concatenate(arrays + avg_arrays) if (len(arrays) + len(avg_arrays)) else np.array([])
+    all_vals = (
+        np.concatenate(arrays + avg_arrays) if (len(arrays) + len(avg_arrays)) else np.array([])
+    )
     if all_vals.size == 0:
         raise ValueError("No finite values to plot.")
     lo = np.quantile(all_vals, clip_quantiles[0])
@@ -403,7 +389,9 @@ def plot_gene_distributions(
     y_max_global = 1.0
     for x in arrays:
         if x.size:
-            y_max_global = max(y_max_global, float(np.max(np.histogram(x, bins=bin_edges, density=False)[0])))
+            y_max_global = max(
+                y_max_global, float(np.max(np.histogram(x, bins=bin_edges, density=False)[0]))
+            )
     if avg_hist is not None and np.isfinite(avg_hist).any():
         y_max_global = max(y_max_global, float(np.nanmax(avg_hist)))
     if avg_kde_counts is not None and np.isfinite(avg_kde_counts).any():
@@ -2812,6 +2800,8 @@ def _format_bin_labels(index):
         return str(v)
 
     return [_fmt(v) for v in vals]
+
+
 def plot_resid_distance_bivariate_pro(
     cells_df: pd.DataFrame,
     y_true: pd.Series,
@@ -2841,7 +2831,7 @@ def plot_resid_distance_bivariate_pro(
 
     # --- 2) Bin residuals and distances (1D only!) ------------------------------
     # residual bins: quantiles
-    resid_q = df["resid"].quantile([0, 1/3, 2/3, 1]).to_numpy()
+    resid_q = df["resid"].quantile([0, 1 / 3, 2 / 3, 1]).to_numpy()
     # ensure strictly increasing
     resid_edges = np.unique(resid_q)
     if resid_edges.size < 4:
@@ -2856,7 +2846,7 @@ def plot_resid_distance_bivariate_pro(
     )
 
     # distance bins: quantiles
-    dist_q = df[dist_col].quantile([0, 1/3, 2/3, 1]).to_numpy()
+    dist_q = df[dist_col].quantile([0, 1 / 3, 2 / 3, 1]).to_numpy()
     dist_edges = np.unique(dist_q)
     if dist_edges.size < 4:
         dist_edges = np.linspace(df[dist_col].min(), df[dist_col].max(), 4)
@@ -2874,11 +2864,13 @@ def plot_resid_distance_bivariate_pro(
     # --- 3) Build a simple 3×3 bivariate color grid -----------------------------
     # rows = residual bins (neg → pos), cols = distance bins (near → far)
     # we’ll manually define a 3×3 palette: cooler for near, warmer for far
-    bivariate_grid = np.array([
-        ["#3b4cc0", "#5470d8", "#6f92f3"],  # negative residual
-        ["#79b5b6", "#8fcf9b", "#a6e675"],  # mid residual
-        ["#e78b5d", "#f3a151", "#f9c74f"],  # positive residual
-    ])
+    bivariate_grid = np.array(
+        [
+            ["#3b4cc0", "#5470d8", "#6f92f3"],  # negative residual
+            ["#79b5b6", "#8fcf9b", "#a6e675"],  # mid residual
+            ["#e78b5d", "#f3a151", "#f9c74f"],  # positive residual
+        ]
+    )
 
     resid_levels = ["neg", "mid", "pos"]
     dist_levels = ["near", "mid", "far"]
@@ -2889,9 +2881,7 @@ def plot_resid_distance_bivariate_pro(
             color_map[(rb, db)] = bivariate_grid[i, j]
 
     # Map each row to a color
-    colors = df.apply(
-        lambda r: color_map.get((r["resid_bin"], r["dist_bin"]), "#cccccc"), axis=1
-    )
+    colors = df.apply(lambda r: color_map.get((r["resid_bin"], r["dist_bin"]), "#cccccc"), axis=1)
 
     # --- 4) Plot ----------------------------------------------------------------
     fig, ax = plt.subplots(figsize=figsize)
@@ -2992,7 +2982,7 @@ def plot_spatial_bubble_resid_distance_pro(
     cbar.set_label("Residual (true − predicted distance, µm)")
 
     # Legend for size (distance)
-    for frac, label in zip([0.1, 0.5, 0.9], ["near", "mid", "far"]):
+    for frac, label in zip([0.1, 0.5, 0.9], ["near", "mid", "far"], strict=False):
         d_val = np.quantile(dist, frac)
         size_val = 10 + 40 * np.sqrt((d_val - dist.min()) / (dist.max() - dist.min() + 1e-9))
         ax.scatter([], [], s=size_val, color="gray", alpha=0.7, label=f"{label} distance")
@@ -3027,7 +3017,9 @@ def plot_kde_true_pred_distance_pro(
 
     fig, ax = plt.subplots(figsize=figsize)
     sns.kdeplot(y_true_arr, ax=ax, label="True distance", linewidth=2)
-    sns.kdeplot(y_pred_arr, ax=ax, label=f"Predicted distance ({model_name})", linewidth=2, linestyle="--")
+    sns.kdeplot(
+        y_pred_arr, ax=ax, label=f"Predicted distance ({model_name})", linewidth=2, linestyle="--"
+    )
 
     ax.set_xlabel("Distance to plaque (µm)")
     ax.set_ylabel("Density")
@@ -3078,14 +3070,11 @@ def plot_resid_vs_distance_scatter_pro(
     plt.tight_layout()
     plt.show()
 
+
 #####
 
-import numpy as np
-import pandas as pd
-import matplotlib.pyplot as plt
 from matplotlib.patches import Patch
-from matplotlib.colors import Normalize
-import seaborn as sns
+import numpy as np
 from scipy.stats import gaussian_kde
 
 
@@ -3111,12 +3100,14 @@ def _bin_residual_three(residuals: pd.Series) -> pd.Series:
 
     return residuals.map(_lbl).astype("category")
 
+
 def _format_interval(iv):
     """Format an interval as rounded bounds."""
     left = iv.left
     right = iv.right
     # round to 1 decimal (you can change to 0 decimals if you prefer)
     return f"{left:.1f} to {right:.1f}"
+
 
 def plot_bivariate_resid_distance_spatial(
     cells_df: pd.DataFrame,
@@ -3134,9 +3125,9 @@ def plot_bivariate_resid_distance_spatial(
     Bivariate choropleth-style plot of residual bin × distance bin in spatial coordinates.
     If `ax` is None, a new figure is created.
     """
-    import seaborn as sns
     import numpy as np
     import pandas as pd
+    import seaborn as sns
 
     if ax is None:
         _, ax = plt.subplots(figsize=(6, 6))
@@ -3169,7 +3160,8 @@ def plot_bivariate_resid_distance_spatial(
     colors = np.array(colors, dtype=object)
 
     cell_colors = [
-        colors[r, d] for r, d in zip(df["_resid_idx_"].to_numpy(), df["_dist_idx_"].to_numpy())
+        colors[r, d]
+        for r, d in zip(df["_resid_idx_"].to_numpy(), df["_dist_idx_"].to_numpy(), strict=False)
     ]
 
     ax.scatter(
@@ -3184,10 +3176,10 @@ def plot_bivariate_resid_distance_spatial(
     ax.invert_yaxis()
     ax.set_xticks([])
     ax.set_yticks([])
-    ax.set_title(f"Residual vs distance bivariate map", fontsize=10)
+    ax.set_title("Residual vs distance bivariate map", fontsize=10)
 
     # Bivariate legend as inset
-    inset = ax.inset_axes([ -0.32, 0.25, 0.28, 0.50 ])  
+    inset = ax.inset_axes([-0.32, 0.25, 0.28, 0.50])
     # x = -0.32 moves it outside the left side
     # y = 0.25 centers it vertically
     # width = 0.28, height = 0.50 chosen to keep aspect
@@ -3195,7 +3187,9 @@ def plot_bivariate_resid_distance_spatial(
         for j in range(n_bins):
             inset.add_patch(
                 plt.Rectangle(
-                    (j, n_bins - 1 - i), 1, 1,
+                    (j, n_bins - 1 - i),
+                    1,
+                    1,
                     color=colors[i, j],
                     transform=inset.transData,
                 )
@@ -3211,7 +3205,7 @@ def plot_bivariate_resid_distance_spatial(
         ha="right",
         fontsize=7,
     )
-    
+
     inset.set_yticklabels(
         [_format_interval(c) for c in resid_cats[::-1]],
         fontsize=7,
@@ -3223,6 +3217,7 @@ def plot_bivariate_resid_distance_spatial(
         spine.set_visible(False)
 
     return ax
+
 
 def plot_radius_color_spatial(
     cells_df: pd.DataFrame,
@@ -3277,7 +3272,7 @@ def plot_radius_color_spatial(
     ax.set_ylabel("y coordinate (µm)", fontsize=10)
 
     ax.set_title(
-        f"Residuals in space\ncolor = residual, size = true distance",
+        "Residuals in space\ncolor = residual, size = true distance",
         fontsize=10,
     )
 
@@ -3288,6 +3283,7 @@ def plot_radius_color_spatial(
     for rr, label in zip(
         [np.percentile(d, p) for p in (10, 50, 90)],
         ["near", "mid", "far"],
+        strict=False,
     ):
         s = 5 + 25 * ((rr - d.min()) / (d.max() - d.min() + 1e-9))
         ax.scatter([], [], s=s, c="gray", alpha=0.7, label=f"{label} distance")
@@ -3304,7 +3300,6 @@ def plot_radius_color_spatial(
         )
 
     return ax
-
 
 
 def plot_true_pred_kde(
@@ -3336,7 +3331,7 @@ def plot_true_pred_kde(
 
     ax.set_xlabel("Distance to plaque (µm)")
     ax.set_ylabel("Density")
-    ax.set_title(f" Distribution of true vs predicted distances")
+    ax.set_title(" Distribution of true vs predicted distances")
     ax.legend(frameon=False)
     ax.grid(alpha=0.25, linestyle="--", linewidth=0.5)
 
@@ -3398,7 +3393,7 @@ def plot_residual_vs_distance(
 
     ax.set_xlabel("True distance to plaque (µm)")
     ax.set_ylabel("Residual (true - predicted, µm)")
-    ax.set_title(f"Residuals vs distance")
+    ax.set_title("Residuals vs distance")
 
     # Add Pearson r as a separate legend entry
     dummy = plt.Line2D([], [], color="none", label=f"Pearson r = {r:.2f}")
