@@ -1,183 +1,137 @@
-import React from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
+import { Image, Microscope, AlignHorizontalJustifyCenter } from "lucide-react";
 
-type Plot = {
-  id: string;
-  title: string;
-  caption: string;
-  pngSrc?: string;   // shown if htmlSrc not available
-  htmlSrc?: string;  // preferred when available (interactive)
-  widthClass?: string;
-};
-
-function Figure({ plot }: { plot: Plot }) {
-  const { title, caption, pngSrc, htmlSrc, widthClass } = plot;
-
+const MiscroscopySection = () => {
   return (
-    <Card className="overflow-hidden">
-      <CardHeader className="space-y-2">
-        <div className="flex items-start justify-between gap-3">
-          <CardTitle className="text-base md:text-lg">{title}</CardTitle>
-          <Badge variant={htmlSrc ? "default" : "secondary"}>
-            {htmlSrc ? "Interactive" : "Static"}
-          </Badge>
-        </div>
-        <p className="text-sm text-muted-foreground">{caption}</p>
-      </CardHeader>
-
-      <CardContent>
-        <div className="flex justify-center">
-          <div className={widthClass ?? "w-full"}>
-            {htmlSrc ? (
-              <iframe
-                title={title}
-                src={htmlSrc}
-                className="w-full h-[520px] rounded-xl border bg-background"
-                loading="lazy"
-              />
-            ) : (
-              <img
-                src={pngSrc}
-                alt={title}
-                className="w-full rounded-xl border bg-background"
-                loading="lazy"
-              />
-            )}
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
-const plots: Plot[] = [
-  {
-    id: "six-mice",
-    title: "Microscopy images of 6 mice",
-    caption:
-      "Sagittal brain slices (DAPI). Three wild-type controls (2.5, 5.7, 13.4 months) and three transgenic mice (2.5, 5.7, 17.9 months).",
-    // Put this file in: frontend/public/figures/microscopy_6_mice.png
-    pngSrc: "@/figures/microscopy_6_mice.png",
-    // Later, when available, add: htmlSrc: "/plots/microscopy_6_mice.html"
-    widthClass: "w-full max-w-[860px]",
-  },
-  {
-    id: "alignment",
-    title: "Inter-mouse morphology alignment (Tg 5.7 → Tg 17.9)",
-    caption:
-      "Best alignment attempt between two transgenic mice. RMSE = 3,390 µm — over 50× larger than the median cell-to-plaque distance (61 µm).",
-    // Put this file in: frontend/public/figures/Tg_17_Tg_5_alignment.png
-    pngSrc: "@/figures/Tg_17_Tg_5_alignment.png",
-    // Later, when available, add: htmlSrc: "/plots/Tg_17_Tg_5_alignment.html"
-    widthClass: "w-full max-w-[520px]",
-  },
-];
-
-const MiscroscopySection: React.FC = () => {
-  return (
-    <section id="microscopy" className="py-24">
+    <section id="microscopy" className="py-24 bg-background">
       <div className="container mx-auto px-6">
-        <div className="text-center mb-14">
+        {/* Header */}
+        <div className="text-center mb-16">
           <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
             Microscopy Data
           </h2>
           <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
-            Xenium spatial transcriptomics (10x Genomics) with morphology images
-            from sagittal brain slices of 6 mice stained with DAPI.
+            Context and visual overview of morphology imaging and immunofluorescence
+            in the Xenium spatial transcriptomics dataset.
           </p>
         </div>
 
-        {/* Narrative / Study design */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-10">
-          <Card className="lg:col-span-2">
-            <CardHeader>
-              <CardTitle>Study background</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4 text-sm leading-relaxed text-muted-foreground">
-              <p>
-                We analyze the Xenium dataset from 10X Genomics containing
-                transcriptomic measurements accompanied by morphology images.
-                The data comes from sagittal brain slices of 6 mice with DAPI
-                (4′,6-diamidino-2-phenylindole), a fluorescent DNA-binding
-                nucleus dye.
-              </p>
-              <p>
-                Three mice are healthy controls (wild type; no induced mutations)
-                at <span className="text-foreground">2.5</span>,{" "}
-                <span className="text-foreground">5.7</span>, and{" "}
-                <span className="text-foreground">13.4</span> months. The
-                remaining mice are transgenic at{" "}
-                <span className="text-foreground">2.5</span>,{" "}
-                <span className="text-foreground">5.7</span>, and{" "}
-                <span className="text-foreground">17.9</span> months.
-              </p>
-              <p>
-                The induced mutation forces cells to express the amyloid
-                precursor protein (<span className="text-foreground">App</span>)
-                carrying known familial Alzheimer’s mutations. Transgenic mice
-                express up to 5× more endogenous App, leading to early and
-                aggressive cerebral amyloid beta (Aβ) plaque deposition as soon
-                as ~3 months of age.
-              </p>
-              <p>
-                Aβ plaques are revealed with immunofluorescence (IF) staining,
-                but only in transgenic mice at{" "}
-                <span className="text-foreground">17.9</span> months; in the
-                microscopy figure, plaques appear in red.
-              </p>
-            </CardContent>
-          </Card>
+        {/* Content cards */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Card 1: Dataset description */}
+          <div className="relative p-6 rounded-2xl bg-card border border-border">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                <Microscope className="w-5 h-5 text-primary" />
+              </div>
+              <h3 className="text-lg font-semibold text-foreground">Study Design</h3>
+            </div>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Key takeaways</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3 text-sm text-muted-foreground">
-              <div className="flex items-start gap-2">
-                <span className="mt-1 h-2 w-2 rounded-full bg-primary/70" />
-                <p>
-                  Strong inter-mouse morphological variation makes direct spatial
-                  alignment unreliable.
-                </p>
-              </div>
-              <div className="flex items-start gap-2">
-                <span className="mt-1 h-2 w-2 rounded-full bg-primary/70" />
-                <p>
-                  Alignment attempt between Tg 5.7 and Tg 17.9 yields RMSE{" "}
-                  <span className="text-foreground font-medium">3,390 µm</span>.
-                </p>
-              </div>
-              <div className="flex items-start gap-2">
-                <span className="mt-1 h-2 w-2 rounded-full bg-primary/70" />
-                <p>
-                  RMSE is &gt;50× the median cell-to-plaque distance{" "}
-                  <span className="text-foreground font-medium">61 µm</span>.
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+            <div className="space-y-4 text-sm text-muted-foreground leading-relaxed">
+              <p>
+                In this project, we analyze the Xenium dataset from 10X Genomics which
+                contains transcriptomic data accompanied by morphology images. The data
+                comes from sagittal brain slices of 6 mice with 4′,6-diamidino-2-phenylindole
+                (DAPI) fluorescent DNA-binding nucleus dye.
+              </p>
 
-        {/* Plots */}
-        <Tabs defaultValue={plots[0].id} className="w-full">
-          <div className="flex justify-center mb-6">
-            <TabsList className="flex flex-wrap">
-              {plots.map((p) => (
-                <TabsTrigger key={p.id} value={p.id}>
-                  {p.title}
-                </TabsTrigger>
-              ))}
-            </TabsList>
+              <p>
+                Three mice constitute healthy controls (wild type, no induced mutations)
+                at 2.5, 5.7, and 13.4 months of age. The remaining mice are mutated
+                (i.e., transgenic) at 2.5, 5.7, and 17.9 months of age.
+              </p>
+            </div>
           </div>
 
-          {plots.map((p) => (
-            <TabsContent key={p.id} value={p.id} className="mt-0">
-              <Figure plot={p} />
-            </TabsContent>
-          ))}
-        </Tabs>
+          {/* Card 2: Mutation + plaques */}
+          <div className="relative p-6 rounded-2xl bg-card border border-border">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                <Image className="w-5 h-5 text-primary" />
+              </div>
+              <h3 className="text-lg font-semibold text-foreground">
+                Mutation & IF Plaques
+              </h3>
+            </div>
+
+            <div className="space-y-4 text-sm text-muted-foreground leading-relaxed">
+              <p>
+                The induced mutation forces murine cells to express the amyloid precursor
+                protein (App) carrying known Alzheimer&apos;s disease familial mutations.
+                As a result, the transgenic mice express up to 5 times more endogenous App.
+                This leads to early and aggressive cerebral amyloid beta (Aβ) plaque deposition
+                as soon as 3 months of age.
+              </p>
+
+              <p>
+                The Aβ plaques are revealed with immunofluorescence (IF) staining, but only
+                in transgenic mice at 17.9 months of age; in microscopy figures, plaques
+                appear in red.
+              </p>
+
+              {/* ✅ INSERT FIGURE HERE (static PNG for now; later replace with interactive HTML plot)
+                  Example for PNG:
+                  <div className="mt-4">
+                    <img
+                      src="/figures/microscopy_6_mice.png"
+                      alt="Microscopy images of 6 mice"
+                      className="w-full rounded-xl border border-border"
+                    />
+                    <p className="mt-2 text-xs text-center text-muted-foreground">
+                      Microscopy images of 6 mice
+                    </p>
+                  </div>
+
+                  Example for interactive HTML (common options):
+                  - If you export a plotly HTML and want to embed it, you can use an iframe:
+                    <iframe src="/plots/microscopy_6_mice.html" className="w-full h-[420px] rounded-xl border" />
+              */}
+            </div>
+          </div>
+
+          {/* Card 3: Alignment / variation */}
+          <div className="relative p-6 rounded-2xl bg-card border border-border">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                <AlignHorizontalJustifyCenter className="w-5 h-5 text-primary" />
+              </div>
+              <h3 className="text-lg font-semibold text-foreground">
+                Morphology Variation
+              </h3>
+            </div>
+
+            <div className="space-y-4 text-sm text-muted-foreground leading-relaxed">
+              <p>
+                Since each brain slice comes from a different mouse, inter-mouse variation
+                in brain morphology is very significant. Our best attempt to align a pair of
+                most similar mice (transgenic at 17.9 and 5.7 months) resulted in a Root Mean
+                Square Error (RMSE) of 3,390 µm.
+              </p>
+
+              <p>
+                This is over 50× larger than the median cell-to-plaque distance (61 µm),
+                indicating that cross-mouse alignment is not reliable at the spatial scale
+                relevant for cell–plaque analyses.
+              </p>
+
+              {/* ✅ INSERT ALIGNMENT FIGURE HERE (static PNG now; later interactive HTML)
+                  Example PNG:
+                  <div className="mt-4">
+                    <img
+                      src="/src/data/figures/Tg_17_Tg_5_alignment.png"
+                      alt="Alignment attempt of Tg 5.7 onto Tg 17.9"
+                      className="w-full max-w-[420px] mx-auto rounded-xl border border-border"
+                    />
+                    <p className="mt-2 text-xs text-center text-muted-foreground">
+                      Attempted alignment of Tg 5.7 months old mouse onto Tg 17.9 months old mouse
+                    </p>
+                  </div>
+
+                  Example HTML:
+                  <iframe src="/plots/Tg_17_Tg_5_alignment.html" className="w-full h-[420px] rounded-xl border" />
+              */}
+            </div>
+          </div>
+        </div>
       </div>
     </section>
   );
