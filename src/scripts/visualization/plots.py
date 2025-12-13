@@ -632,7 +632,7 @@ def plot_gene_distributions(
         fig.suptitle(suptitle, y=0.998, fontsize=12)
 
     fig.supxlabel("log1p(counts)" if use_log1p else "counts", y=0.03, fontsize=11)
-    fig.supylabel("Frequency", x=0.01, fontsize=11)
+    fig.supylabel("Count", x=0.01, fontsize=11)
 
     plt.tight_layout(rect=[0.02, 0.05, 1, 0.94])
 
@@ -1279,6 +1279,9 @@ def plot_plaques(
     seed: int = 42,
     figsize=(8, 8),
     ax: plt.Axes | None = None,
+    # --- new rotation controls ---
+    rotate_180: bool = True,
+    rotation_origin: tuple[float, float] | str = "auto",
 ):
     """
     Plot plaque geometries with styling by convexity and sampled convex hulls.
@@ -1298,11 +1301,19 @@ def plot_plaques(
         Matplotlib figure size if `ax` is not provided.
     ax : matplotlib.axes.Axes, optional
         Existing axes to draw on. A new figure/axes is created if None.
+    rotate_180 : bool, optional
+        If True, rotate all geometries by 180° clockwise about `rotation_origin`.
+        (Note: 180° CW == 180° CCW.)
+    rotation_origin : tuple(x, y) | "auto", optional
+        Rotation pivot. If "auto", uses the center of the combined bounds of all
+        geometries (plaques and brain ROI). If a (x, y) tuple, rotates around it.
 
     Returns
     -------
     ax : matplotlib.axes.Axes
     """
+    from shapely.affinity import rotate as shp_rotate
+
     if "geometry" not in df.columns:
         raise ValueError("Input DataFrame must contain a 'geometry' column.")
 
@@ -1358,22 +1369,63 @@ def plot_plaques(
                 )
             )
 
+    # ---- rotation prep ----------------------------------------------------
+    def _compute_auto_origin() -> tuple[float, float]:
+        """Center of combined bounds of plaques and brain geometry if present."""
+        bounds = []
+        for g in P["geometry"]:
+            if g is not None and hasattr(g, "bounds"):
+                try:
+                    b = g.bounds  # (minx, miny, maxx, maxy)
+                    if b and np.isfinite(b).all():
+                        bounds.append(b)
+                except Exception:
+                    pass
+        if brain_geom is not None and getattr(brain_geom, "is_valid", False):
+            try:
+                b = brain_geom.bounds
+                if b and np.isfinite(b).all():
+                    bounds.append(b)
+            except Exception:
+                pass
+        if not bounds:
+            return (0.0, 0.0)
+        arr = np.array(bounds, dtype=float)
+        minx, miny = arr[:, 0].min(), arr[:, 1].min()
+        maxx, maxy = arr[:, 2].max(), arr[:, 3].max()
+        return ((minx + maxx) / 2.0, (miny + maxy) / 2.0)
+
+    if isinstance(rotation_origin, str):
+        if rotation_origin != "auto":
+            raise ValueError("rotation_origin must be a (x, y) tuple or 'auto'.")
+        origin_point = _compute_auto_origin()
+    else:
+        origin_point = rotation_origin
+
+    def _rot(g):
+        """Rotate geometry by 180° about origin if enabled."""
+        if not rotate_180 or g is None:
+            return g
+        # 180° CW == 180° CCW; shapely rotates CCW by default.
+        return shp_rotate(g, 180.0, origin=origin_point, use_radians=False)
+
     # ---- draw brain ROI (optional) ----------------------------------------
     if brain_geom is not None and getattr(brain_geom, "is_valid", False):
-        bx, by = brain_geom.exterior.xy
+        g_b = _rot(brain_geom)
+        bx, by = g_b.exterior.xy
         ax.plot(bx, by, color="blue", lw=1.0, label="Brain ROI")
 
     # ---- draw plaques by convexity ----------------------------------------
-    # Use itertuples for speed and avoid repeated attribute lookups
     for row in P.itertuples(index=False):
         g = getattr(row, "geometry", None)
         is_convex = getattr(row, "is_convex", None)
         if g is None:
             continue
+        g_draw = _rot(g)
 
         if bool(is_convex):
             _add_geom(
-                g,
+                g_draw,
                 facecolor="none",
                 edgecolor="green",
                 linestyle="-",
@@ -1381,7 +1433,7 @@ def plot_plaques(
             )
         else:
             _add_geom(
-                g,
+                g_draw,
                 facecolor="none",
                 edgecolor="red",
                 linestyle="--",
@@ -1396,8 +1448,9 @@ def plot_plaques(
             g = getattr(row, "geometry", None)
             if g is None:
                 continue
+            hull = g.convex_hull
             _add_geom(
-                g.convex_hull,
+                _rot(hull),
                 facecolor="none",
                 edgecolor="orange",
                 linestyle=":",
@@ -1406,32 +1459,26 @@ def plot_plaques(
 
     # ---- cosmetics ---------------------------------------------------------
     ax.set_aspect("equal", "box")
-    ax.set_title("Plaque geometries after normalization", fontsize=11)
+    title = "Plaque geometries after normalization"
+    if rotate_180:
+        title += " (rotated 180°)"
+    ax.set_title(title, fontsize=11)
     ax.set_xlabel("X coordinate (µm)")
     ax.set_ylabel("Y coordinate (µm)")
 
-    # Build a clean legend with proxy artists (avoids duplicate entries)
     legend_elems = [
         Line2D([0], [0], color="blue", lw=1.0, label="Brain ROI"),
         Line2D([0], [0], color="green", lw=0.8, linestyle="-", label="Convex"),
         Line2D([0], [0], color="red", lw=0.8, linestyle="--", label="Non-convex"),
-        Line2D(
-            [0],
-            [0],
-            color="orange",
-            lw=1.0,
-            linestyle=":",
-            label="Convex hull (sample)",
-        ),
+        Line2D([0], [0], color="orange", lw=1.0, linestyle=":", label="Convex hull (sample)"),
     ]
-    # Only include items that were actually drawn
     handles, labels = [], []
     if brain_geom is not None and getattr(brain_geom, "is_valid", False):
         handles.append(legend_elems[0])
         labels.append(legend_elems[0].get_label())
     handles.extend(legend_elems[1:])
     labels.extend([e.get_label() for e in legend_elems[1:]])
-    ax.legend(handles, labels, loc="upper right", frameon=False)
+    ax.legend(handles, labels, loc="lower left", frameon=False)
 
     if created_fig:
         plt.tight_layout()
