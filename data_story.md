@@ -14,6 +14,7 @@ In total, Xenium dataset contains:
 - 78,885,074 transcripts
 - 34.7 GB of data
 - 0 missing values
+- >= 1 zero-transcript gene in each cell (sparse)
 
 ## Microscopy data
 
