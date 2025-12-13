@@ -1,4 +1,6 @@
 import { Image, Microscope, AlignHorizontalJustifyCenter } from "lucide-react";
+import PlotFrame from "@/components/PlotFrame";
+
 const base = import.meta.env.BASE_URL;
 
 const MicroscopySection = () => {
@@ -21,7 +23,6 @@ const MicroscopySection = () => {
             CARD 1 — Study design + spatial overview
            ========================= */}
         <div className="relative p-8 mb-12 rounded-2xl bg-card border border-border">
-          {/* Header */}
           <div className="flex items-center gap-3 mb-6">
             <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
               <Microscope className="w-5 h-5 text-primary" />
@@ -31,7 +32,6 @@ const MicroscopySection = () => {
             </h3>
           </div>
 
-          {/* Text */}
           <div className="space-y-4 text-sm text-muted-foreground leading-relaxed mb-8 max-w-4xl">
             <p>
               In this project, we analyze the Xenium dataset from 10X Genomics which
@@ -39,7 +39,6 @@ const MicroscopySection = () => {
               The data consists of sagittal brain slices stained with DAPI, enabling
               precise localization of individual cells.
             </p>
-
             <p>
               Three mice are wild-type controls at 2.5, 5.7, and 13.4 months of age.
               Three additional mice carry Alzheimer’s disease–associated mutations
@@ -47,19 +46,13 @@ const MicroscopySection = () => {
             </p>
           </div>
 
-          {/* Plot */}
-          <iframe
+          <PlotFrame
             src={`${base}plots/wt_tg_age_grid.html`}
-            className="w-full h-[720px] rounded-xl border border-border"
-            loading="lazy"
             title="WT vs TG spatial maps by age"
+            size="lg"
+            caption="Spatial distribution of cells in wild-type and transgenic mice across
+              2.5, 5.7, and 13+ months of age. Interactive: pan and zoom enabled."
           />
-
-          {/* Caption */}
-          <p className="mt-3 text-xs text-center text-muted-foreground">
-            Spatial distribution of cells in wild-type and transgenic mice across
-            2.5, 5.7, and 13+ months of age. Interactive: pan and zoom enabled.
-          </p>
         </div>
 
         {/* =========================
@@ -81,20 +74,17 @@ const MicroscopySection = () => {
               protein (App) carrying Alzheimer’s disease–associated familial mutations.
               This results in early and aggressive amyloid beta (Aβ) plaque deposition.
             </p>
-
             <p>
               Aβ plaques are revealed using immunofluorescence staining and appear only
-              in transgenic mice at advanced age. In microscopy images, plaques are
-              visible as red aggregates.
+              in transgenic mice at advanced age.
             </p>
           </div>
 
-          {/* Placeholder plot */}
-          <div className="min-h-[420px] flex items-center justify-center rounded-xl border border-dashed border-border bg-muted/30">
-            <p className="text-sm text-muted-foreground text-center">
-              IF staining / Aβ plaque visualization (plot forthcoming)
-            </p>
-          </div>
+          <PlotFrame
+            title="IF staining / Aβ plaque visualization"
+            size="md"
+            placeholder="IF staining / Aβ plaque visualization (plot forthcoming)"
+          />
         </div>
 
         {/* =========================
@@ -113,24 +103,19 @@ const MicroscopySection = () => {
           <div className="space-y-4 text-sm text-muted-foreground leading-relaxed mb-8 max-w-4xl">
             <p>
               Each brain slice originates from a different animal, leading to substantial
-              inter-mouse morphological variability. Attempts to align different mice
-              geometrically result in large residual errors.
+              inter-mouse morphological variability.
             </p>
-
             <p>
-              The best alignment achieved between two transgenic mice yielded an RMSE of
-              approximately 3,390 µm—over 50× larger than the median cell-to-plaque distance.
-              This demonstrates that cross-mouse spatial alignment is unreliable at the
-              biologically relevant scale.
+              The best alignment achieved yielded an RMSE of approximately 3,390 µm,
+              far larger than the biologically relevant scale.
             </p>
           </div>
 
-          {/* Placeholder plot */}
-          <div className="min-h-[420px] flex items-center justify-center rounded-xl border border-dashed border-border bg-muted/30">
-            <p className="text-sm text-muted-foreground text-center">
-              Tg 5.7 → Tg 17.9 alignment attempt (plot forthcoming)
-            </p>
-          </div>
+          <PlotFrame
+            title="Tg 5.7 → Tg 17.9 alignment attempt"
+            size="md"
+            placeholder="Tg 5.7 → Tg 17.9 alignment attempt (plot forthcoming)"
+          />
         </div>
 
       </div>
