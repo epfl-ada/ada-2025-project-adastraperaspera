@@ -6,6 +6,7 @@ Our story explores how plaque proximity impacts the cellular, molecular, and tis
 # Dataset Analysis
 
 In total, Xenium dataset contains:
+- 6 mice
 - 347 genes
 - 351,714 cells
 - 78,885,074 transcripts
