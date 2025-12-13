@@ -1,11 +1,33 @@
-import { Database, Dna, FlaskConical, HardDrive } from "lucide-react";
+import {
+  Database,
+  Dna,
+  FlaskConical,
+  HardDrive,
+  Rat,
+  Image,
+  Microscope,
+  CheckCircle2,
+} from "lucide-react";
+
 
 const metrics = [
   {
-    icon: Database,
-    label: "Transcripts",
-    value: "78.9M",
-    description: "Total transcript molecules detected"
+    icon: Rat,
+    label: "Mice",
+    value: "6",
+    description: "Biological replicates"
+  },
+  {
+    icon: Image,
+    label: "Morphology Images",
+    value: "6",
+    description: "High-resolution tissue images"
+  },
+  {
+    icon: Microscope,
+    label: "IF Image",
+    value: "1",
+    description: "Immunofluorescence channel"
   },
   {
     icon: Dna,
@@ -20,12 +42,25 @@ const metrics = [
     description: "Individual cells analyzed"
   },
   {
+    icon: Database,
+    label: "Transcripts",
+    value: "78.9M",
+    description: "Transcript molecules detected"
+  },
+  {
     icon: HardDrive,
     label: "Dataset Size",
     value: "34.7 GB",
     description: "Total data volume"
+  },
+  {
+    icon: CheckCircle2,
+    label: "Missing Values",
+    value: "0",
+    description: "Complete dataset"
   }
 ];
+
 
 const MetricsSection = () => {
   return (
