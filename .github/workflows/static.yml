@@ -38,13 +38,6 @@ jobs:
         working-directory: ./frontend
         run: npm ci
 
-      - name: Debug frontend context
-        working-directory: ./frontend
-        run: |
-          echo "PWD=$(pwd)"
-          echo "---- frontend/vite.config.ts ----"
-          cat vite.config.ts
-
       - name: Build
         working-directory: ./frontend
         run: npm run build
@@ -52,6 +45,10 @@ jobs:
       - name: Setup Pages
         uses: actions/configure-pages@v5
 
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./frontend/dist
       
 
   deploy:
