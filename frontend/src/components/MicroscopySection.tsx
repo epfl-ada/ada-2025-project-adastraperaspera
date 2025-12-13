@@ -34,15 +34,10 @@ const MicroscopySection = () => {
 
           <div className="space-y-4 text-sm text-muted-foreground leading-relaxed mb-8 max-w-4xl">
             <p>
-              In this project, we analyze the Xenium dataset from 10X Genomics which
-              combines high-resolution spatial transcriptomics with morphology imaging.
-              The data consists of sagittal brain slices stained with DAPI, enabling
-              precise localization of individual cells.
+              In this project, we analyze the Xenium dataset from 10X Genomics which contains trascriptomic data accompanied by morphology images. The data comes from sagittal brain slices of 6 mice stained with 4′,6-diamidino-2-phenylindole (DAPI) fluorescent DNA-binding nucleus dye. Three mice constitute healthy controls (wild type, no induced mutations) at 2.5, 5.7, and 13.4 months of age. The remaining mice are mutated (i.e., transgenic) at 2.5, 5.7, and 17.9 months of age.
             </p>
             <p>
-              Three mice are wild-type controls at 2.5, 5.7, and 13.4 months of age.
-              Three additional mice carry Alzheimer’s disease–associated mutations
-              (transgenic) at matched or advanced ages.
+              Since each brain slice comes from a different mouse, the inter-mouse variation in brain morphology is very significant. Our best attempt to align a pair of most similar mice in terms of age and disease status(transgenic at 17.9 and 5.7 months) reveals significant divergences in the brain geometry, especially the dentate gyrus. Overall, the Root Mean Square Error (RMSE) for the 8 key point pairs reached 3,390 µm, which is over 50 times larger than the median cell to plaque distance.
             </p>
           </div>
 
@@ -50,8 +45,7 @@ const MicroscopySection = () => {
             src={`${base}plots/wt_tg_age_grid.html`}
             title="WT vs TG spatial maps by age"
             size="lg"
-            caption="Spatial distribution of cells in wild-type and transgenic mice across
-              2.5, 5.7, and 13+ months of age. Interactive: pan and zoom enabled."
+            caption="Attempted alignment of Tg 5.7 months old mouse onto Tg 17.9 months old mouse. Interactive: pan and zoom enabled."
           />
         </div>
 
@@ -70,20 +64,16 @@ const MicroscopySection = () => {
 
           <div className="space-y-4 text-sm text-muted-foreground leading-relaxed mb-8 max-w-4xl">
             <p>
-              The induced mutation forces murine cells to express the amyloid precursor
-              protein (App) carrying Alzheimer’s disease–associated familial mutations.
-              This results in early and aggressive amyloid beta (Aβ) plaque deposition.
-            </p>
-            <p>
-              Aβ plaques are revealed using immunofluorescence staining and appear only
-              in transgenic mice at advanced age.
+              The induced mutation forces the murine cells to express the amyloid precursor protein (App) carrying known Alzheimer's disease familial mutations. As a result of mutations, the transgenic mice express up to 5 times more of the endogenous App. This leads to early and aggressive cerebral amyloid beta (Aβ) plaque deposition as soon as 3 months of age. The Aβ plaques are revealed with immunofluorescence (IF) staining, but only in transgenic mice at 17.9 months of age; in the figure below, the plaques appear in red.
             </p>
           </div>
 
           <PlotFrame
-            title="IF staining / Aβ plaque visualization"
-            size="md"
-            placeholder="IF staining / Aβ plaque visualization (plot forthcoming)"
+            src={`${base}plots/wt_tg_age_grid.html`}
+            title="WT vs TG spatial maps by age"
+            size="lg"
+            caption="Spatial distribution of cells in wild-type and transgenic mice across
+              2.5, 5.7, and 13+ months of age. Interactive: pan and zoom enabled."
           />
         </div>
 
