@@ -41,15 +41,9 @@ jobs:
       - name: Debug frontend context
         working-directory: ./frontend
         run: |
-          pwd
-          ls -la
-          echo "---- vite.config.ts ----"
-          sed -n '1,200p' vite.config.ts
-          echo "---- package.json build script ----"
-          cat package.json | sed -n '1,120p'
-          echo "---- does src/components/ui exist? ----"
-          ls -la src/components || true
-          ls -la src/components/ui || true
+          echo "PWD=$(pwd)"
+          echo "---- frontend/vite.config.ts ----"
+          cat vite.config.ts
 
       - name: Build
         working-directory: ./frontend
