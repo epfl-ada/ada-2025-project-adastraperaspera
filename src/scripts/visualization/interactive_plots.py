@@ -1033,8 +1033,8 @@ def make_wt_tg_age_grid_scatter_from_csv(
     # ---- overall layout + transparency ----
     fig.update_layout(
         title=title,
-        width=1400,
-        height=800,
+        width=None,
+        height=720,
         margin=dict(l=30, r=20, t=80 if title else 40, b=30),
         dragmode="pan",
         template="plotly_white",
