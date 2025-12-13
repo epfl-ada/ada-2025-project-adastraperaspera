@@ -3,7 +3,7 @@ schema.py
 
 Defines canonical column groups for plaque signature modeling.
 """
-
+import pandas as pd
 # Columns always present across all mice
 SPATIAL_COLS = ["x_centroid", "y_centroid"]
 MORPH_COLS = ["cell_area", "nucleus_area"]
@@ -21,7 +21,15 @@ PLAQUE_COLS = [
 TARGET_COL = "distance_to_plaque"
 
 # Function to detect gene columns given a dataframe
-def get_gene_columns(df):
+def get_gene_columns(df: pd.DataFrame) -> list[str]:
+    """
+    Detect gene-expression columns in a dataframe.
+
+    Gene columns are defined as:
+    - numeric columns
+    - not part of spatial, morphological, cluster, or plaque metadata
+    """
+
     exclude = set(
         ["cell_id"]
         + SPATIAL_COLS
@@ -29,6 +37,10 @@ def get_gene_columns(df):
         + [CLUSTER_COL]
         + PLAQUE_COLS
         + [
+            "distance_bin",
+            "dist_bin_simple",
+            "mouse",
+            "mouse_id",
             "transcript_counts",
             "control_probe_counts",
             "control_codeword_counts",
@@ -36,4 +48,12 @@ def get_gene_columns(df):
             "total_counts",
         ]
     )
-    return [c for c in df.columns if c not in exclude]
+
+    gene_cols: list[str] = []
+    for c in df.columns:
+        if c in exclude:
+            continue
+        if pd.api.types.is_numeric_dtype(df[c]):
+            gene_cols.append(c)
+
+    return gene_cols
