@@ -1,4 +1,5 @@
 import { Image, Microscope, AlignHorizontalJustifyCenter } from "lucide-react";
+const base = import.meta.env.BASE_URL;
 
 const MiscroscopySection = () => {
   return (
@@ -54,7 +55,7 @@ const MiscroscopySection = () => {
           {/* Plot 1 placeholder */}
           <div className="relative p-6 rounded-2xl bg-muted/30 border border-dashed border-border">
             <iframe
-              src="/plots/wt_tg_age_grid.html"
+              src={`${base}plots/wt_tg_age_grid.html`}
               className="w-full h-[720px] rounded-xl border border-border"
               loading="lazy"
               title="WT vs TG spatial maps by age"
