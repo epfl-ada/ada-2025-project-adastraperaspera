@@ -1,98 +1,147 @@
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
+import PlotFrame from "@/components/PlotFrame";
 
-const geneData = [
-  { gene: "EPCAM", expression: 8.4, color: "hsl(180, 60%, 35%)" },
-  { gene: "CD3D", expression: 7.2, color: "hsl(340, 75%, 55%)" },
-  { gene: "COL1A1", expression: 6.8, color: "hsl(45, 90%, 55%)" },
-  { gene: "PECAM1", expression: 5.9, color: "hsl(260, 60%, 55%)" },
-  { gene: "PTPRC", expression: 5.4, color: "hsl(120, 50%, 45%)" },
-  { gene: "ACTA2", expression: 4.8, color: "hsl(200, 70%, 50%)" },
-  { gene: "CD68", expression: 4.2, color: "hsl(15, 80%, 55%)" },
-  { gene: "KRT19", expression: 3.9, color: "hsl(280, 60%, 50%)" },
-];
+const base = import.meta.env.BASE_URL;
 
 const GeneExpressionChart = () => {
   return (
     <section className="py-24 bg-muted/30">
       <div className="container mx-auto px-6">
-        <div className="grid lg:grid-cols-2 gap-12 items-center">
+
+        {/* =========================
+            TITLE + INTRO + SMALL PLOT
+           ========================= */}
+        <div className="mb-8 grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-8 items-start">
+          {/* Text */}
           <div>
             <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
               Gene expression
             </h2>
-            <p className="text-lg text-muted-foreground mb-8">
+            <p className="text-lg text-muted-foreground max-w-3xl">
               We are dealing with a spatial transcriptomics dataset which contains single cell gene expression measurements of 347 genes. The gene expression matrix tends to be sparse. For the transgenic mouse at 17.9 months of age, 302 out of 347 genes have zero median transcript count.
+              Looking at the gene selection, out of 347 genes, 248 represent markers for 8 main cell types, canonical neuronal cortical layer markers, and non-neuronal markers; 83 genes related to activated microglia and astrocytes; and 16 PIGs curated from primary literature.
             </p>
-            <p className="text-lg text-muted-foreground mb-8">
-              Looking at the gene selection, out of 347 genes, 248 represent markers for 8 main cell types, canonical neuronal cortical layer markers, and non-neuronal markers; 83 genes related to activated microglia and astrocytes; and 16 PIGs curated from primary literature. The figure below reveals the individual cells as filled circles with clustering component.
-            </p>
-            
-            <div className="space-y-4">
-              <div className="flex items-center gap-3 p-4 rounded-xl bg-card border border-border">
-                <div className="w-3 h-3 rounded-full bg-chart-1" />
-                <div>
-                  <p className="font-medium text-foreground">EPCAM</p>
-                  <p className="text-sm text-muted-foreground">Epithelial cell adhesion molecule - marks epithelial cells</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3 p-4 rounded-xl bg-card border border-border">
-                <div className="w-3 h-3 rounded-full bg-chart-2" />
-                <div>
-                  <p className="font-medium text-foreground">CD3D</p>
-                  <p className="text-sm text-muted-foreground">T-cell surface glycoprotein - marks T lymphocytes</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3 p-4 rounded-xl bg-card border border-border">
-                <div className="w-3 h-3 rounded-full bg-chart-3" />
-                <div>
-                  <p className="font-medium text-foreground">COL1A1</p>
-                  <p className="text-sm text-muted-foreground">Collagen type I - marks fibroblasts and stroma</p>
-                </div>
-              </div>
-            </div>
           </div>
 
-          <div className="bg-card rounded-2xl border border-border p-6 shadow-md">
-            <h3 className="text-lg font-semibold text-foreground mb-6">
-              Mean Log Expression (CPM)
-            </h3>
-            <div className="h-[400px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={geneData} layout="vertical" margin={{ left: 20, right: 20 }}>
-                  <XAxis 
-                    type="number" 
-                    domain={[0, 10]}
-                    tick={{ fill: 'hsl(210, 20%, 45%)', fontSize: 12 }}
-                    axisLine={{ stroke: 'hsl(210, 20%, 88%)' }}
-                  />
-                  <YAxis 
-                    type="category" 
-                    dataKey="gene" 
-                    tick={{ fill: 'hsl(210, 50%, 10%)', fontSize: 13, fontWeight: 500 }}
-                    axisLine={false}
-                    tickLine={false}
-                    width={70}
-                  />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: 'hsl(0, 0%, 100%)',
-                      border: '1px solid hsl(210, 20%, 88%)',
-                      borderRadius: '12px',
-                      boxShadow: '0 8px 24px -4px hsl(210, 50%, 10%, 0.12)'
-                    }}
-                    formatter={(value: number) => [`${value.toFixed(2)}`, 'Expression']}
-                  />
-                  <Bar 
-                    dataKey="expression" 
-                    radius={[0, 6, 6, 0]}
+          {/* Small microscopy card */}
+          <div className="bg-card rounded-2xl border border-border p-4">
+            <PlotFrame
+              src={`${base}plots/microscopy_cells_unified.html`}
+              title="Microscopy cells unified"
+              size="sm"
+            />
+          </div>
+        </div>
+
+        {/* Scroll hint */}
+        <p className="mb-4 text-xs text-muted-foreground">
+          Tip: scroll horizontally to explore the analysis →
+        </p>
+
+        {/* =========================
+            HORIZONTAL SCROLL STRIP
+           ========================= */}
+        <div
+          className="
+            relative
+            flex
+            flex-row
+            gap-12
+            overflow-x-auto
+            overflow-y-hidden
+            snap-x snap-mandatory
+            pb-6
+          "
+        >
+          {/* Block 1 */}
+          <div
+            className="
+              snap-start
+              min-w-[700px]
+              max-w-[700px]
+              bg-card
+              rounded-2xl
+              border border-border
+              p-8
+              flex-shrink-0
+              space-y-6
+            "
+          >
+            <p className="text-lg text-muted-foreground">
+              First, let us explore the data by visualizing the distribution of log1p-transformed transcript counts for the 16 PIGs against the average distribution of all 347 genes. We will focus on the mouse with the most advanced stage of the Alzheimer's disease (transgenic at 17.9 months of age).
+            </p>
+
+            <PlotFrame
+              src={`${base}plots/expression_distribution.html`}
+              title="Gene expression distribution (log1p-transformed)"
+              size="md"
+            />
+
+            <p className="text-lg text-muted-foreground">
+              We can observe that for 13 out of 16 PIGs, the distribution has a mode at zero. Above zero, the support gradually drops off at higher transcript counts; however, different PIGs have a different rate of the density decay.
+            </p>
+          </div>
+
+          {/* Block 2 */}
+          <div
+            className="
+              snap-start
+              min-w-[500px]
+              max-w-[500px]
+              bg-card
+              rounded-2xl
+              border border-border
+              p-8
+              flex-shrink-0
+              space-y-6
+            "
+          >
+            <p className="text-lg text-muted-foreground leading-relaxed">
+              Next, we diagnose the PIGs with the most unusual expression patterns. To that end, we combine several diagnostic metrics (among which, zero-inflation, dispersion, and shape) into a composite score.
+            </p>
+
+            <table className="min-w-full text-sm">
+              <thead className="bg-muted/50">
+                <tr>
+                  <th className="px-4 py-3 text-left font-semibold text-foreground">
+                    gene
+                  </th>
+                  <th className="px-4 py-3 text-right font-semibold text-foreground">
+                    zero_frac
+                  </th>
+                  <th className="px-4 py-3 text-right font-semibold text-foreground">
+                    weird_score
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {[
+                  { gene: "Cxcl10", zero_frac: 1.0, weird_score: 9.35 },
+                  { gene: "Cd74", zero_frac: 0.98, weird_score: 8.13 },
+                  { gene: "Serpina3n", zero_frac: 0.88, weird_score: 0.79 },
+                  { gene: "C4b", zero_frac: 0.9, weird_score: 0.19 },
+                  { gene: "Gfap", zero_frac: 0.69, weird_score: 0.05 },
+                ].map((row) => (
+                  <tr
+                    key={row.gene}
+                    className="border-t border-border hover:bg-muted/30 transition"
                   >
-                    {geneData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
+                    <td className="px-4 py-2 font-mono text-foreground">
+                      {row.gene}
+                    </td>
+                    <td className="px-4 py-2 text-right text-muted-foreground">
+                      {row.zero_frac.toFixed(2)}
+                    </td>
+                    <td className="px-4 py-2 text-right text-muted-foreground">
+                      {row.weird_score.toFixed(2)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+
+            <p className="text-lg text-muted-foreground leading-relaxed">
+              We find that among the 5 most unusual PIGs, Cxcl10 and Cd74 clearly stand out. Both have the weirdness score exceeding 8; the next highest is Serpina3n with a score an order of magnitude lower at 0.79. Looking at the diagnostic statistics above, we can see that both Cxcl10 and Cd74 have a very high zero proportion exceeding 0.97%.
+            </p>
           </div>
         </div>
       </div>

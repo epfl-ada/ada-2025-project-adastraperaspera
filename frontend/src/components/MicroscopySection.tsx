@@ -177,9 +177,7 @@ const MicroscopySection = () => {
             Microscopy Summary
           </h3>
           <p>
-            Over 99% of cells lie within 200 µm of a plaque, with a median distance of 61 µm.
-            The distribution is strongly right-skewed, highlighting a small population of
-            plaque-distant cells.
+            We can see that the maximum distance from any plaque is 457 µm; however, over 99% of all cells are located at most 200 µm from the nearest plaque, with the median being 61 µm. The standard deviation is very significant at 44.4 µm. This is supported by the previous figure showing the brain regions by distance to the nearest plaque - some regions are very close, and some are very far. Further, we can observe that the distribution of cell-to-plaque distances is right-skewed, with a long tail of infrequent cells which are very far from the nearest plaque.
           </p>
         </div>
 

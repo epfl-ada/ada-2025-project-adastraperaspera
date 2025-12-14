@@ -1472,3 +1472,251 @@ def make_cell_to_plaque_distance_distribution_plotly(
     )
 
     return fig
+
+
+def make_expression_distribution_selector_plotly(
+    df: pd.DataFrame,
+    genes: Sequence[str],
+    *,
+    all_genes: Sequence[str] | None = None,
+    bins: int = 50,
+    use_log1p: bool = True,
+    kde: bool = True,
+    kde_bandwidth: float | None = None,
+    clip_quantiles: tuple[float, float] = (0.0, 0.995),
+    show_iqr: bool = True,
+    show_mean: bool = True,
+    show_zero_fraction: bool = True,
+    title: str = "Gene expression distribution",
+    filename: str = "expression_distribution.html",
+    out_dir: str = "frontend/public/plots",
+) -> go.Figure:
+
+    genes = [g for g in genes if g in df.columns]
+    if not genes:
+        raise ValueError("None of the requested genes are present in the dataframe.")
+
+    if all_genes is None:
+        all_genes = genes
+    all_genes = [g for g in all_genes if g in df.columns]
+
+    def transform(x):
+        x = x.astype(float)
+        if use_log1p:
+            x = np.log1p(x)
+        return x[np.isfinite(x)]
+
+    # ---------- global x-range ----------
+    all_vals = []
+    for g in set(genes) | set(all_genes):
+        all_vals.append(transform(df[g].to_numpy()))
+    all_vals = np.concatenate(all_vals)
+
+    lo = float(np.quantile(all_vals, clip_quantiles[0]))
+    hi = float(np.quantile(all_vals, clip_quantiles[1]))
+    if hi <= lo:
+        lo, hi = float(all_vals.min()), float(all_vals.max())
+
+    bin_edges = np.linspace(lo, hi, bins + 1)
+    centers = 0.5 * (bin_edges[:-1] + bin_edges[1:])
+    bw = bin_edges[1] - bin_edges[0]
+
+    # ---------- avg reference ----------
+    avg_hist = None
+    avg_q25 = avg_q75 = avg_mean = avg_zero_frac = None
+
+    if all_genes:
+        hists, q25s, q75s, means, zfs = [], [], [], [], []
+        for g in all_genes:
+            raw = df[g].to_numpy(dtype=float)
+            x = transform(raw)
+            if x.size == 0:
+                continue
+            h, _ = np.histogram(x, bins=bin_edges)
+            hists.append(h)
+            q25s.append(np.quantile(x, 0.25))
+            q75s.append(np.quantile(x, 0.75))
+            means.append(x.mean())
+            zfs.append(np.mean(raw <= 0.0) if use_log1p else np.mean(raw == 0.0))
+
+        if hists:
+            avg_hist = np.mean(hists, axis=0)
+            avg_q25 = float(np.mean(q25s))
+            avg_q75 = float(np.mean(q75s))
+            avg_mean = float(np.mean(means))
+            avg_zero_frac = float(np.mean(zfs))
+
+    # ---------- KDE-like smoothing ----------
+    def smooth(counts):
+        if not kde:
+            return None
+        bw_bins = kde_bandwidth or max(1.0, bins / 30)
+        k = int(4 * bw_bins)
+        xk = np.arange(-k, k + 1)
+        kernel = np.exp(-(xk**2) / (2 * bw_bins**2))
+        kernel /= kernel.sum()
+        return np.convolve(counts, kernel, mode="same")
+
+    avg_smooth = smooth(avg_hist) if avg_hist is not None else None
+
+    # ---------- traces per gene ----------
+    traces = []
+    visibility = []
+
+    for gi, gene in enumerate(genes):
+        raw = df[gene].to_numpy(dtype=float)
+        x = transform(raw)
+        gene_hist, _ = np.histogram(x, bins=bin_edges)
+        gene_smooth = smooth(gene_hist)
+
+        q25, q75 = np.quantile(x, [0.25, 0.75])
+        mean = x.mean()
+        zero_frac = np.mean(raw <= 0.0) if use_log1p else np.mean(raw == 0.0)
+
+        is_visible = gi == 0
+
+        # avg IQR
+        if show_iqr and avg_q25 is not None:
+            traces.append(go.Scatter(
+                x=[avg_q25, avg_q75, avg_q75, avg_q25],
+                y=[0, 0, max(gene_hist)*1.1, max(gene_hist)*1.1],
+                fill="toself",
+                fillcolor="rgba(255,224,178,0.45)",
+                line=dict(width=0),
+                showlegend=False,
+                visible=is_visible,
+            ))
+            visibility.append(is_visible)
+
+        # gene IQR
+        if show_iqr:
+            traces.append(go.Scatter(
+                x=[q25, q75, q75, q25],
+                y=[0, 0, max(gene_hist)*1.1, max(gene_hist)*1.1],
+                fill="toself",
+                fillcolor="rgba(179,217,255,0.45)",
+                line=dict(width=0),
+                showlegend=False,
+                visible=is_visible,
+            ))
+            visibility.append(is_visible)
+
+        # avg histogram
+        if avg_hist is not None:
+            traces.append(go.Bar(
+                x=centers,
+                y=avg_hist,
+                name="Hist (avg)",
+                marker_color="#F4A261",
+                opacity=1.0,
+                visible=is_visible,
+            ))
+            visibility.append(is_visible)
+
+        # gene histogram
+        traces.append(go.Bar(
+            x=centers,
+            y=gene_hist,
+            name="Hist (gene)",
+            marker_color="#4C78A8",
+            opacity=1.0,
+            visible=is_visible,
+        ))
+        visibility.append(is_visible)
+
+        # avg KDE
+        if avg_smooth is not None:
+            traces.append(go.Scatter(
+                x=centers,
+                y=avg_smooth,
+                mode="lines",
+                name="KDE (avg)",
+                line=dict(color="#F28E2B", width=2),
+                visible=is_visible,
+            ))
+            visibility.append(is_visible)
+
+        # gene KDE
+        if gene_smooth is not None:
+            traces.append(go.Scatter(
+                x=centers,
+                y=gene_smooth,
+                mode="lines",
+                name="KDE (gene)",
+                line=dict(color="#1F77B4", width=2),
+                visible=is_visible,
+            ))
+            visibility.append(is_visible)
+
+        # mean lines
+        if show_mean:
+            traces.append(go.Scatter(
+                x=[mean, mean],
+                y=[0, max(gene_hist)*1.1],
+                mode="lines",
+                line=dict(color="#1F77B4", dash="dash"),
+                name="Mean (gene)",
+                visible=is_visible,
+            ))
+            visibility.append(is_visible)
+
+            if avg_mean is not None:
+                traces.append(go.Scatter(
+                    x=[avg_mean, avg_mean],
+                    y=[0, max(gene_hist)*1.1],
+                    mode="lines",
+                    line=dict(color="#F28E2B", dash="dash"),
+                    name="Mean (avg)",
+                    visible=is_visible,
+                ))
+                visibility.append(is_visible)
+
+    # ---------- dropdown ----------
+    n_traces_per_gene = len(visibility) // len(genes)
+
+    buttons = []
+    for i, g in enumerate(genes):
+        vis = [False] * len(traces)
+        start = i * n_traces_per_gene
+        for j in range(n_traces_per_gene):
+            vis[start + j] = True
+        buttons.append(dict(
+            label=g,
+            method="update",
+            args=[{"visible": vis}, {"title": f"{title}: {g}"}],
+        ))
+
+    fig = go.Figure(data=traces)
+
+    fig.update_layout(
+        title=f"{title}: {genes[0]}",
+        updatemenus=[dict(
+            buttons=buttons,
+            direction="down",
+            x=0.6,
+            y=1.20,
+            showactive=True,
+        )],
+        barmode="overlay",
+        autosize=True,
+        margin=dict(l=60, r=20, t=90, b=55),
+        template="simple_white",
+        xaxis=dict(title="log1p(counts)" if use_log1p else "counts", range=[lo, hi]),
+        yaxis=dict(title="Count"),
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0),
+    )
+
+    out_path = Path(out_dir) / filename
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    fig.write_html(
+        str(out_path),
+        include_plotlyjs="cdn",
+        full_html=True,
+        config={"responsive": True, "displayModeBar": False},
+        default_width="100%",
+        default_height="100%",
+    )
+
+    return fig
