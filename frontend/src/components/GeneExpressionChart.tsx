@@ -30,7 +30,7 @@ const GeneExpressionChart = () => {
             <PlotFrame
                 src={`${base}plots/microscopy_cells_unified.html`}
                 title="Detected Aβ plaques after transformation"
-                size="md"
+                size="sm"
               />
           </div>
 
