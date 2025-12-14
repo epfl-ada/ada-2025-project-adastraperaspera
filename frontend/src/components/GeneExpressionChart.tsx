@@ -22,13 +22,14 @@ const GeneExpressionChart = () => {
             </p>
           </div>
 
-          {/* Small microscopy card */}
+          {/* 
           <div className="bg-card rounded-2xl border border-border p-4">
             <PlotFrame
               src={`${base}plots/microscopy_cells_unified.html`}
               title="Microscopy cells unified"
               size="sm"
             />
+            Small microscopy card */}
           </div>
         </div>
 
