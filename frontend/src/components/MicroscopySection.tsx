@@ -158,10 +158,10 @@ const MicroscopySection = () => {
           </div>
 
           {/* Two plots side by side */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+          <div className="space-y-10">
             <PlotFrame
               title="Brain regions by distance to nearest plaque"
-              size="sm"
+              size="md"
               placeholder="Distance heatmap / map plot (to be inserted)"
               src={`${base}plots/cell_to_plaque_distance_map.html`}
             />
