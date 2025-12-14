@@ -27,11 +27,29 @@ const GeneExpressionChart = () => {
               Looking at the gene selection, out of 347 genes, 248 represent markers for 8 main cell types, canonical neuronal cortical layer markers, and non-neuronal markers; 83 genes related to activated microglia and astrocytes; and 16 PIGs curated from primary literature. The figure below reveals the individual cells as filled circles with clustering component.
             </p>
             
-            <PlotFrame
-                src={`${base}plots/microscopy_cells_unified.html`}
-                title="Detected Aβ plaques after transformation"
-                size="sm"
-              />
+            <div className="space-y-4">
+              <div className="flex items-center gap-3 p-4 rounded-xl bg-card border border-border">
+                <div className="w-3 h-3 rounded-full bg-chart-1" />
+                <div>
+                  <p className="font-medium text-foreground">EPCAM</p>
+                  <p className="text-sm text-muted-foreground">Epithelial cell adhesion molecule - marks epithelial cells</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 p-4 rounded-xl bg-card border border-border">
+                <div className="w-3 h-3 rounded-full bg-chart-2" />
+                <div>
+                  <p className="font-medium text-foreground">CD3D</p>
+                  <p className="text-sm text-muted-foreground">T-cell surface glycoprotein - marks T lymphocytes</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 p-4 rounded-xl bg-card border border-border">
+                <div className="w-3 h-3 rounded-full bg-chart-3" />
+                <div>
+                  <p className="font-medium text-foreground">COL1A1</p>
+                  <p className="text-sm text-muted-foreground">Collagen type I - marks fibroblasts and stroma</p>
+                </div>
+              </div>
+            </div>
           </div>
 
           <div className="bg-card rounded-2xl border border-border p-6 shadow-md">
