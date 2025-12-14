@@ -1,5 +1,6 @@
 import React, { useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+const base = import.meta.env.BASE_URL;
 
 const researchQuestions = [
   {
@@ -86,13 +87,12 @@ const RQSection = () => {
               section on this page.
             </p>
 
-            <div className="bg-card rounded-2xl border border-border p-6 shadow-md">
-              <h3 className="text-lg font-semibold text-foreground mb-2">
-                Navigation
-              </h3>
-              <p className="text-sm text-muted-foreground">
-                Uses in-page anchors (e.g. <span className="font-mono">#rq-3</span>) so links are shareable.
-              </p>
+            <div className="mb-8">
+                <img
+                    src="${base}rat-brain.png"
+                    alt="Rat brain schematic"
+                    className="w-full max-w-md rounded-2xl border border-border shadow-md"
+                />
             </div>
           </div>
 
