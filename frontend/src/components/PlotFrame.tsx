@@ -1,10 +1,9 @@
 type PlotSize = "sm" | "md" | "lg" | "xl";
 
 const SIZE_CLASSES: Record<PlotSize, string> = {
-  sm: "h-[420px]",
-  md: "h-[560px]",
-  lg: "h-[720px]",
-  xl: "h-[860px]",
+  sm: "h-[360px]",
+  md: "h-[520px]",
+  lg: "h-[700px]",
 };
 
 interface PlotFrameProps {

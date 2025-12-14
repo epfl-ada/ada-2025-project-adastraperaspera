@@ -161,13 +161,13 @@ const MicroscopySection = () => {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
             <PlotFrame
               title="Brain regions by distance to nearest plaque"
-              size="md"
+              size="sm"
               placeholder="Distance heatmap / map plot (to be inserted)"
               src={`${base}plots/cell_to_plaque_distance_map.html`}
             />
             <PlotFrame
               title="Cell-to-plaque distance distribution"
-              size="md"
+              size="sm"
               placeholder="Histogram / distribution plot (to be inserted)"
               // Example later:
               // src={`${base}plots/cell_to_plaque_distance_hist.html`}
