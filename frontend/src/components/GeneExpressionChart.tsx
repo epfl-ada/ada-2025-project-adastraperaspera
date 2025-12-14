@@ -68,7 +68,7 @@ const GeneExpressionChart = () => {
             <PlotFrame
               src={`${base}plots/microscopy_cells_unified.html`}
               title="Microscopy cells unified"
-              size="lg"
+              size="md"
             />
 
             <p className="text-xs text-muted-foreground text-center">
@@ -92,7 +92,7 @@ const GeneExpressionChart = () => {
             <PlotFrame
               src={`${base}plots/expression_distribution.html`}
               title="Microscopy cells unified"
-              size="lg"
+              size="md"
             />
             <p className="text-xs text-muted-foreground text-center">
               Interactive microscopy-based spatial maps. Pan and zoom enabled.
