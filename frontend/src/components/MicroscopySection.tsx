@@ -176,7 +176,7 @@ const MicroscopySection = () => {
           <h3 className="text-xl font-semibold text-foreground mb-4">
             Microscopy Summary
           </h3>
-          <p className="text-sm text-muted-foreground leading-relaxed">
+          <p>
             Over 99% of cells lie within 200 µm of a plaque, with a median distance of 61 µm.
             The distribution is strongly right-skewed, highlighting a small population of
             plaque-distant cells.
