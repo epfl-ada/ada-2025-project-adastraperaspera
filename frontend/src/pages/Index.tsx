@@ -8,7 +8,7 @@ import MethodologySection from "@/components/MethodologySection";
 import ConclusionSection from "@/components/ConclusionSection";
 import MiscroscopySection from "@/components/MicroscopySection";
 import Footer from "@/components/Footer";
-import ResearchQuestionsNav from "@/components/RQSection";  
+import RQSection from "@/components/RQSection";  
 
 const Index = () => {
   return (
@@ -18,7 +18,7 @@ const Index = () => {
       {/*<MetricsSection /> */}
       <MiscroscopySection/>
       <GeneExpressionChart />
-      <ResearchQuestionsNav />
+      <RQSection />
       <CellClusteringSection />
       <SpatialMapSection />
       <MethodologySection />

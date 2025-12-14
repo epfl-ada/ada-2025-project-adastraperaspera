@@ -26,7 +26,7 @@ function scrollToHash(hash: string) {
   el.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
-export default function ResearchQuestionsNav() {
+export default function RQSection() {
   const navigate = useNavigate();
   const location = useLocation();
 
