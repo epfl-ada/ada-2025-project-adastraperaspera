@@ -121,13 +121,32 @@ We find that among the 5 most unusual PIGs, Cxcl10 and Cd74 clearly stand out. B
 
 ## Predicting Cell Composition
 
-### Cell clustering
+### Joint cell clustering
+
+// ToDo: improve the plot based on src.scripts.visualization.plots.plot_leiden_umap_grid; usage in results.ipynb
+// Zoom in, transparent background
+// Add unified axi like in figures/microscopy_cells_unified.png
+// Should be 2x3 grid; oY: mouse type (first row: wild type, second row: transgenic); oX: age (first column: 2.5 months, second column: 5.7 months, third column: 13+ months)
+<p align="center">
+  <img src="figures/joint_clustering_umap.png" width="160">
+  <br><em>Joint Leiden clustering UMAP plot</em>
+</p>
+
+// ToDo: improve the plot based on src.scripts.visualization.plots.plot_leiden_spatial_grid; usage in results.ipynb
+// Zoom in, transparent background
+// Add unified axi like in figures/microscopy_cells_unified.png
+// Should be 2x3 grid; oY: mouse type (first row: wild type, second row: transgenic); oX: age (first column: 2.5 months, second column: 5.7 months, third column: 13+ months)
+<p align="center">
+  <img src="figures/joint_clustering_overlayed.png" width="160">
+  <br><em>Joint Leiden clustering of 6 mice</em>
+</p>
+
 
 ## Predicting Gene Expression
 
 ### Mean PIG expression at different plaque distances
 
-In this section, we investigate how the expression of the 16 plaque-induced genes changes with distance to the nearest plaque. To this end, we group the cells into 5 equal-count distance bins` and compute the mean log1p-normalized transcript count within each bin along with the 95% confidence interval.
+In this section, we investigate how the expression of the 16 plaque-induced genes changes with distance to the nearest plaque. To this end, we group the cells into 5 equal-count distance bins` and compute the mean log1p-normalized transcript count within each bin along with the 95% confidence interval. ANOVA analysis confirms that all the 16 PIGs show significant differences in mean expression across distance bins at Bonferroni-corrected FDR set to 0.01. 
 
 // ToDo: improve the plot based on src.scripts.visualization.plots.plot_gene_trends; all 16 PIGs should be plotted
 // One option: utilize src.scripts.visualization.plots.plot_gene_expression_by_distance_interactive, but add all genes at once, not just one at a time
@@ -137,7 +156,9 @@ In this section, we investigate how the expression of the 16 plaque-induced gene
   <br><em>Expression of PIGs vs. distance to plaque</em>
 </p>
 
-From the figure above, we can see that Gfap shows the biggest difference in the log1p-transformed expression between the closest and furthest distance bin at 0.72. This corresponds to exp(0.72) = 2.05 times more expression in the closest bin compared to the furthest bin. Thus, Gfap shows the strongest spatial variation, as its expression quickly decays as we move away from the plaque. This is supported by the Gfap's role as an intermediate filament protein found predominantly in astrocytes
+From the figure above, we can see that Gfap shows the biggest difference in the log1p-transformed expression between the closest and furthest distance bin at 0.72. This difference is about two orders of magnitude larger than the Standard Error of the Mean (SEM) which is on the scale of 0.01 thanks to a large number of cells (10779) per bin. The aforementioned difference corresponds to exp(0.72) = 2.05 times more expression in the closest bin compared to the furthest bin. Overall, per-bin expression of Gfap decreases monotonically from the closest bin to the farthest.
+
+Thus, Gfap shows the strongest spatial variation, as its expression quickly decays as we move away from the plaque. This is supported by the Gfap's role as an intermediate filament protein found predominantly in astrocytes
 
 The visualization also highlights consistent decreasing gradients for microglial (e.g., Hexb, Ctsd, Cst3, Apoe) and astrocytic (e.g., Gfap, Serpina3n, Vim) markers. In other words, the brain regions most proximal to plaques (up to 29 µm) show elevated microglial and astrocytic gene expression that fades with distance.
 
@@ -151,7 +172,7 @@ The visualization also highlights consistent decreasing gradients for microglial
 
 For each of the 16 PIGs, we regress the log1p-normalized transcript count against the distance to the nearest plaque. Further, we perform multiple testing correction using the Benjamini–Hochberg False Discovery Rate (FDR) adjustment since we perform 16 independent regressions.
 
-All 16 PIGs exhibit a statistically significant negative slope at 0.01 FDR level. However, the slopes vary significantly among PIGs, with the smallest and largest absolute values of slopes corresponding to Cxcl10 and Gfap, respectively. Translating the slopes to the original integer transcript count scale, we get 128 µm distance to halve the expression for Gfap and 4,415 µm distance for Cxcl10. For context, the entire diameter of the mouse brain is about 6,000 µm, meaning that for Cxcl10, the expression is nearly constant.
+All 16 PIGs exhibit a statistically significant negative slope at 0.01 FDR level. However, the slopes vary significantly among PIGs, with the smallest and largest absolute values of slopes corresponding to Cxcl10 and Gfap, respectively. Translating the slopes to the original integer transcript count scale, we get 128 µm distance to halve the expression for Gfap and 4,415 µm distance for Cxcl10. For context, the entire diameter of the mouse brain is about 6,000 µm, meaning that for Cxcl10, the expression is nearly constant. This result is in large due to the fact that Cxcl10 is extremely zero-inflated. In other words, its expression is very low across all distances with a low absolute value of the spatial variation.
 
 // ToDo: improve the plot based on src.scripts.visualization.plots.plot_half_distance;usage in results.ipynb 
 // Add Zoom in, transparent background

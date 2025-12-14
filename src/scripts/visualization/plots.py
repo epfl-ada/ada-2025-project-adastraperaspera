@@ -31,6 +31,122 @@ from ..preprocessing.partition import gaussian_kde
 
 Number = Union[int, float, np.number]
 
+def plot_half_distance(
+    df: pd.DataFrame,
+    gene_col: str = "gene",
+    slope_col: str = "slope",
+    qval_col: str | None = "qval",
+    filter_negative: bool = True,
+    sort: str = "half",             # "half" | "abs_half_desc" | "qval_then_half"
+    top_n: int | None = None,
+    log_scale: bool = False,
+    tissue_radius_um: float | None = None,
+    annotate: bool = True,
+    ax: plt.Axes | None = None,
+    figsize: tuple[float, float] | None = None,
+):
+    """
+    Compute and plot distance to halve expression: d_{1/2} = ln(2) / |slope| (µm).
+
+    Parameters
+    ----------
+    df : DataFrame
+        Must contain `gene_col`, `slope_col`, and optionally `qval_col`.
+    filter_negative : bool
+        If True, keep only rows with slope < 0.
+    sort : str
+        "half" -> ascending d_{1/2} (shortest first).
+        "abs_half_desc" -> descending |d_{1/2}| (longest first).
+        "qval_then_half" -> ascending qval then ascending d_{1/2}. Requires qval_col.
+    top_n : int | None
+        If set, plot only the first N after sorting.
+    log_scale : bool
+        If True, use a log x-axis.
+    tissue_radius_um : float | None
+        If set, draw a vertical reference line at this radius (µm).
+    annotate : bool
+        If True, write the numeric value next to each bar.
+    ax : matplotlib Axes | None
+        If provided, draw on this axes; otherwise create a new figure/axes.
+    figsize : (w, h) | None
+        Figure size. If None, height is scaled by number of bars.
+
+    Returns
+    -------
+    ax : matplotlib Axes
+    plot_df : DataFrame
+        The dataframe (indexed by gene) with a 'half_dist_um' column used for plotting.
+    """
+    if filter_negative:
+        work = df.loc[df[slope_col] < 0, [gene_col, slope_col] + ([qval_col] if qval_col else [])].copy()
+    else:
+        work = df[[gene_col, slope_col] + ([qval_col] if qval_col else [])].copy()
+
+    # Compute half-distance (µm) and clean
+    work["half_dist_um"] = np.log(2) / work[slope_col].abs()
+    work.replace([np.inf, -np.inf], np.nan, inplace=True)
+    work.dropna(subset=["half_dist_um"], inplace=True)
+
+    # Sorting
+    if sort == "half":
+        work.sort_values("half_dist_um", inplace=True, ascending=True)
+    elif sort == "abs_half_desc":
+        work["abs_half"] = work["half_dist_um"].abs()
+        work.sort_values("abs_half", inplace=True, ascending=False)
+    elif sort == "qval_then_half":
+        if qval_col is None or qval_col not in work.columns:
+            raise ValueError("qval_then_half sorting requires qval_col to be provided and present in df.")
+        work.sort_values([qval_col, "half_dist_um"], inplace=True, ascending=[True, True])
+    else:
+        raise ValueError("sort must be one of {'half','abs_half_desc','qval_then_half'}")
+
+    if top_n is not None:
+        work = work.head(int(top_n))
+
+    plot_df = work.set_index(gene_col)
+
+    # Create axes
+    n = len(plot_df)
+    if ax is None:
+        if figsize is None:
+            figsize = (11, max(4, 0.28 * n))
+        _, ax = plt.subplots(figsize=figsize)
+
+    # Plot
+    plot_df["half_dist_um"].plot(kind="barh", ax=ax)
+    ax.set_xlabel("Distance to halve expression (µm)")
+    ax.set_ylabel("Gene")
+    ax.set_title(f"Half-distance d₁/₂ = ln(2)/|β₁| (n={n})")
+    ax.invert_yaxis()  # shortest at top if ascending sort
+
+    if log_scale:
+        ax.set_xscale("log")
+        pad_factor = 1.03
+    else:
+        pad = (plot_df["half_dist_um"].max() or 0) * 0.01
+
+    # Reference line for tissue radius
+    if tissue_radius_um is not None:
+        ax.axvline(tissue_radius_um, linestyle="--", linewidth=1)
+        ax.text(
+            tissue_radius_um, -0.6,
+            f"radius = {tissue_radius_um:,.0f} µm",
+            rotation=0, ha="right", va="bottom"
+        )
+
+    # Annotations
+    if annotate:
+        for i, v in enumerate(plot_df["half_dist_um"].values):
+            if np.isnan(v):
+                continue
+            if log_scale:
+                ax.text(v * pad_factor, i, f"{v:,.0f} µm", va="center", ha="left", fontsize=9)
+            else:
+                ax.text(v + pad, i, f"{v:,.0f} µm", va="center", ha="left", fontsize=9)
+
+    plt.tight_layout()
+    return ax, plot_df
+
 
 def load_png_rgb(path: Path) -> np.ndarray:
     """Load PNG as RGB array (H, W, 3)."""
