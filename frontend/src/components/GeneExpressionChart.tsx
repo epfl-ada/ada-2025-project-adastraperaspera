@@ -71,31 +71,8 @@ const GeneExpressionChart = () => {
           <div
             className="
               snap-start
-              min-w-[700px]
-              max-w-[700px]
-              bg-card
-              rounded-2xl
-              border border-border
-              p-8
-              flex-shrink-0
-              space-y-6
-            "
-          >
-            <p className="text-lg text-muted-foreground">
-              First, let us explore the data by visualizing the distribution of log1p-transformed transcript counts for the 16 PIGs against the average distribution of all 347 genes. We will focus on the mouse with the most advanced stage of the Alzheimer's disease (transgenic at 17.9 months of age).
-            </p>
-
-            <PlotFrame
-              src={`${base}plots/expression_distribution.html`}
-              title="Gene expression distribution (log1p-transformed)"
-              size="md"
-            />
-          </div>
-          <div
-            className="
-              snap-start
-              min-w-[700px]
-              max-w-[700px]
+              min-w-[500px]
+              max-w-[500px]
               bg-card
               rounded-2xl
               border border-border
@@ -147,7 +124,6 @@ const GeneExpressionChart = () => {
                 We find that among the 5 most unusual PIGs, Cxcl10 and Cd74 clearly stand out. Both have the weirdness score exceeding 8; the next highest is Serpina3n with a score an order of magnitude lower at 0.79. Looking at the diagnostic statistics above, we can see that both Cxcl10 and Cd74 have a very high zero proportion exceeding 0.97%.
             </p>
           </div>
-
         </div>
       </div>
     </section>
