@@ -91,6 +91,62 @@ const GeneExpressionChart = () => {
               size="md"
             />
           </div>
+          <div
+            className="
+              snap-start
+              min-w-[700px]
+              max-w-[700px]
+              bg-card
+              rounded-2xl
+              border border-border
+              p-8
+              flex-shrink-0
+              space-y-6
+            "
+          >
+            <table className="min-w-full text-sm">
+                  <thead className="bg-muted/50">
+                    <tr>
+                      <th className="px-4 py-3 text-left font-semibold text-foreground">
+                        gene
+                      </th>
+                      <th className="px-4 py-3 text-right font-semibold text-foreground">
+                        zero_frac
+                      </th>
+                      <th className="px-4 py-3 text-right font-semibold text-foreground">
+                        weird_score
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {[
+                      { gene: "Cxcl10", zero_frac: 1.0, weird_score: 9.35 },
+                      { gene: "Cd74", zero_frac: 0.98, weird_score: 8.13 },
+                      { gene: "Serpina3n", zero_frac: 0.88, weird_score: 0.79 },
+                      { gene: "C4b", zero_frac: 0.9, weird_score: 0.19 },
+                      { gene: "Gfap", zero_frac: 0.69, weird_score: 0.05 },
+                    ].map((row) => (
+                      <tr
+                        key={row.gene}
+                        className="border-t border-border hover:bg-muted/30 transition"
+                      >
+                        <td className="px-4 py-2 font-mono text-foreground">
+                          {row.gene}
+                        </td>
+                        <td className="px-4 py-2 text-right text-muted-foreground">
+                          {row.zero_frac.toFixed(2)}
+                        </td>
+                        <td className="px-4 py-2 text-right text-muted-foreground">
+                          {row.weird_score.toFixed(2)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+            </table>
+            <p className="text-lg text-muted-foreground leading-relaxed">
+                We find that among the 5 most unusual PIGs, Cxcl10 and Cd74 clearly stand out. Both have the weirdness score exceeding 8; the next highest is Serpina3n with a score an order of magnitude lower at 0.79. Looking at the diagnostic statistics above, we can see that both Cxcl10 and Cd74 have a very high zero proportion exceeding 0.97%.
+            </p>
+          </div>
 
         </div>
       </div>
