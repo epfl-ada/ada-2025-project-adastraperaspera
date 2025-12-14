@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from collections.abc import Iterable, Sequence
+from collections.abc import Iterable, Mapping, Sequence
 import math
 from pathlib import Path
-from typing import Union
+from typing import Any, Union
 
 import geopandas as gpd
 import matplotlib as mpl
@@ -31,13 +31,115 @@ from ..preprocessing.partition import gaussian_kde
 
 Number = Union[int, float, np.number]
 
+
+def plot_leiden_logit_slopes(
+    logit_df: pd.DataFrame,
+    my_label_to_type: Mapping[int, str],
+    *,
+    pval_col: str = "adj_pval",
+    slope_col: str = "slope",
+    cluster_col: str = "cluster",
+    pval_threshold: float = 0.01,
+    blue: str = "#4C78A8",
+    red: str = "#E45756",
+    gap: int = 1,
+    fig_width_min: float = 10.0,
+    fig_width_per_bar: float = 0.35,
+    fig_height: float = 15.0,
+    ypad_scale: float = 0.001,
+    rotation: int = 90,
+    ax: plt.Axes | None = None,
+    title: str | None = None,
+    show: bool = True,
+) -> tuple[plt.Figure, plt.Axes, pd.DataFrame]:
+    """
+    Filter significant entries and plot slopes as a split bar chart:
+      - left half: negative slopes (ascending), colored blue, labels at bottom
+      - right half: positive slopes (ascending), colored red, labels at top
+
+    Returns (fig, ax, sig_df) where sig_df is the filtered significant DataFrame
+    with an added 'cell_type' column.
+
+    Notes:
+      - Entries with slope == 0 are excluded by default (neither neg nor pos).
+      - Cluster ids are mapped via my_label_to_type[int(cluster_id)].
+        If a key is missing, falls back to str(cluster_id).
+    """
+    required = {pval_col, slope_col, cluster_col}
+    missing = required - set(logit_df.columns)
+    if missing:
+        raise KeyError(f"logit_df is missing required columns: {sorted(missing)}")
+
+    # 0) Sort by adjusted p-value (ascending)
+    df = logit_df.sort_values(pval_col, ascending=True).reset_index(drop=True)
+
+    # 1) Keep only significant entries
+    sig = df.loc[df[pval_col] < pval_threshold].copy()
+
+    # 3) Map cluster id -> cell type label
+    def _map_cluster(x: Any) -> str:
+        try:
+            return my_label_to_type[int(x)]
+        except Exception:
+            return str(x)
+
+    sig["cell_type"] = sig[cluster_col].apply(_map_cluster)
+
+    # 2) Split into negative/positive slopes; sort each side ascending by slope
+    neg = sig.loc[sig[slope_col] < 0].sort_values(slope_col, ascending=True)
+    pos = sig.loc[sig[slope_col] > 0].sort_values(slope_col, ascending=True)
+
+    nL, nR = len(neg), len(pos)
+    xL = np.arange(nL)
+    xR = np.arange(nR) + nL + gap
+
+    if ax is None:
+        fig_w = max(fig_width_min, fig_width_per_bar * (nL + nR + gap))
+        fig, ax = plt.subplots(figsize=(fig_w, fig_height))
+    else:
+        fig = ax.figure
+
+    ax.bar(xL, neg[slope_col].to_numpy(), color=blue)
+    ax.bar(xR, pos[slope_col].to_numpy(), color=red)
+
+    # Zero line for reference
+    ax.axhline(0, linewidth=1)
+
+    # Clean x-axis (we write cell types directly on bars)
+    ax.set_xticks([])
+    ax.set_ylabel(slope_col)
+
+    if title:
+        ax.set_title(title)
+
+    # Annotation offsets
+    max_abs = float(sig[slope_col].abs().max()) if len(sig) else 1.0
+    ypad = ypad_scale * max_abs if max_abs > 0 else 0.1
+
+    # Bottom of left (negative) bars
+    for x, y, txt in zip(xL, neg[slope_col].to_numpy(), neg["cell_type"].to_numpy(), strict=False):
+        ax.text(x, y - ypad, str(txt), ha="center", va="top", rotation=rotation)
+
+    # Top of right (positive) bars
+    for x, y, txt in zip(xR, pos[slope_col].to_numpy(), pos["cell_type"].to_numpy(), strict=False):
+        ax.text(x, y + ypad, str(txt), ha="center", va="bottom", rotation=rotation)
+
+    ax.margins(x=0.01)
+    fig.tight_layout()
+
+    if show:
+        plt.show()
+
+    return fig, ax, sig
+
+
 def plot_half_distance(
     df: pd.DataFrame,
     gene_col: str = "gene",
     slope_col: str = "slope",
     qval_col: str | None = "qval",
     filter_negative: bool = True,
-    sort: str = "half",             # "half" | "abs_half_desc" | "qval_then_half"
+    sort: str = "half",  # "half" | "abs_half_desc" | "qval_then_half"
     top_n: int | None = None,
     log_scale: bool = False,
     tissue_radius_um: float | None = None,
@@ -78,7 +180,9 @@ def plot_half_distance(
         The dataframe (indexed by gene) with a 'half_dist_um' column used for plotting.
     """
     if filter_negative:
-        work = df.loc[df[slope_col] < 0, [gene_col, slope_col] + ([qval_col] if qval_col else [])].copy()
+        work = df.loc[
+            df[slope_col] < 0, [gene_col, slope_col] + ([qval_col] if qval_col else [])
+        ].copy()
     else:
         work = df[[gene_col, slope_col] + ([qval_col] if qval_col else [])].copy()
 
@@ -95,7 +199,9 @@ def plot_half_distance(
         work.sort_values("abs_half", inplace=True, ascending=False)
     elif sort == "qval_then_half":
         if qval_col is None or qval_col not in work.columns:
-            raise ValueError("qval_then_half sorting requires qval_col to be provided and present in df.")
+            raise ValueError(
+                "qval_then_half sorting requires qval_col to be provided and present in df."
+            )
         work.sort_values([qval_col, "half_dist_um"], inplace=True, ascending=[True, True])
     else:
         raise ValueError("sort must be one of {'half','abs_half_desc','qval_then_half'}")
@@ -129,9 +235,12 @@ def plot_half_distance(
     if tissue_radius_um is not None:
         ax.axvline(tissue_radius_um, linestyle="--", linewidth=1)
         ax.text(
-            tissue_radius_um, -0.6,
+            tissue_radius_um,
+            -0.6,
             f"radius = {tissue_radius_um:,.0f} µm",
-            rotation=0, ha="right", va="bottom"
+            rotation=0,
+            ha="right",
+            va="bottom",
         )
 
     # Annotations

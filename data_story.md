@@ -141,12 +141,28 @@ We find that among the 5 most unusual PIGs, Cxcl10 and Cd74 clearly stand out. B
   <br><em>Joint Leiden clustering of 6 mice</em>
 </p>
 
+### Plaque distance by cell type
+
+// ToDo: improve the plot based on src.scripts.visualization.plots.plot_leiden_logit_slopes; usage in results.ipynb
+// Zoom in, transparent background
+<p align="center">
+  <img src="figures/slopes_types.png" width="160">
+  <br><em>Plaque distance by cell type</em>
+</p>
+
+// ToDo: improve the plot based on src.scripts.research_questions.RQ2.analyze_leiden_spatial; usage in results.ipynb
+// Zoom in, transparent background
+<p align="center">
+  <img src="figures/cluster_frequency_distance_to_plaque.png" width="160">
+  <br><em>Cluster frequency vs. distance to plaque</em>
+</p>
+
 
 ## Predicting Gene Expression
 
 ### Mean PIG expression at different plaque distances
 
-In this section, we investigate how the expression of the 16 plaque-induced genes changes with distance to the nearest plaque. To this end, we group the cells into 5 equal-count distance bins` and compute the mean log1p-normalized transcript count within each bin along with the 95% confidence interval. ANOVA analysis confirms that all the 16 PIGs show significant differences in mean expression across distance bins at Bonferroni-corrected FDR set to 0.01. 
+In this section, we investigate how the expression of the 16 plaque-induced genes changes with distance to the nearest plaque. To this end, we group the cells into 5 equal-count distance bins` and compute the mean log1p-normalized transcript count within each bin along with the 95% confidence interval. ANOVA analysis confirms that all the 16 PIGs show significant differences in mean expression across distance bins at Bonferroni-corrected FDR set to 0.01.
 
 // ToDo: improve the plot based on src.scripts.visualization.plots.plot_gene_trends; all 16 PIGs should be plotted
 // One option: utilize src.scripts.visualization.plots.plot_gene_expression_by_distance_interactive, but add all genes at once, not just one at a time
@@ -174,15 +190,11 @@ For each of the 16 PIGs, we regress the log1p-normalized transcript count agains
 
 All 16 PIGs exhibit a statistically significant negative slope at 0.01 FDR level. However, the slopes vary significantly among PIGs, with the smallest and largest absolute values of slopes corresponding to Cxcl10 and Gfap, respectively. Translating the slopes to the original integer transcript count scale, we get 128 µm distance to halve the expression for Gfap and 4,415 µm distance for Cxcl10. For context, the entire diameter of the mouse brain is about 6,000 µm, meaning that for Cxcl10, the expression is nearly constant. This result is in large due to the fact that Cxcl10 is extremely zero-inflated. In other words, its expression is very low across all distances with a low absolute value of the spatial variation.
 
-// ToDo: improve the plot based on src.scripts.visualization.plots.plot_half_distance;usage in results.ipynb 
+// ToDo: improve the plot based on src.scripts.visualization.plots.plot_half_distance;usage in results.ipynb
 // Add Zoom in, transparent background
 <p align="center">
   <img src="figures/distances_to_halve_expression.png" width="160">
   <br><em>Distances to halve expression for the 16 PIGs</em>
 </p>
-
-### Plaque distance by cell type
-
-// ToDo
 
 ## Predicting Plaque distance
