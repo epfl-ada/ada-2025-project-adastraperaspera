@@ -817,6 +817,7 @@ def plot_gene_expression_by_distance_interactive(
         title=title,
         xaxis_title=x_label,
         yaxis_title=y_label,
+        autosize=True,
         template="plotly_white",
         margin=dict(t=120, l=60, r=20, b=60),
     )
@@ -1035,8 +1036,9 @@ def make_wt_tg_age_grid_scatter_from_csv(
     # ---- overall layout + transparency ----
     fig.update_layout(
         title=title,
-        width=None,
-        height=700,
+        #width=None,
+        #height=700,
+        autosize=True,
         margin=dict(l=30, r=20, t=80 if title else 40, b=30),
         dragmode="pan",
         template="plotly_white",
@@ -1112,8 +1114,9 @@ def make_alignment_overlay_plot(
 
     fig.update_layout(
         title=title,
-        height=700,
-        width=None,  # responsive inside iframe
+        #height=700,
+        #width=None,  # responsive inside iframe
+        autosize=True,
         margin=dict(l=30, r=20, t=80, b=30),
         dragmode="pan",
         template="plotly_white",
