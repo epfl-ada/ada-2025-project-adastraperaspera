@@ -1330,146 +1330,145 @@ def make_plaques_detected_plotly(
 
     return fig
 
-def make_cell_to_plaque_distance_map_plotly(
+def make_cell_to_plaque_distance_distribution_plotly(
+    df: pd.DataFrame,
     *,
-    cells_df: pd.DataFrame,
-    plaques_gdf: pd.DataFrame | None = None,
-    x_col: str = "x_centroid",
-    y_col: str = "y_centroid",
-    dist_col: str = "distance_to_plaque",
-    clip_quantiles: tuple[float, float] = (0.01, 0.99),
-    vmin: float | None = None,
-    vmax: float | None = None,
-    max_points: int | None = None,
-    point_size: float = 4,
-    point_alpha: float = 0.85,
-    plaque_edgecolor: str = "cyan",
-    plaque_linewidth: float = 1.2,
-    invert_y: bool = False,
-    title: str = "Cell–plaque distance map (µm)",
-    figsize_px: tuple[int, int] = (820, 700),
-    filename: str = "cell_to_plaque_distance_map.html",
+    column: str = "distance_to_plaque",
+    prox_thresh: float = 30.0,
+    distal_thresh: float = 100.0,
+    n_bins: int = 60,
+    clip_quantiles: tuple[float, float] | None = (0.0, 0.99),
+    show_kde: bool = True,
+    kde_points: int = 400,
+    bandwidth: float | None = None,
+    title: str = "Distribution of cell distances to nearest plaque (linear scale)",
+    filename: str = "cell_to_plaque_distance_distribution.html",
     out_dir: str = "frontend/public/plots",
 ) -> go.Figure:
     """
-    Interactive spatial map of distance from each cell to nearest plaque.
+    Interactive Plotly version of the *linear-scale* distance distribution.
+
+    - Histogram on linear scale
+    - Optional smooth density curve (KDE-like Gaussian smoothing)
+    - Threshold lines at prox_thresh and distal_thresh
+    - Quantile lines at 5/25/50/75/95%
+    - Transparent background for embedding
     """
 
-    # ------------------ cells ------------------
-    C = cells_df.copy()
+    if column not in df.columns:
+        raise ValueError(f"Column '{column}' not found in DataFrame.")
+    if prox_thresh <= 0 or distal_thresh <= prox_thresh:
+        raise ValueError("Thresholds must satisfy: 0 < prox_thresh < distal_thresh.")
 
-    if max_points is not None and len(C) > max_points:
-        C = C.sample(n=max_points, random_state=0)
+    x = df[column].astype(float).dropna().to_numpy()
+    if x.size == 0:
+        raise ValueError(f"No valid numeric values found in '{column}'.")
 
-    dvals = C[dist_col].astype(float)
+    # Optional clipping (useful to avoid the long tail dominating the view)
+    if clip_quantiles is not None:
+        loq, hiq = clip_quantiles
+        lo = np.quantile(x, loq)
+        hi = np.quantile(x, hiq)
+        x_plot = x[(x >= lo) & (x <= hi)]
+    else:
+        x_plot = x
 
-    lo = np.quantile(dvals, clip_quantiles[0]) if vmin is None else vmin
-    hi = np.quantile(dvals, clip_quantiles[1]) if vmax is None else vmax
+    # Quantiles (computed on *full* distribution, not clipped)
+    q5, q25, q50, q75, q95 = np.percentile(x, [5, 25, 50, 75, 95])
 
-    # ------------------ main scatter ------------------
+    # Histogram (counts)
+    counts, edges = np.histogram(x_plot, bins=n_bins)
+    centers = 0.5 * (edges[:-1] + edges[1:])
+
     fig = go.Figure()
 
     fig.add_trace(
-        go.Scatter(
-            x=C[x_col],
-            y=C[y_col],
-            mode="markers",
-            marker=dict(
-                size=point_size,
-                color=C[dist_col],
-                colorscale="Plasma",
-                cmin=lo,
-                cmax=hi,
-                opacity=point_alpha,
-                colorbar=dict(
-                    title="Distance to plaque (µm)",
-                    ticks="outside",
-                ),
-            ),
-            hovertemplate=(
-                "Cell<br>"
-                f"Distance: %{{marker.color:.1f}} µm<extra></extra>"
-            ),
-            name="",
+        go.Bar(
+            x=centers,
+            y=counts,
+            width=(edges[1:] - edges[:-1]),
+            name="Cells",
+            hovertemplate="Distance: %{x:.1f} µm<br>Count: %{y}<extra></extra>",
         )
     )
 
-    # ------------------ plaque overlays ------------------
-    def iter_polygons(g):
-        if isinstance(g, Polygon):
-            yield g
-        elif isinstance(g, MultiPolygon):
-            for sub in g.geoms:
-                if isinstance(sub, Polygon):
-                    yield sub
+    # Optional KDE-like smoothing on histogram counts (fast, no SciPy dependency)
+    if show_kde and counts.sum() > 0:
+        # Heuristic bandwidth in "bin units"
+        if bandwidth is None:
+            # Slight smoothing proportional to bins
+            bandwidth = max(1.0, n_bins / 30.0)
 
-    if plaques_gdf is not None and len(plaques_gdf):
-        for row in plaques_gdf.itertuples(index=False):
-            geom = getattr(row, "geometry", None)
-            if geom is None:
-                continue
+        # Gaussian kernel in bin space
+        kx = np.arange(-int(4 * bandwidth), int(4 * bandwidth) + 1)
+        kernel = np.exp(-(kx**2) / (2 * bandwidth**2))
+        kernel = kernel / kernel.sum()
 
-            for poly in iter_polygons(geom):
-                if poly.is_empty or not poly.is_valid:
-                    continue
+        smooth = np.convolve(counts.astype(float), kernel, mode="same")
 
-                x, y = map(list, poly.exterior.xy)
+        fig.add_trace(
+            go.Scatter(
+                x=centers,
+                y=smooth,
+                mode="lines",
+                name="Smoothed density (KDE-like)",
+                hovertemplate="Distance: %{x:.1f} µm<br>Smoothed count: %{y:.1f}<extra></extra>",
+            )
+        )
 
-                fig.add_trace(
-                    go.Scatter(
-                        x=x,
-                        y=y,
-                        mode="lines",
-                        line=dict(
-                            color=plaque_edgecolor,
-                            width=plaque_linewidth,
-                        ),
-                        hoverinfo="skip",
-                        showlegend=False,
-                    )
-                )
+    # Threshold lines
+    for val, lab in [
+        (prox_thresh, f"proximal threshold ({prox_thresh:g} µm)"),
+        (distal_thresh, f"distal threshold ({distal_thresh:g} µm)"),
+    ]:
+        fig.add_vline(
+            x=val,
+            line_width=2,
+            line_dash="dash",
+            annotation_text=lab,
+            annotation_position="top",
+        )
 
-    # ------------------ layout ------------------
-    """fig.update_layout(
+    # Quantile lines
+    for val, lab in [
+        (q5, "q5"),
+        (q25, "q25"),
+        (q50, "median"),
+        (q75, "q75"),
+        (q95, "q95"),
+    ]:
+        fig.add_vline(
+            x=float(val),
+            line_width=1,
+            line_dash="dot",
+            annotation_text=lab,
+            annotation_position="bottom",
+        )
+
+    fig.update_layout(
         title=title,
-        #width=figsize_px[0],
-        #height=figsize_px[1],
+        xaxis_title="Distance to nearest plaque (µm)",
+        yaxis_title="Cell count",
+        bargap=0.02,
+        hovermode="x unified",
         template="simple_white",
-        margin=dict(l=60, r=40, t=60, b=50),
+        margin=dict(l=60, r=20, t=70, b=55),
+        autosize=True,
+        # transparent backgrounds for embedding
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0)",
-    )"""
-    fig.update_layout(
-    autosize=True,
-    margin=dict(l=20, r=10, t=40, b=20),
-    paper_bgcolor="rgba(0,0,0,0)",
-    plot_bgcolor="rgba(0,0,0,0)",
     )
 
-    fig.update_xaxes(
-        title="X (µm)",
-        showgrid=False,
-        zeroline=False,
-        scaleanchor="y",
-        scaleratio=1,
-    )
-
-    fig.update_yaxes(
-        title="Y (µm)",
-        showgrid=False,
-        zeroline=False,
-        autorange="reversed" if invert_y else True,
-    )
-
-    # ------------------ save ------------------
+    # Save HTML responsive
     out_path = Path(out_dir) / filename
     out_path.parent.mkdir(parents=True, exist_ok=True)
     fig.write_html(
-    out_path,
-    include_plotlyjs="cdn",
-    full_html=True,
-    config={"responsive": True},
-)
-
+        str(out_path),
+        include_plotlyjs="cdn",
+        full_html=True,
+        config={"responsive": True, "displayModeBar": False},
+        default_width="100%",
+        default_height="100%",
+    )
 
     return fig

@@ -14,7 +14,7 @@ const Index = () => {
     <main className="min-h-screen bg-background">
       <HeroSection />
       <IntroductionSection />
-      <MetricsSection />
+      {/*<MetricsSection /> */}
       <MiscroscopySection/>
       <GeneExpressionChart />
       <CellClusteringSection />
