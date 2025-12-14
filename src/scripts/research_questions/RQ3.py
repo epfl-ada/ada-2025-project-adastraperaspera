@@ -124,14 +124,32 @@ def analyze_plaque_distance_effects(
     def _simplify_celltype(ct: object) -> str:
         if pd.isna(ct):
             return "Unlabeled"
-        s = str(ct)
-        if "Glut" in s:
-            return "Glutamatergic"
-        if "GABA" in s:
-            return "GABAergic"
-        if any(x in s for x in ("Astro", "Micro", "Oligo")):
-            return "Glial"
-        return "Other"
+        celltype_to_broad = {
+            # Neurons (glutamatergic)
+            "Corticothalamic, Gluta": "Neuron_Glutamatergic",
+            "Dentate, Gluta": "Neuron_Glutamatergic",
+            "Hypothalamic Gnrh1, Gluta": "Neuron_Glutamatergic",
+            "Hypothalamic medial, Gluta": "Neuron_Glutamatergic",
+            "Intra/Extratelencephalic, Gluta": "Neuron_Glutamatergic",
+            "Olfactory bulb, Gluta": "Neuron_Glutamatergic",
+            "Pineal, Gluta": "Neuron_Glutamatergic",
+            "Pons, Gluta": "Neuron_Glutamatergic",
+            "Thalamic, Gluta": "Neuron_Glutamatergic",
+            # Neurons (GABAergic)
+            "Cerebellar, GABA": "Neuron_GABAergic",
+            "Cerebral LGE, GABA": "Neuron_GABAergic",
+            "Cortex caudal, GABA": "Neuron_GABAergic",
+            "Cortex medial, GABA": "Neuron_GABAergic",
+            "Hypothalamic GABA": "Neuron_GABAergic",
+            "Medulla, GABA": "Neuron_GABAergic",
+            # Glia
+            "Astrocyte": "Glia_Astrocyte_Ependymal",
+            "Oligodendrocyte": "Glia_Oligodendrocyte_Lineage",
+            # Other non-neuronal
+            "Immune": "Immune_Microglia_Macrophage",
+            "Vascular": "Vascular_Endothelial_Pericyte",
+        }
+        return celltype_to_broad.get(ct, "Unlabeled")
 
     if broad_type_col not in cells.columns:
         logger.info("Creating '%s' by simplifying '%s'.", broad_type_col, cell_type_col)
@@ -156,13 +174,7 @@ def analyze_plaque_distance_effects(
                 break
         else:
             # Fallback: use the most frequent observed level
-            ref = (
-                cells[broad_type_col]
-                .dropna()
-                .astype(str)
-                .value_counts()
-                .idxmax()
-            )
+            ref = cells[broad_type_col].dropna().astype(str).value_counts().idxmax()
     # --- Apoe model
     if apoe_gene not in cells.columns:
         raise ValueError(f"Column '{apoe_gene}' not found in `cells` for the Apoe model.")

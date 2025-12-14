@@ -671,18 +671,7 @@ def analyze_plaque_distance(
         plt.tight_layout()
         plt.show()
 
-    # --- 3. Histogram (log scale) ---
-    if show_plots:
-        plt.figure(figsize=figsize)
-        # Use +1 to remain defined at zero
-        sns.histplot(np.log10(x_clean + 1.0), bins=n_bins, kde=kde)
-        plt.xlabel("log10(Distance + 1)")
-        plt.ylabel("Cell count")
-        plt.title("Distribution of distances (log10 scale)")
-        plt.tight_layout()
-        plt.show()
-
-    # --- 4. Quantiles and thresholds ---
+    # --- 3. Quantiles and thresholds ---
     q5, q25, q50, q75, q95 = np.percentile(x_clean, [5, 25, 50, 75, 95])
     quantiles: dict[str, float] = {
         "5%": float(q5),
@@ -693,7 +682,7 @@ def analyze_plaque_distance(
     }
     _logger.info(quantiles)
 
-    # --- 5. Proximity classes ---
+    # --- 4. Proximity classes ---
     bins = [0.0, float(prox_thresh), float(distal_thresh), np.inf]
     labels: list[str] = [
         f"proximal (<{prox_thresh:g} µm)",
@@ -705,14 +694,6 @@ def analyze_plaque_distance(
     _logger.info("\n=== Cell counts by proximity class ===")
     counts = df_out[category_col].value_counts().reindex(labels, fill_value=0)
     _logger.info(counts)
-
-    if show_plots:
-        sns.countplot(y=category_col, data=df_out, order=labels, palette=palette)
-        plt.title("Cell counts by plaque proximity class")
-        plt.xlabel("Count")
-        plt.ylabel("Proximity class")
-        plt.tight_layout()
-        plt.show()
 
     results: dict[str, Any] = {
         "describe": desc,
@@ -1040,6 +1021,30 @@ def analyze_leiden_spatial(
     genes_to_check = [g for genes in marker_genes.values() for g in genes if g in df.columns]
     expr_z = pd.DataFrame()
     top_z = pd.Series(dtype=object)
+
+    if genes_to_check:
+        df["cluster_leiden"] = df["cluster_leiden"].map(expanded_types)
+        expr = df.groupby("cluster_leiden")[genes_to_check].mean(numeric_only=True)
+        # z-score across clusters per gene
+        expr_z = (expr - expr.mean(axis=0)) / expr.std(axis=0, ddof=0)
+
+        if plot and not expr_z.empty:
+            plt.figure(figsize=(9, 5))
+            sns.heatmap(
+                expr_z,
+                cmap="vlag",
+                center=0,
+                cbar_kws={"label": "Z-score"},
+            )
+            plt.xlabel("")
+            plt.ylabel("")
+            plt.tight_layout()
+            plt.show()
+
+        top_z = expr_z.idxmax(axis=0).rename("max_in_cluster")
+
+    else:
+        log.warning("No marker genes found in dataframe columns; skipping enrichment heatmap.")
 
     return LeidenAnalysisResult(
         df=df,

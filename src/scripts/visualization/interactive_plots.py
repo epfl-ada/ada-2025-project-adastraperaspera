@@ -1,26 +1,20 @@
 from __future__ import annotations
+
+import base64
 from collections.abc import Sequence
 import logging
 import os
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
-import plotly.express as px
-import plotly.graph_objects as go
-from scipy.stats import gaussian_kde
-import plotly.express as px
-import plotly.graph_objects as go
-import pandas as pd
-from typing import Optional, List
-from pathlib import Path
-from typing import Iterable
-import base64
-import numpy as np
 from PIL import Image
+import plotly.express as px
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
-from shapely.geometry import Polygon, MultiPolygon
+from scipy.stats import gaussian_kde
 from shapely.affinity import rotate as shp_rotate
+from shapely.geometry import MultiPolygon, Polygon
 
 # Get current directory
 vis_dir = os.path.dirname(os.path.abspath(__file__))
@@ -29,9 +23,109 @@ src_dir = os.path.dirname(scripts_dir)
 figures_dir = os.path.join(src_dir, "data", "figures")
 
 
+def interactive_comp_pig_regression_grid(agg, PIGS, bin_order):
+    # Create a 4x4 grid of subplots for up to 16 genes
+    n = len(PIGS)
+    rows = 4
+    cols = 4
+
+    fig = make_subplots(
+        rows=rows,
+        cols=cols,
+        subplot_titles=PIGS,
+        shared_xaxes=False,
+        shared_yaxes=False,
+        horizontal_spacing=0.06,
+        vertical_spacing=0.08,
+    )
+
+    btypes = agg["broad_type"].unique().tolist()
+
+    for i, gene in enumerate(PIGS):
+        row = i // cols + 1
+        col = i % cols + 1
+
+        sub = agg[agg["gene"] == gene]
+        for bt in btypes:
+            dsub = sub[sub["broad_type"] == bt]
+            if dsub.empty:
+                continue
+
+            xcats = dsub["distance_bin"].astype(str)
+
+            # Add error band
+            fig.add_trace(
+                go.Scatter(
+                    x=pd.concat([xcats, xcats[::-1]]),
+                    y=pd.concat(
+                        [
+                            dsub["mean"] + 1.96 * dsub["sem"],
+                            (dsub["mean"] - 1.96 * dsub["sem"])[::-1],
+                        ]
+                    ),
+                    mode="lines",
+                    fill="toself",
+                    line=dict(width=0),
+                    name=f"{bt} ± 1.96×SEM",
+                    legendgroup=bt,
+                    showlegend=False,  # Error band excluded from legend
+                    hoverinfo="skip",
+                ),
+                row=row,
+                col=col,
+            )
+
+            # Add mean line
+            fig.add_trace(
+                go.Scatter(
+                    x=xcats,
+                    y=dsub["mean"],
+                    mode="lines+markers",
+                    name=bt,
+                    legendgroup=bt,
+                    showlegend=(i == 0),  # legend only in the first subplot
+                    hovertemplate=(
+                        f"Gene: {gene}<br>Type: {bt}<br>Bin: %{{x}}<br>"
+                        "Mean expr: %{y:.3f}<extra></extra>"
+                    ),
+                ),
+                row=row,
+                col=col,
+            )
+
+        # Update axes titles on diagonal or last column/row
+        fig.update_xaxes(
+            title_text="Distance bin",
+            row=row,
+            col=col,
+            categoryorder="array",
+            categoryarray=bin_order,
+        )
+        fig.update_yaxes(title_text="Mean expression", row=row, col=col)
+
+    fig.update_layout(
+        height=1500,
+        width=3000,
+        title_text="PIG Expression by Distance and Cell Type (4×4 grid)",
+        showlegend=True,
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=1.02,
+            xanchor="left",
+            x=0,
+        ),
+        margin=dict(t=120, b=60, l=60, r=60),
+    )
+
+    fig.show()
+    fig.write_html(os.path.join(figures_dir, "pig_by_distance_grid.html"))
+    logging.info(f"Saved to {os.path.join(figures_dir, 'pig_by_distance_grid.html')}")
+
+
 def plot_gene_trends_interactive(
     mean_expr: pd.DataFrame,
-    genes: List[str],
+    genes: list[str],
     ylabel: str = "Mean expression (log1p normalized)",
     xlabel: str = "Distance to plaque (µm, binned)",
     title: str = "Spatial gene expression gradients",
@@ -40,7 +134,7 @@ def plot_gene_trends_interactive(
     width: int = 820,
     use_webgl: bool = True,
     *,
-    sem_expr: Optional[pd.DataFrame] = None,  # NEW: optional SEM matrix (same shape as mean_expr)
+    sem_expr: pd.DataFrame | None = None,  # NEW: optional SEM matrix (same shape as mean_expr)
 ) -> go.Figure:
     """
     Interactive version of 'plot_gene_trends' with optional SEM error bars.
@@ -120,8 +214,9 @@ def plot_gene_trends_interactive(
                 hovertemplate=(
                     "Bin: %{x}<br>"
                     f"Gene: {g}<br>"
-                    "Mean: %{y:.3f}" + ("<br>SEM: %{customdata:.3f}" if S is not None else "") +
-                    "<extra></extra>"
+                    "Mean: %{y:.3f}"
+                    + ("<br>SEM: %{customdata:.3f}" if S is not None else "")
+                    + "<extra></extra>"
                 ),
                 customdata=sub["sem_expr"] if S is not None else None,
             )
@@ -139,14 +234,9 @@ def plot_gene_trends_interactive(
         margin=dict(l=60, r=20, t=60, b=60),
     )
     # Keep the bin order as given
-    fig.update_xaxes(
-        tickangle=45,
-        categoryorder="array",
-        categoryarray=bin_labels
-    )
+    fig.update_xaxes(tickangle=45, categoryorder="array", categoryarray=bin_labels)
 
     return fig
-
 
 
 def plot_mean_heatmap_interactive(
@@ -628,10 +718,12 @@ def interactive_comp_pig_regression(agg, PIGS, bin_order):
             fig.add_trace(
                 go.Scatter(
                     x=pd.concat([xcats, xcats[::-1]]),
-                    y=pd.concat([
-                        dsub["mean"] + 1.96 * dsub["sem"],
-                        (dsub["mean"] - 1.96 * dsub["sem"])[::-1],
-                    ]),
+                    y=pd.concat(
+                        [
+                            dsub["mean"] + 1.96 * dsub["sem"],
+                            (dsub["mean"] - 1.96 * dsub["sem"])[::-1],
+                        ]
+                    ),
                     mode="lines",
                     fill="toself",
                     line=dict(width=0),
@@ -742,7 +834,7 @@ def plot_gene_expression_by_distance_interactive(
     title: str = "Plaque-Induced Gene Expression vs Distance (mean ± 95% CI ≈ 1.96×SEM, log1p)",
     x_label: str = "Distance to Plaque (µm, binned)",
     y_label: str = "Mean log1p Expression",
-    use_ci95: bool = True,   # multiply SEM by 1.96
+    use_ci95: bool = True,  # multiply SEM by 1.96
 ):
     """
     Interactive line plot with gene selector and CI bands (±1.96×SEM ≈ 95% CI).
@@ -779,41 +871,48 @@ def plot_gene_expression_by_distance_interactive(
         x = sub["bin_label"].tolist()
 
         # mean line
-        fig.add_trace(go.Scatter(
-            x=x, y=m, mode="lines+markers",
-            name=f"{gene}",
-            visible=(i == 0),
-            line=dict(width=2),
-            marker=dict(size=7),
-        ))
+        fig.add_trace(
+            go.Scatter(
+                x=x,
+                y=m,
+                mode="lines+markers",
+                name=f"{gene}",
+                visible=(i == 0),
+                line=dict(width=2),
+                marker=dict(size=7),
+            )
+        )
 
         # SEM (shaded band)
-        fig.add_trace(go.Scatter(
-            x=x + x[::-1],
-            y=(m + s).tolist() + (m - s)[::-1].tolist(),
-            fill="toself",
-            fillcolor="rgba(31, 119, 180, 0.18)",
-            line=dict(width=0),
-            hoverinfo="skip",
-            name=f"{gene} CI",
-            visible=(i == 0),
-        ))
+        fig.add_trace(
+            go.Scatter(
+                x=x + x[::-1],
+                y=(m + s).tolist() + (m - s)[::-1].tolist(),
+                fill="toself",
+                fillcolor="rgba(31, 119, 180, 0.18)",
+                line=dict(width=0),
+                hoverinfo="skip",
+                name=f"{gene} CI",
+                visible=(i == 0),
+            )
+        )
 
         # button to toggle visibility
         vis = [False] * (len(pig_genes) * traces_per_gene)
-        vis[i*traces_per_gene:(i+1)*traces_per_gene] = [True, True]
+        vis[i * traces_per_gene : (i + 1) * traces_per_gene] = [True, True]
 
-        buttons.append(dict(label=gene, method="update",
-                            args=[{"visible": vis},
-                                  {"title": f"{title}<br><sup>{gene}</sup>"}]))
+        buttons.append(
+            dict(
+                label=gene,
+                method="update",
+                args=[{"visible": vis}, {"title": f"{title}<br><sup>{gene}</sup>"}],
+            )
+        )
 
     fig.update_layout(
-        updatemenus=[dict(
-            buttons=buttons,
-            direction="down",
-            x=0.5, xanchor="center",
-            y=1.15, yanchor="top"
-        )],
+        updatemenus=[
+            dict(buttons=buttons, direction="down", x=0.5, xanchor="center", y=1.15, yanchor="top")
+        ],
         title=title,
         xaxis_title=x_label,
         yaxis_title=y_label,
@@ -823,7 +922,6 @@ def plot_gene_expression_by_distance_interactive(
     )
 
     fig.show()
-
 
 
 def _infer_grid_shape(key_to_pos: dict[str, tuple[int, int]]) -> tuple[int, int]:
@@ -858,6 +956,7 @@ def _pad_to_max(img: np.ndarray, target_h: int, target_w: int) -> np.ndarray:
 def _to_data_uri(img: np.ndarray) -> str:
     pil = Image.fromarray(img.astype(np.uint8))
     from io import BytesIO
+
     buf = BytesIO()
     pil.save(buf, format="PNG")
     b64 = base64.b64encode(buf.getvalue()).decode("ascii")
@@ -866,12 +965,12 @@ def _to_data_uri(img: np.ndarray) -> str:
 
 def make_wt_tg_age_grid_scatter_from_csv(
     *,
-    csv_paths: dict[str, str | Path],                 # e.g. {"wt2": "...csv", "tg2": "...csv", ...}
-    age_map: dict[str, tuple[str, str]],              # age_label -> (wt_key, tg_key)
+    csv_paths: dict[str, str | Path],  # e.g. {"wt2": "...csv", "tg2": "...csv", ...}
+    age_map: dict[str, tuple[str, str]],  # age_label -> (wt_key, tg_key)
     title: str | None = "WT vs TG by age (interactive)",
     filename: str = "wt_tg_age_grid_scatter.html",
     out_dir: str = "frontend/public/plots",
-    max_points: int | None = 150_000,                 # downsample for browser performance
+    max_points: int | None = 150_000,  # downsample for browser performance
     x_candidates=("x_centroid", "x"),
     y_candidates=("y_centroid", "y"),
     # If your tissue coordinates behave like images (origin top-left), this makes it look right:
@@ -881,7 +980,7 @@ def make_wt_tg_age_grid_scatter_from_csv(
     # styling
     marker_size: float = 1.8,
     marker_opacity: float = 0.65,
-    color_col: str | None = None,                     # e.g. "prediction" (numeric) or None
+    color_col: str | None = None,  # e.g. "prediction" (numeric) or None
     row_label_wt: str = "Wild type",
     row_label_tg: str = "Transgenic",
     row_label_font_size: int = 18,
@@ -929,7 +1028,9 @@ def make_wt_tg_age_grid_scatter_from_csv(
     fig = make_subplots(
         rows=2,
         cols=3,
-        column_titles=[f"{a} months" if a.replace('.', '', 1).isdigit() else f"{a} months" for a in age_labels],
+        column_titles=[
+            f"{a} months" if a.replace(".", "", 1).isdigit() else f"{a} months" for a in age_labels
+        ],
         horizontal_spacing=0.02,
         vertical_spacing=0.06,
     )
@@ -943,13 +1044,15 @@ def make_wt_tg_age_grid_scatter_from_csv(
 
         # WT (row 1)
         x_wt, y_wt, c_wt = prep_df(wt_key)
-        xmins.append(float(x_wt.min())); xmaxs.append(float(x_wt.max()))
-        ymins.append(float(y_wt.min())); ymaxs.append(float(y_wt.max()))
+        xmins.append(float(x_wt.min()))
+        xmaxs.append(float(x_wt.max()))
+        ymins.append(float(y_wt.min()))
+        ymaxs.append(float(y_wt.max()))
 
         marker_wt = dict(size=marker_size, opacity=marker_opacity)
         if c_wt is not None and pd.api.types.is_numeric_dtype(c_wt):
             marker_wt["color"] = c_wt
-            marker_wt["showscale"] = (j == 3)  # show colorbar only on last column
+            marker_wt["showscale"] = j == 3  # show colorbar only on last column
 
         fig.add_trace(
             go.Scattergl(
@@ -960,13 +1063,16 @@ def make_wt_tg_age_grid_scatter_from_csv(
                 showlegend=False,
                 hovertemplate=f"{row_label_wt}<br>Age: {age}<br>x=%{{x:.2f}}<br>y=%{{y:.2f}}<extra></extra>",
             ),
-            row=1, col=j
+            row=1,
+            col=j,
         )
 
         # TG (row 2)
         x_tg, y_tg, c_tg = prep_df(tg_key)
-        xmins.append(float(x_tg.min())); xmaxs.append(float(x_tg.max()))
-        ymins.append(float(y_tg.min())); ymaxs.append(float(y_tg.max()))
+        xmins.append(float(x_tg.min()))
+        xmaxs.append(float(x_tg.max()))
+        ymins.append(float(y_tg.min()))
+        ymaxs.append(float(y_tg.max()))
 
         marker_tg = dict(size=marker_size, opacity=marker_opacity)
         if c_tg is not None and pd.api.types.is_numeric_dtype(c_tg):
@@ -982,7 +1088,8 @@ def make_wt_tg_age_grid_scatter_from_csv(
                 showlegend=False,
                 hovertemplate=f"{row_label_tg}<br>Age: {age}<br>x=%{{x:.2f}}<br>y=%{{y:.2f}}<extra></extra>",
             ),
-            row=2, col=j
+            row=2,
+            col=j,
         )
 
     # ---- unify axes ----
@@ -992,14 +1099,16 @@ def make_wt_tg_age_grid_scatter_from_csv(
     for r in (1, 2):
         for c in (1, 2, 3):
             fig.update_xaxes(
-                row=r, col=c,
+                row=r,
+                col=c,
                 range=xr,
                 showgrid=False,
                 zeroline=False,
                 visible=False,
             )
             fig.update_yaxes(
-                row=r, col=c,
+                row=r,
+                col=c,
                 range=yr,
                 showgrid=False,
                 zeroline=False,
@@ -1012,32 +1121,38 @@ def make_wt_tg_age_grid_scatter_from_csv(
     # ---- row labels (bigger + bold) ----
     # Add annotations on the left side, vertically centered per row
     fig.update_layout(
-    annotations=list(fig.layout.annotations) + [
-        dict(
-            text=f"<b>{row_label_wt}</b>",
-            x=0.01, y=0.97,                 # ⬅ inside the plot
-            xref="paper", yref="paper",
-            xanchor="left", yanchor="middle",
-            showarrow=False,
-            font=dict(size=row_label_font_size),
-        ),
-        dict(
-            text=f"<b>{row_label_tg}</b>",
-            x=0.01, y=0.50,                 # ⬅ inside the plot
-            xref="paper", yref="paper",
-            xanchor="left", yanchor="middle",
-            showarrow=False,
-            font=dict(size=row_label_font_size),
-        ),
+        annotations=list(fig.layout.annotations)
+        + [
+            dict(
+                text=f"<b>{row_label_wt}</b>",
+                x=0.01,
+                y=0.97,  # ⬅ inside the plot
+                xref="paper",
+                yref="paper",
+                xanchor="left",
+                yanchor="middle",
+                showarrow=False,
+                font=dict(size=row_label_font_size),
+            ),
+            dict(
+                text=f"<b>{row_label_tg}</b>",
+                x=0.01,
+                y=0.50,  # ⬅ inside the plot
+                xref="paper",
+                yref="paper",
+                xanchor="left",
+                yanchor="middle",
+                showarrow=False,
+                font=dict(size=row_label_font_size),
+            ),
         ]
     )
-
 
     # ---- overall layout + transparency ----
     fig.update_layout(
         title=title,
-        #width=None,
-        #height=700,
+        # width=None,
+        # height=700,
         autosize=True,
         margin=dict(l=30, r=20, t=80 if title else 40, b=30),
         dragmode="pan",
@@ -1058,8 +1173,8 @@ def make_alignment_overlay_plot(
     aligned_label: str = "TG5 aligned → TG17",
     x_col: str = "x_centroid",
     y_col: str = "y_centroid",
-    swap_xy: bool = True,          # swap x and y (requested)
-    reverse_y: bool = True,        # image-like orientation (optional but usually correct)
+    swap_xy: bool = True,  # swap x and y (requested)
+    reverse_y: bool = True,  # image-like orientation (optional but usually correct)
     max_points: int | None = 200_000,
     marker_size: float = 1.8,
     opacity: float = 0.6,
@@ -1067,7 +1182,6 @@ def make_alignment_overlay_plot(
     filename: str = "tg5_to_tg17_alignment.html",
     out_dir: str = "frontend/public/plots",
 ) -> go.Figure:
-
     def get_xy(df: pd.DataFrame):
         x = df[x_col].astype(float)
         y = df[y_col].astype(float)
@@ -1094,7 +1208,8 @@ def make_alignment_overlay_plot(
 
     fig.add_trace(
         go.Scattergl(
-            x=x_ref, y=y_ref,
+            x=x_ref,
+            y=y_ref,
             mode="markers",
             name=ref_label,
             marker=dict(size=marker_size, opacity=opacity),
@@ -1104,7 +1219,8 @@ def make_alignment_overlay_plot(
 
     fig.add_trace(
         go.Scattergl(
-            x=x_aln, y=y_aln,
+            x=x_aln,
+            y=y_aln,
             mode="markers",
             name=aligned_label,
             marker=dict(size=marker_size, opacity=opacity),
@@ -1114,15 +1230,14 @@ def make_alignment_overlay_plot(
 
     fig.update_layout(
         title=title,
-        #height=700,
-        #width=None,  # responsive inside iframe
+        # height=700,
+        # width=None,  # responsive inside iframe
         autosize=True,
         margin=dict(l=30, r=20, t=80, b=30),
         dragmode="pan",
         template="plotly_white",
         showlegend=True,
         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
-
         # transparent background
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0)",
@@ -1143,6 +1258,7 @@ def make_alignment_overlay_plot(
     out_path.parent.mkdir(parents=True, exist_ok=True)
     fig.write_html(str(out_path), include_plotlyjs="cdn")
     return fig
+
 
 def make_plaques_detected_plotly(
     *,
@@ -1220,7 +1336,7 @@ def make_plaques_detected_plotly(
     # ------------------ brain ROI ------------------
     if brain_geom is not None and brain_geom.is_valid:
         g = rot(brain_geom)
-        x, y = map(list, g.exterior.xy)   # IMPORTANT FIX
+        x, y = map(list, g.exterior.xy)  # IMPORTANT FIX
         fig.add_trace(
             go.Scatter(
                 x=x,
@@ -1248,7 +1364,7 @@ def make_plaques_detected_plotly(
             if poly.is_empty or not poly.is_valid:
                 continue
 
-            x, y = map(list, poly.exterior.xy)   # IMPORTANT FIX
+            x, y = map(list, poly.exterior.xy)  # IMPORTANT FIX
 
             fig.add_trace(
                 go.Scatter(
@@ -1260,10 +1376,7 @@ def make_plaques_detected_plotly(
                         width=0.9,
                         dash="solid" if is_convex else "dash",
                     ),
-                    hovertemplate=(
-                        f"Plaque {pid}<br>"
-                        f"Area: {area:,.0f} µm²<extra></extra>"
-                    ),
+                    hovertemplate=(f"Plaque {pid}<br>" f"Area: {area:,.0f} µm²<extra></extra>"),
                     showlegend=False,
                 )
             )
@@ -1279,7 +1392,7 @@ def make_plaques_detected_plotly(
                 continue
 
             hull = rot(g.convex_hull)
-            x, y = map(list, hull.exterior.xy)   # IMPORTANT FIX
+            x, y = map(list, hull.exterior.xy)  # IMPORTANT FIX
 
             fig.add_trace(
                 go.Scatter(
@@ -1329,6 +1442,7 @@ def make_plaques_detected_plotly(
     fig.write_html(out_path, include_plotlyjs="cdn")
 
     return fig
+
 
 def make_cell_to_plaque_distance_distribution_plotly(
     df: pd.DataFrame,
@@ -1491,7 +1605,6 @@ def make_expression_distribution_selector_plotly(
     filename: str = "expression_distribution.html",
     out_dir: str = "frontend/public/plots",
 ) -> go.Figure:
-
     genes = [g for g in genes if g in df.columns]
     if not genes:
         raise ValueError("None of the requested genes are present in the dataframe.")
@@ -1577,98 +1690,114 @@ def make_expression_distribution_selector_plotly(
 
         # avg IQR
         if show_iqr and avg_q25 is not None:
-            traces.append(go.Scatter(
-                x=[avg_q25, avg_q75, avg_q75, avg_q25],
-                y=[0, 0, max(gene_hist)*1.1, max(gene_hist)*1.1],
-                fill="toself",
-                fillcolor="rgba(255,224,178,0.45)",
-                line=dict(width=0),
-                showlegend=False,
-                visible=is_visible,
-            ))
+            traces.append(
+                go.Scatter(
+                    x=[avg_q25, avg_q75, avg_q75, avg_q25],
+                    y=[0, 0, max(gene_hist) * 1.1, max(gene_hist) * 1.1],
+                    fill="toself",
+                    fillcolor="rgba(255,224,178,0.45)",
+                    line=dict(width=0),
+                    showlegend=False,
+                    visible=is_visible,
+                )
+            )
             visibility.append(is_visible)
 
         # gene IQR
         if show_iqr:
-            traces.append(go.Scatter(
-                x=[q25, q75, q75, q25],
-                y=[0, 0, max(gene_hist)*1.1, max(gene_hist)*1.1],
-                fill="toself",
-                fillcolor="rgba(179,217,255,0.45)",
-                line=dict(width=0),
-                showlegend=False,
-                visible=is_visible,
-            ))
+            traces.append(
+                go.Scatter(
+                    x=[q25, q75, q75, q25],
+                    y=[0, 0, max(gene_hist) * 1.1, max(gene_hist) * 1.1],
+                    fill="toself",
+                    fillcolor="rgba(179,217,255,0.45)",
+                    line=dict(width=0),
+                    showlegend=False,
+                    visible=is_visible,
+                )
+            )
             visibility.append(is_visible)
 
         # avg histogram
         if avg_hist is not None:
-            traces.append(go.Bar(
-                x=centers,
-                y=avg_hist,
-                name="Hist (avg)",
-                marker_color="#F4A261",
-                opacity=1.0,
-                visible=is_visible,
-            ))
+            traces.append(
+                go.Bar(
+                    x=centers,
+                    y=avg_hist,
+                    name="Hist (avg)",
+                    marker_color="#F4A261",
+                    opacity=1.0,
+                    visible=is_visible,
+                )
+            )
             visibility.append(is_visible)
 
         # gene histogram
-        traces.append(go.Bar(
-            x=centers,
-            y=gene_hist,
-            name="Hist (gene)",
-            marker_color="#4C78A8",
-            opacity=1.0,
-            visible=is_visible,
-        ))
+        traces.append(
+            go.Bar(
+                x=centers,
+                y=gene_hist,
+                name="Hist (gene)",
+                marker_color="#4C78A8",
+                opacity=1.0,
+                visible=is_visible,
+            )
+        )
         visibility.append(is_visible)
 
         # avg KDE
         if avg_smooth is not None:
-            traces.append(go.Scatter(
-                x=centers,
-                y=avg_smooth,
-                mode="lines",
-                name="KDE (avg)",
-                line=dict(color="#F28E2B", width=2),
-                visible=is_visible,
-            ))
+            traces.append(
+                go.Scatter(
+                    x=centers,
+                    y=avg_smooth,
+                    mode="lines",
+                    name="KDE (avg)",
+                    line=dict(color="#F28E2B", width=2),
+                    visible=is_visible,
+                )
+            )
             visibility.append(is_visible)
 
         # gene KDE
         if gene_smooth is not None:
-            traces.append(go.Scatter(
-                x=centers,
-                y=gene_smooth,
-                mode="lines",
-                name="KDE (gene)",
-                line=dict(color="#1F77B4", width=2),
-                visible=is_visible,
-            ))
+            traces.append(
+                go.Scatter(
+                    x=centers,
+                    y=gene_smooth,
+                    mode="lines",
+                    name="KDE (gene)",
+                    line=dict(color="#1F77B4", width=2),
+                    visible=is_visible,
+                )
+            )
             visibility.append(is_visible)
 
         # mean lines
         if show_mean:
-            traces.append(go.Scatter(
-                x=[mean, mean],
-                y=[0, max(gene_hist)*1.1],
-                mode="lines",
-                line=dict(color="#1F77B4", dash="dash"),
-                name="Mean (gene)",
-                visible=is_visible,
-            ))
+            traces.append(
+                go.Scatter(
+                    x=[mean, mean],
+                    y=[0, max(gene_hist) * 1.1],
+                    mode="lines",
+                    line=dict(color="#1F77B4", dash="dash"),
+                    name="Mean (gene)",
+                    visible=is_visible,
+                )
+            )
             visibility.append(is_visible)
 
             if avg_mean is not None:
-                traces.append(go.Scatter(
-                    x=[avg_mean, avg_mean],
-                    y=[0, max(gene_hist)*1.1],
-                    mode="lines",
-                    line=dict(color="#F28E2B", dash="dash"),
-                    name="Mean (avg)",
-                    visible=is_visible,
-                ))
+                traces.append(
+                    go.Scatter(
+                        x=[avg_mean, avg_mean],
+                        y=[0, max(gene_hist) * 1.1],
+                        mode="lines",
+                        line=dict(color="#F28E2B", dash="dash"),
+                        name="Mean (avg)",
+                        visible=is_visible,
+                    )
+                )
                 visibility.append(is_visible)
 
     # ---------- dropdown ----------
@@ -1680,23 +1809,27 @@ def make_expression_distribution_selector_plotly(
         start = i * n_traces_per_gene
         for j in range(n_traces_per_gene):
             vis[start + j] = True
-        buttons.append(dict(
-            label=g,
-            method="update",
-            args=[{"visible": vis}, {"title": f"{title}: {g}"}],
-        ))
+        buttons.append(
+            dict(
+                label=g,
+                method="update",
+                args=[{"visible": vis}, {"title": f"{title}: {g}"}],
+            )
+        )
 
     fig = go.Figure(data=traces)
 
     fig.update_layout(
         title=f"{title}: {genes[0]}",
-        updatemenus=[dict(
-            buttons=buttons,
-            direction="down",
-            x=0.6,
-            y=1.20,
-            showactive=True,
-        )],
+        updatemenus=[
+            dict(
+                buttons=buttons,
+                direction="down",
+                x=0.6,
+                y=1.20,
+                showactive=True,
+            )
+        ],
         barmode="overlay",
         autosize=True,
         margin=dict(l=60, r=20, t=90, b=55),
