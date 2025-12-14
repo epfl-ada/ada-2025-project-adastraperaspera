@@ -167,6 +167,7 @@ In this section, we investigate how the expression of the 16 plaque-induced gene
 // ToDo: improve the plot based on src.scripts.visualization.plots.plot_gene_trends; all 16 PIGs should be plotted
 // One option: utilize src.scripts.visualization.plots.plot_gene_expression_by_distance_interactive, but add all genes at once, not just one at a time
 // Zoom in, transparent background
+// Make the legend not overlap with the plot itself; it should appear to the right as a separate sidebar
 <p align="center">
   <img src="figures/PIG_expression_vs_distance.png" width="160">
   <br><em>Expression of PIGs vs. distance to plaque</em>
