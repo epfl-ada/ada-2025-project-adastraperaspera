@@ -201,3 +201,13 @@
 ::-webkit-scrollbar-thumb:hover {
   @apply bg-primary/50;
 }
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  :root {
+    scroll-padding-top: 96px; /* tweak if needed */
+  }
+}
