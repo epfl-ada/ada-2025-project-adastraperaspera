@@ -169,6 +169,7 @@ const MicroscopySection = () => {
               src={`${base}plots/cell_to_plaque_distance_distribution.html`}
               title="Cell-to-plaque distance distribution (linear scale)"
               size="md"
+              scrollable
               caption="Histogram of Euclidean distances from cell centroids to the nearest plaque boundary (linear scale). Dashed lines indicate proximity thresholds (30 µm and 100 µm); dotted lines show distribution quantiles."
             />
           </div>
