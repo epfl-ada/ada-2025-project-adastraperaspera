@@ -39,7 +39,7 @@ The induced mutation forces the murine cells to express the amyloid precursor pr
 // 2. Make background transparent so that it blends into the dark theme of the website
 // Current plot was obtained with: src.scripts.visualization.plots.make_image_grid; exact inputs can be found in results.ipynb
 <p align="center">
-  <img src="frontend/src/figures/microscopy_6_mice.png" width="480">
+  <img src="figures/microscopy_6_mice.png" width="480">
   <br><em>Microscopy images of 6 mice</em>
 </p>
 
@@ -50,7 +50,7 @@ The induced mutation forces the murine cells to express the amyloid precursor pr
 \\ Current plot was obtained with: src.scripts.visualization.plots.plot_plaques; exact inputs can be found in results.ipynb
 
 <p align="center">
-  <img src="frontend/src/figures/plaque_geometries.png" width="160">
+  <img src="figures/plaque_geometries.png" width="160">
   <br><em>1736 Aβ plaques visualized in the morphology image</em>
 </p>
 
@@ -61,7 +61,7 @@ Next, for each cell, we computed the distance to the nearest plaque. Namely, we 
 // Make background transparent so that it blends into the dark theme of the website
 
 <p align="center">
-  <img src="frontend/src/figures/cell_to_plaque_distance.png" width="160">
+  <img src="figures/cell_to_plaque_distance.png" width="160">
   <br><em>Brain regions colored by plaque proximity (cool = near plaque)</em>
 </p>
 
@@ -70,7 +70,7 @@ Next, for each cell, we computed the distance to the nearest plaque. Namely, we 
 // Zoom in, transparent background
 
 <p align="center">
-  <img src="frontend/src/figures/cell_distance_distribution.png" width="160">
+  <img src="figures/cell_distance_distribution.png" width="160">
   <br><em>Distribution of cell-to-plaque distance</em>
 </p>
 
@@ -87,7 +87,7 @@ Looking at the gene selection, out of 347 genes, 248 represent markers for 8 mai
 // 2. Make background transparent so that it blends into the dark theme of the website
 // Current plot was obtained with: src.scripts.visualization.plots.make_image_grid; exact inputs can be found in results.ipynb
 <p align="center">
-  <img src="frontend/src/figures/microscopy_cells_unified.png" width="480">
+  <img src="figures/microscopy_cells_unified.png" width="480">
   <br><em>Single cell images of 6 mice</em>
 </p>
 
@@ -98,7 +98,7 @@ First, let us explore the data by visualizing the distribution of log1p-transfor
 // 2. Make background transparent so that it blends into the dark theme of the website
 // Current plot was obtained with: src.scripts.visualization.plots.plot_gene_distributions; exact inputs can be found in results.ipynb
 <p align="center">
-  <img src="frontend/src/figures/Expression_Distribution.png" width="480">
+  <img src="figures/Expression_Distribution.png" width="480">
   <br><em>Probability distribution of log1p-transformed PIG transcript counts</em>
 </p>
 
@@ -133,7 +133,7 @@ In this section, we investigate how the expression of the 16 plaque-induced gene
 // One option: utilize src.scripts.visualization.plots.plot_gene_expression_by_distance_interactive, but add all genes at once, not just one at a time
 // Zoom in, transparent background
 <p align="center">
-  <img src="frontend/src/figures/PIG_expression_vs_distance.png" width="160">
+  <img src="figures/PIG_expression_vs_distance.png" width="160">
   <br><em>Expression of PIGs vs. distance to plaque</em>
 </p>
 
@@ -143,8 +143,21 @@ The visualization also highlights consistent decreasing gradients for microglial
 
 // ToDo: Integrate this astrocyte image nicely into the website
 <p align="center">
-  <img src="frontend/src/figures/Human_astrocyte.png" width="160">
+  <img src="figures/Human_astrocyte.png" width="160">
   <br><em>Human astrocyte</em>
+</p>
+
+### Regression analysis: PIG expression vs. plaque distance
+
+For each of the 16 PIGs, we regress the log1p-normalized transcript count against the distance to the nearest plaque. Further, we perform multiple testing correction using the Benjamini–Hochberg False Discovery Rate (FDR) adjustment since we perform 16 independent regressions.
+
+All 16 PIGs exhibit a statistically significant negative slope at 0.01 FDR level. However, the slopes vary significantly among PIGs, with the smallest and largest absolute values of slopes corresponding to Cxcl10 and Gfap, respectively. Translating the slopes to the original integer transcript count scale, we get 128 µm distance to halve the expression for Gfap and 4,415 µm distance for Cxcl10. For context, the entire diameter of the mouse brain is about 6,000 µm, meaning that for Cxcl10, the expression is nearly constant.
+
+// ToDo: improve the plot based on src.scripts.visualization.plots.plot_half_distance;usage in results.ipynb 
+// Add Zoom in, transparent background
+<p align="center">
+  <img src="figures/distances_to_halve_expression.png" width="160">
+  <br><em>Distances to halve expression for the 16 PIGs</em>
 </p>
 
 ### Plaque distance by cell type
