@@ -163,8 +163,7 @@ const MicroscopySection = () => {
               title="Brain regions by distance to nearest plaque"
               size="md"
               placeholder="Distance heatmap / map plot (to be inserted)"
-              // Example later:
-              // src={`${base}plots/cell_to_plaque_distance_map.html`}
+              src={`${base}plots/cell_to_plaque_distance_map.html`}
             />
             <PlotFrame
               title="Cell-to-plaque distance distribution"
