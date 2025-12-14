@@ -1693,8 +1693,8 @@ def make_expression_distribution_selector_plotly(
         updatemenus=[dict(
             buttons=buttons,
             direction="down",
-            x=0.55,
-            y=1.12,
+            x=0.6,
+            y=1.20,
             showactive=True,
         )],
         barmode="overlay",
