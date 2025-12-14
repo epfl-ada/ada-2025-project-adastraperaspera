@@ -5,9 +5,9 @@ const base = import.meta.env.BASE_URL;
 const GeneExpressionChart = () => {
   return (
     <section className="py-24 bg-muted/30">
-      {/* Section title + content */}
+      <div className="container mx-auto px-6">
+        {/* Section title + content */}
         <div className="mb-6 max-w-4xl">
-
           <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
             Gene expression
           </h2>
@@ -30,7 +30,6 @@ const GeneExpressionChart = () => {
               size="sm"
             />
           </div>
-
         </div>
 
         {/* Scroll hint (TOP) */}
@@ -38,9 +37,7 @@ const GeneExpressionChart = () => {
           Tip: scroll horizontally to explore the analysis →
         </p>
 
-        {/* =========================
-            HORIZONTAL SCROLL STRIP
-           ========================= */}
+        {/* HORIZONTAL SCROLL STRIP */}
         <div
           className="
             relative
@@ -66,21 +63,21 @@ const GeneExpressionChart = () => {
               space-y-6
             "
           >
-          
             <PlotFrame
               src={`${base}plots/expression_distribution.html`}
-              title="Microscopy cells unified"
+              title="Gene expression distribution (log1p-transformed)"
               size="md"
             />
+
+
             <p className="text-xs text-muted-foreground text-center">
               Interactive microscopy-based spatial maps. Pan and zoom enabled.
             </p>
+
             <p className="text-lg text-muted-foreground">
               First, let us explore the data by visualizing the distribution of log1p-transformed transcript counts for the 16 PIGs against the average distribution of all 347 genes. We will focus on the mouse with the most advanced stage of the Alzheimer's disease (transgenic at 17.9 months of age).
             </p>
-
           </div>
-
         </div>
       </div>
     </section>
