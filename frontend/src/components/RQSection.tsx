@@ -89,7 +89,7 @@ const RQSection = () => {
 
             <div className="mb-8">
                 <img
-                    src="/rat-brain.svg"
+                    src={`${base}rat-brain.png`}
                     className="w-full max-w-md rounded-2xl border border-border shadow-md"
                 />
             </div>
