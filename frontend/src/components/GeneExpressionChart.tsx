@@ -67,6 +67,10 @@ const GeneExpressionChart = () => {
               title="Gene expression distribution (log1p-transformed)"
               size="md"
             />
+
+            <p className="text-lg text-muted-foreground">
+              We can observe that for 13 out of 16 PIGs, the distribution has a mode at zero. Above zero, the support gradually drops off at higher transcript counts; however, different PIGs have a different rate of the density decay.
+            </p>
           </div>
           <div
             className="
@@ -81,6 +85,9 @@ const GeneExpressionChart = () => {
               space-y-6
             "
           >
+            <p className="text-lg text-muted-foreground leading-relaxed">
+              Next, we diagnose the PIGs with the most unusual expression patterns. To that end, we combine several diagnostic metrics (among which, zero-inflation, dispersion, and shape) into a composite score.
+            </p>
             <table className="min-w-full text-sm">
                   <thead className="bg-muted/50">
                     <tr>
