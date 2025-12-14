@@ -19,6 +19,8 @@ import numpy as np
 from PIL import Image
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
+from shapely.geometry import Polygon, MultiPolygon
+from shapely.affinity import rotate as shp_rotate
 
 # Get current directory
 vis_dir = os.path.dirname(os.path.abspath(__file__))
@@ -1138,3 +1140,190 @@ def make_alignment_overlay_plot(
     out_path.parent.mkdir(parents=True, exist_ok=True)
     fig.write_html(str(out_path), include_plotlyjs="cdn")
     return fig
+
+def make_plaques_detected_plotly(
+    *,
+    df: pd.DataFrame,
+    brain_geom: Polygon | None = None,
+    sample_hulls: int = 20,
+    seed: int = 42,
+    rotate_180: bool = True,
+    rotation_origin: tuple[float, float] | str = "auto",
+    title: str | None = None,
+    figsize_px: tuple[int, int] = (820, 820),
+    filename: str = "plaques_detected.html",
+    out_dir: str = "frontend/public/plots",
+) -> go.Figure:
+    """
+    Interactive Plotly visualization of detected Aβ plaques.
+
+    Color encoding
+    --------------
+    - Blue   : Brain ROI
+    - Green  : Convex plaques
+    - Red    : Non-convex plaques
+    - Orange : Sampled convex hulls
+
+    All geometries are optionally rotated by 180° for orientation consistency.
+    """
+
+    # ------------------ sanity checks ------------------
+    if "geometry" not in df.columns:
+        raise ValueError("df must contain a 'geometry' column with shapely objects.")
+    if "is_convex" not in df.columns:
+        raise ValueError("df must contain an 'is_convex' boolean column.")
+
+    P = df.copy()
+
+    if "plaque_id" not in P.columns:
+        P["plaque_id"] = np.arange(1, len(P) + 1, dtype=int)
+    if "area" not in P.columns:
+        P["area"] = P["geometry"].map(lambda g: getattr(g, "area", np.nan))
+
+    # ------------------ helpers ------------------
+    def iter_polygons(g):
+        if isinstance(g, Polygon):
+            yield g
+        elif isinstance(g, MultiPolygon):
+            for sub in g.geoms:
+                if isinstance(sub, Polygon):
+                    yield sub
+
+    def compute_auto_origin():
+        bounds = []
+        for g in P["geometry"]:
+            if g is not None and hasattr(g, "bounds"):
+                bounds.append(g.bounds)
+        if brain_geom is not None:
+            bounds.append(brain_geom.bounds)
+
+        arr = np.array(bounds, dtype=float)
+        minx, miny = arr[:, 0].min(), arr[:, 1].min()
+        maxx, maxy = arr[:, 2].max(), arr[:, 3].max()
+        return (minx + maxx) / 2, (miny + maxy) / 2
+
+    if rotation_origin == "auto":
+        origin = compute_auto_origin()
+    else:
+        origin = rotation_origin
+
+    def rot(g):
+        if rotate_180 and g is not None:
+            return shp_rotate(g, 180.0, origin=origin, use_radians=False)
+        return g
+
+    fig = go.Figure()
+
+    # ------------------ brain ROI ------------------
+    if brain_geom is not None and brain_geom.is_valid:
+        g = rot(brain_geom)
+        x, y = map(list, g.exterior.xy)   # IMPORTANT FIX
+        fig.add_trace(
+            go.Scatter(
+                x=x,
+                y=y,
+                mode="lines",
+                name="Brain ROI",
+                line=dict(color="blue", width=1.4),
+                hoverinfo="skip",
+            )
+        )
+
+    # ------------------ plaques ------------------
+    for row in P.itertuples(index=False):
+        g = getattr(row, "geometry", None)
+        is_convex = bool(getattr(row, "is_convex", False))
+        pid = getattr(row, "plaque_id", None)
+        area = getattr(row, "area", np.nan)
+
+        if g is None:
+            continue
+
+        g = rot(g)
+
+        for poly in iter_polygons(g):
+            if poly.is_empty or not poly.is_valid:
+                continue
+
+            x, y = map(list, poly.exterior.xy)   # IMPORTANT FIX
+
+            fig.add_trace(
+                go.Scatter(
+                    x=x,
+                    y=y,
+                    mode="lines",
+                    line=dict(
+                        color="green" if is_convex else "red",
+                        width=0.9,
+                        dash="solid" if is_convex else "dash",
+                    ),
+                    hovertemplate=(
+                        f"Plaque {pid}<br>"
+                        f"Area: {area:,.0f} µm²<extra></extra>"
+                    ),
+                    showlegend=False,
+                )
+            )
+
+    # ------------------ convex hull overlays ------------------
+    rng = np.random.default_rng(seed)
+    n = min(len(P), int(sample_hulls))
+    if n > 0:
+        sample = P.sample(n=n, random_state=seed)
+        for row in sample.itertuples(index=False):
+            g = getattr(row, "geometry", None)
+            if g is None:
+                continue
+
+            hull = rot(g.convex_hull)
+            x, y = map(list, hull.exterior.xy)   # IMPORTANT FIX
+
+            fig.add_trace(
+                go.Scatter(
+                    x=x,
+                    y=y,
+                    mode="lines",
+                    line=dict(color="orange", width=1.2, dash="dot"),
+                    hoverinfo="skip",
+                    showlegend=False,
+                )
+            )
+
+    # ------------------ layout ------------------
+    fig.update_layout(
+        title=title or "Detected Aβ plaques after normalization",
+        width=figsize_px[0],
+        height=figsize_px[1],
+        template="simple_white",
+        margin=dict(l=40, r=40, t=60, b=40),
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=1.02,
+            xanchor="right",
+            x=1,
+        ),
+    )
+
+    fig.update_xaxes(
+        title="X coordinate (µm)",
+        showgrid=False,
+        zeroline=False,
+        scaleanchor="y",
+        scaleratio=1,
+    )
+    fig.update_yaxes(
+        title="Y coordinate (µm)",
+        showgrid=False,
+        zeroline=False,
+    )
+
+    # ------------------ save ------------------
+    out_path = Path(out_dir) / filename
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    fig.write_html(out_path, include_plotlyjs="cdn")
+
+    return fig
+

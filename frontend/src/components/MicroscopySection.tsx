@@ -128,12 +128,10 @@ const MicroscopySection = () => {
 
           {/* 1 plot placeholder */}
           <PlotFrame
+            src={`${base}plots/plaques_detected.html`}
             title="Detected Aβ plaques after transformation and filtering"
             size="md"
-            placeholder="Plaque detection + transformation plot (to be inserted)"
-            // When ready, replace with e.g.:
-            // src={`${base}plots/plaques_detected.html`}
-            // caption="Detected plaques in morphology coordinate space after RANSAC transform and filtering."
+            caption="Aβ plaque geometries in morphology coordinate space after RANSAC-based transformation and post-processing. Green outlines denote convex plaques, red dashed outlines denote non-convex plaques, and orange dotted outlines indicate sampled convex hulls."
           />
         </div>
 

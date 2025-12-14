@@ -18,11 +18,13 @@ const GeneExpressionChart = () => {
         <div className="grid lg:grid-cols-2 gap-12 items-center">
           <div>
             <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-              Top Expressed Genes
+              Gene expression
             </h2>
             <p className="text-lg text-muted-foreground mb-8">
-              Marker genes showing highest expression levels across the tissue section, 
-              indicating major cell type populations and tissue architecture.
+              We are dealing with a spatial transcriptomics dataset which contains single cell gene expression measurements of 347 genes. The gene expression matrix tends to be sparse. For the transgenic mouse at 17.9 months of age, 302 out of 347 genes have zero median transcript count.
+            </p>
+            <p className="text-lg text-muted-foreground mb-8">
+              Looking at the gene selection, out of 347 genes, 248 represent markers for 8 main cell types, canonical neuronal cortical layer markers, and non-neuronal markers; 83 genes related to activated microglia and astrocytes; and 16 PIGs curated from primary literature. The figure below reveals the individual cells as filled circles with clustering component.
             </p>
             
             <div className="space-y-4">
