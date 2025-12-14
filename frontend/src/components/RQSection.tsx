@@ -1,19 +1,49 @@
 import React, { useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
-type RQ = {
-  id: string;    // "rq-1"
-  title: string; // main label
-};
-
-const RQS: RQ[] = [
-  { id: "rq-1", title: "Predicting Cell Composition" },
-  { id: "rq-2", title: "Predicting Gene Expression" },
-  { id: "rq-3", title: "Predicting Gene Expression" },
-  { id: "rq-4", title: "Predicting Gene Expression" },
-  { id: "rq-5", title: "Predicting Plaque Distance" },
-  { id: "rq-6", title: "Predicting Plaque Distance" },
-  { id: "rq-7", title: "Predicting Plaque Distance" },
+const researchQuestions = [
+  {
+    id: "rq-1",
+    title: "Predicting Cell Composition",
+    description: "How well can we infer cell-type composition from spatial transcriptomics features?",
+    dotClass: "bg-chart-1",
+  },
+  {
+    id: "rq-2",
+    title: "Predicting Gene Expression",
+    description: "Can plaque proximity explain changes in PIG gene expression patterns?",
+    dotClass: "bg-chart-2",
+  },
+  {
+    id: "rq-3",
+    title: "Predicting Gene Expression",
+    description: "Do regression models capture PIG expression as a function of plaque distance?",
+    dotClass: "bg-chart-3",
+  },
+  {
+    id: "rq-4",
+    title: "Predicting Gene Expression",
+    description: "How does plaque distance vary across annotated cell types?",
+    dotClass: "bg-chart-4",
+  },
+  {
+    id: "rq-5",
+    title: "Predicting Plaque Distance",
+    description: "Can we predict plaque distance using cell state / expression signatures?",
+    dotClass: "bg-chart-5",
+  },
+  {
+    id: "rq-6",
+    title: "Predicting Plaque Distance",
+    description: "Which models generalize best across samples and conditions?",
+    dotClass: "bg-chart-6",
+  },
+  {
+    id: "rq-7",
+    title: "Predicting Plaque Distance",
+    description: "Where do predictions fail, and what biological factors drive errors?",
+    dotClass: "bg-chart-7",
+  },
 ];
 
 function scrollToHash(hash: string) {
@@ -26,7 +56,7 @@ function scrollToHash(hash: string) {
   el.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
-export default function RQSection() {
+const RQSection = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -43,35 +73,49 @@ export default function RQSection() {
   };
 
   return (
-    <section className="w-full">
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[340px_1fr]">
-        {/* Big box */}
-        <div className="rounded-2xl border border-white/10 bg-white/5 p-5 shadow-sm">
-          <div className="text-xs uppercase tracking-wide text-white/70">Navigation</div>
-          <h2 className="mt-2 text-2xl font-semibold leading-tight">Research Questions</h2>
-          <p className="mt-2 text-sm text-white/70">
-            Click a card to jump to the corresponding section below.
-          </p>
-        </div>
+    <section className="py-24 bg-muted/30">
+      <div className="container mx-auto px-6">
+        <div className="grid lg:grid-cols-2 gap-12 items-start">
+          {/* Left: Big box */}
+          <div>
+            <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
+              Research Questions
+            </h2>
+            <p className="text-lg text-muted-foreground mb-8">
+              Seven questions guide the analysis. Click any item to jump to the corresponding
+              section on this page.
+            </p>
 
-        {/* Horizontal cards */}
-        <div className="rounded-2xl border border-white/10 bg-white/5 p-4 shadow-sm">
-          <div className="flex items-center justify-between">
-            <div className="text-sm font-medium text-white/80">Jump to</div>
-            <div className="text-xs text-white/60">Scroll →</div>
+            <div className="bg-card rounded-2xl border border-border p-6 shadow-md">
+              <h3 className="text-lg font-semibold text-foreground mb-2">
+                Navigation
+              </h3>
+              <p className="text-sm text-muted-foreground">
+                Uses in-page anchors (e.g. <span className="font-mono">#rq-3</span>) so links are shareable.
+              </p>
+            </div>
           </div>
 
-          <div className="mt-3 flex gap-3 overflow-x-auto pb-2 pr-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            {RQS.map((rq, idx) => (
+          {/* Right: RQ list styled like your “dot + text” rows */}
+          <div className="space-y-4">
+            {researchQuestions.map((rq, idx) => (
               <button
                 key={rq.id}
                 onClick={() => onSelect(rq.id)}
-                className="group min-w-[260px] max-w-[340px] flex-shrink-0 rounded-2xl border border-white/10 bg-white/5 p-4 text-left transition hover:bg-white/10 hover:border-white/20 focus:outline-none focus:ring-2 focus:ring-white/25"
+                className="w-full text-left flex items-center gap-3 p-4 rounded-xl bg-card border border-border hover:bg-muted/40 transition focus:outline-none focus:ring-2 focus:ring-ring"
               >
-                <div className="text-xs font-semibold text-white/60">RQ {idx + 1}</div>
-                <div className="mt-2 text-base font-semibold leading-snug">{rq.title}</div>
-                <div className="mt-3 text-xs text-white/60 group-hover:text-white/75">
-                  Go to section →
+                {/* the dot like in your previous section (NOT custom colored by data) */}
+                <div className={`w-3 h-3 rounded-full ${rq.dotClass}`} />
+
+                <div className="min-w-0">
+                  <div className="flex items-baseline gap-2">
+                    <p className="font-medium text-foreground">
+                      RQ {idx + 1} — {rq.title}
+                    </p>
+                  </div>
+                  <p className="text-sm text-muted-foreground truncate">
+                    {rq.description}
+                  </p>
                 </div>
               </button>
             ))}
@@ -80,4 +124,6 @@ export default function RQSection() {
       </div>
     </section>
   );
-}
+};
+
+export default RQSection;
