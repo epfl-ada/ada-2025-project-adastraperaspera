@@ -1033,8 +1033,8 @@ def make_wt_tg_age_grid_scatter_from_csv(
     # ---- overall layout + transparency ----
     fig.update_layout(
         title=title,
-        width=900,
-        height=500,
+        width=None,
+        height=700,
         margin=dict(l=30, r=20, t=80 if title else 40, b=30),
         dragmode="pan",
         template="plotly_white",
@@ -1045,113 +1045,96 @@ def make_wt_tg_age_grid_scatter_from_csv(
     fig.write_html(str(out_path), include_plotlyjs="cdn")
     return fig
 
-def make_alignment_plot(
+
+def make_alignment_overlay_plot(
     *,
     df_ref: pd.DataFrame,
     df_aligned: pd.DataFrame,
     ref_label: str = "TG17 (reference)",
-    aligned_label: str = "Aligned mouse",
+    aligned_label: str = "TG5 aligned → TG17",
     x_col: str = "x_centroid",
     y_col: str = "y_centroid",
+    swap_xy: bool = True,          # swap x and y (requested)
+    reverse_y: bool = True,        # image-like orientation (optional but usually correct)
     max_points: int | None = 200_000,
-    marker_size_ref: float = 1.8,
-    marker_size_aligned: float = 1.8,
-    opacity_ref: float = 0.6,
-    opacity_aligned: float = 0.6,
-    title: str = "TG17 alignment inspection",
-    filename: str = "tg17_alignment_interactive.html",
+    marker_size: float = 1.8,
+    opacity: float = 0.6,
+    title: str = "Attempted alignment: TG5 → TG17 (interactive)",
+    filename: str = "tg5_to_tg17_alignment.html",
     out_dir: str = "frontend/public/plots",
 ) -> go.Figure:
 
-    # Downsample for performance
-    if max_points:
+    def get_xy(df: pd.DataFrame):
+        x = df[x_col].astype(float)
+        y = df[y_col].astype(float)
+        if swap_xy:
+            x, y = y, x
+        return x, y
+
+    # Downsample for speed
+    if max_points is not None:
         if len(df_ref) > max_points:
             df_ref = df_ref.sample(max_points, random_state=0)
         if len(df_aligned) > max_points:
             df_aligned = df_aligned.sample(max_points, random_state=0)
 
-    # Coordinate ranges
-    xmin = min(df_ref[x_col].min(), df_aligned[x_col].min())
-    xmax = max(df_ref[x_col].max(), df_aligned[x_col].max())
-    ymin = min(df_ref[y_col].min(), df_aligned[y_col].min())
-    ymax = max(df_ref[y_col].max(), df_aligned[y_col].max())
+    x_ref, y_ref = get_xy(df_ref)
+    x_aln, y_aln = get_xy(df_aligned)
+
+    xmin = float(min(x_ref.min(), x_aln.min()))
+    xmax = float(max(x_ref.max(), x_aln.max()))
+    ymin = float(min(y_ref.min(), y_aln.min()))
+    ymax = float(max(y_ref.max(), y_aln.max()))
 
     fig = go.Figure()
 
-    # Reference TG17
     fig.add_trace(
         go.Scattergl(
-            x=df_ref[x_col],
-            y=df_ref[y_col],
+            x=x_ref, y=y_ref,
             mode="markers",
             name=ref_label,
-            marker=dict(
-                size=marker_size_ref,
-                opacity=opacity_ref,
-                color="#2563eb",  # blue
-            ),
+            marker=dict(size=marker_size, opacity=opacity),
             hovertemplate=f"{ref_label}<br>x=%{{x:.1f}}<br>y=%{{y:.1f}}<extra></extra>",
         )
     )
 
-    # Aligned mouse
     fig.add_trace(
         go.Scattergl(
-            x=df_aligned[x_col],
-            y=df_aligned[y_col],
+            x=x_aln, y=y_aln,
             mode="markers",
             name=aligned_label,
-            marker=dict(
-                size=marker_size_aligned,
-                opacity=opacity_aligned,
-                color="#dc2626",  # red
-            ),
+            marker=dict(size=marker_size, opacity=opacity),
             hovertemplate=f"{aligned_label}<br>x=%{{x:.1f}}<br>y=%{{y:.1f}}<extra></extra>",
         )
     )
 
     fig.update_layout(
         title=title,
-        height=720,
-        width=None,  # responsive
-        margin=dict(l=40, r=20, t=80, b=40),
+        height=700,
+        width=None,  # responsive inside iframe
+        margin=dict(l=30, r=20, t=80, b=30),
         dragmode="pan",
-        showlegend=True,
-        legend=dict(
-            orientation="h",
-            yanchor="bottom",
-            y=1.02,
-            xanchor="right",
-            x=1,
-        ),
         template="plotly_white",
+        showlegend=True,
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
 
         # transparent background
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0)",
     )
 
-    fig.update_xaxes(
-        range=[xmin, xmax],
-        showgrid=False,
-        zeroline=False,
-        visible=False,
-        fixedrange=False,
-    )
-
+    fig.update_xaxes(range=[xmin, xmax], visible=False, showgrid=False, zeroline=False)
     fig.update_yaxes(
         range=[ymin, ymax],
+        visible=False,
         showgrid=False,
         zeroline=False,
-        visible=False,
         scaleanchor="x",
         scaleratio=1,
-        autorange="reversed",  # image-like coordinates
-        fixedrange=False,
+        autorange="reversed" if reverse_y else True,
     )
 
     out_path = Path(out_dir) / filename
     out_path.parent.mkdir(parents=True, exist_ok=True)
     fig.write_html(str(out_path), include_plotlyjs="cdn")
-
     return fig

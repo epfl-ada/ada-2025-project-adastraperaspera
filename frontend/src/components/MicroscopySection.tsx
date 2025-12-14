@@ -42,11 +42,21 @@ const MicroscopySection = () => {
           </div>
 
           <PlotFrame
-            src={`${base}plots/wt_tg_age_grid.html`}
-            title="WT vs TG spatial maps by age"
-            size="lg"
-            caption="Attempted alignment of Tg 5.7 months old mouse onto Tg 17.9 months old mouse. Interactive: pan and zoom enabled."
+            src={`${base}plots/tg5_to_tg17_alignment.html`}
+            title="Attempted alignment of Tg 5.7 months old mouse onto Tg 17.9 months old mouse"
+            size="md"
+            caption={
+              <>
+                <span className="font-medium text-foreground">Blue:</span> Tg 17.9 months
+                reference tissue.{" "}
+                <span className="font-medium text-foreground">Red:</span> Tg 5.7 months
+                tissue after rigid alignment (flip + translation) into the Tg 17.9 coordinate
+                frame. Large residual mismatches highlight the limits of cross-mouse spatial
+                alignment.
+              </>
+            }
           />
+
         </div>
 
         {/* =========================
