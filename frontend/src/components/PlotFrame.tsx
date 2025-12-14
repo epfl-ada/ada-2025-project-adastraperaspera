@@ -1,16 +1,16 @@
-type PlotSize = "sm" | "md" | "lg" | "xl";
+type PlotSize = "sm" | "md" | "lg";
 
 const SIZE_CLASSES: Record<PlotSize, string> = {
-  sm: "h-[360px]",
-  md: "h-[520px]",
-  lg: "h-[700px]",
+  sm: "h-[320px] md:h-[380px]",
+  md: "h-[420px] md:h-[520px]",
+  lg: "h-[520px] md:h-[680px]",
 };
 
 interface PlotFrameProps {
   src?: string;
   title: string;
   size?: PlotSize;
-  caption?: string;
+  caption?: React.ReactNode;
   placeholder?: string;
 }
 
@@ -23,25 +23,33 @@ const PlotFrame = ({
 }: PlotFrameProps) => {
   return (
     <div className="w-full">
-      {src ? (
-        <iframe
-          src={src}
-          title={title}
-          loading="lazy"
-          className={`w-full ${SIZE_CLASSES[size]} rounded-xl border border-border`}
-        />
-      ) : (
-        <div
-          className={`w-full ${SIZE_CLASSES[size]} flex items-center justify-center rounded-xl border border-dashed border-border bg-muted/30`}
-        >
-          <p className="text-sm text-muted-foreground text-center">
-            {placeholder ?? "Plot forthcoming"}
-          </p>
-        </div>
-      )}
+      {/* Title */}
+      <h4 className="mb-2 text-sm font-medium text-foreground">
+        {title}
+      </h4>
 
+      {/* Frame */}
+      <div
+        className={`relative w-full ${SIZE_CLASSES[size]} overflow-hidden rounded-xl border border-border`}
+      >
+        {src ? (
+          <iframe
+            src={src}
+            title={title}
+            loading="lazy"
+            className="absolute inset-0 h-full w-full border-0"
+            scrolling="no"
+          />
+        ) : (
+          <div className="flex h-full items-center justify-center text-sm text-muted-foreground bg-muted/30">
+            {placeholder ?? "Plot forthcoming"}
+          </div>
+        )}
+      </div>
+
+      {/* Caption */}
       {caption && (
-        <p className="mt-3 text-xs text-center text-muted-foreground">
+        <p className="mt-2 text-xs text-muted-foreground leading-snug">
           {caption}
         </p>
       )}
