@@ -29,8 +29,9 @@ const GeneExpressionChart = () => {
               title="Microscopy cells unified"
               size="sm"
             />
-            Small microscopy card */}
+           
           </div>
+           Small microscopy card */}
         </div>
 
         {/* Scroll hint */}
