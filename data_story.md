@@ -220,3 +220,38 @@ All 16 PIGs exhibit a statistically significant negative slope at 0.01 FDR level
 </p>
 
 ## Predicting Plaque distance
+
+// Todo: improve the plot based on src.scripts.visualization.plots.plot_model_performance; usage in results.ipynb
+// Add interactive zoom in, transparent background
+<p align="center">
+  <img src="figures/model_performance_predict_dist.png" width="160">
+  <br><em>Model performance for predicting plaque distance</em>
+</p>
+
+// ToDo: improve the plot based on src.scripts.visualization.plots.plot_true_vs_predicted; usage in results.ipynb
+// Add interactive zoom in, transparent background
+<p align="center">
+  <img src="figures/true_vs_predicted.png" width="160">
+  <br><em>True vs. predicted plaque distance</em>
+</p>
+
+// ToDo: improve the plot based on src.scripts.visualization.plots.plot_residual_vs_distance; usage in results.ipynb
+// Add interactive zoom in, transparent background
+<p align="center">
+  <img src="figures/residuals_diagnostics.png" width="160">
+  <br><em>Residual diagnostics</em>
+</p>
+
+// ToDo: improve the plot based on src.scripts.visualization.plots.plot_residual_vs_distance; usage in results.ipynb
+// Add interactive zoom in, transparent background
+<p align="center">
+  <img src="figures/residuals_vs_distance.png" width="160">
+  <br><em>Spatial diagnostics</em>
+</p>
+
+// ToDo: improve the plot based on src.scripts.visualization.plots.plot_top_gene_importances; usage in results.ipynb
+// Make interactive, add transparent background, improve color choice (make more pleasant potentially)
+<p align="center">
+  <img src="figures/model_performance_predict_dist.png" width="160">
+  <br><em>Model performance for predicting plaque distance</em>
+</p>

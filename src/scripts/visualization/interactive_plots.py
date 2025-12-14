@@ -134,7 +134,7 @@ def plot_gene_trends_interactive(
     width: int = 820,
     use_webgl: bool = True,
     *,
-    sem_expr: pd.DataFrame | None = None,  # NEW: optional SEM matrix (same shape as mean_expr)
+    sem_expr: pd.DataFrame | None = None,  # optional SEM matrix (same shape as mean_expr)
 ) -> go.Figure:
     """
     Interactive version of 'plot_gene_trends' with optional SEM error bars.
