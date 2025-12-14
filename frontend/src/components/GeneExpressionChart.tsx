@@ -7,8 +7,8 @@ const GeneExpressionChart = () => {
     <section className="py-24 bg-muted/30">
       <div className="container mx-auto px-6">
 
-        {/* Section title (fixed, not scrolling) */}
-        <div className="mb-8">
+        {/* Section title */}
+        <div className="mb-6">
           <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
             Gene expression
           </h2>
@@ -16,6 +16,11 @@ const GeneExpressionChart = () => {
             Spatial transcriptomics overview and microscopy-based cell maps.
           </p>
         </div>
+
+        {/* Scroll hint (TOP) */}
+        <p className="mb-4 text-xs text-muted-foreground">
+          Tip: scroll horizontally to explore the analysis →
+        </p>
 
         {/* =========================
             HORIZONTAL SCROLL STRIP
@@ -47,7 +52,6 @@ const GeneExpressionChart = () => {
               space-y-6
             "
           >
-            {/* Text */}
             <p className="text-lg text-muted-foreground">
               We are dealing with a spatial transcriptomics dataset which contains
               single cell gene expression measurements of 347 genes. The gene
@@ -61,7 +65,6 @@ const GeneExpressionChart = () => {
               genes curated from literature.
             </p>
 
-            {/* Microscopy plot BELOW text */}
             <PlotFrame
               src={`${base}plots/microscopy_cells_unified.html`}
               title="Microscopy cells unified"
@@ -72,14 +75,35 @@ const GeneExpressionChart = () => {
               Interactive microscopy-based spatial maps. Pan and zoom enabled.
             </p>
           </div>
+          <div
+            className="
+              snap-start
+              min-w-[900px]
+              max-w-[900px]
+              bg-card
+              rounded-2xl
+              border border-border
+              p-8
+              flex-shrink-0
+              space-y-6
+            "
+          >
+          
+            <PlotFrame
+              src={`${base}plots/expression_distribution.html`}
+              title="Microscopy cells unified"
+              size="lg"
+            />
+            <p className="text-xs text-muted-foreground text-center">
+              Interactive microscopy-based spatial maps. Pan and zoom enabled.
+            </p>
+            <p className="text-lg text-muted-foreground">
+              First, let us explore the data by visualizing the distribution of log1p-transformed transcript counts for the 16 PIGs against the average distribution of all 347 genes. We will focus on the mouse with the most advanced stage of the Alzheimer's disease (transgenic at 17.9 months of age).
+            </p>
+
+          </div>
 
         </div>
-
-        {/* Scroll hint */}
-        <p className="mt-4 text-xs text-muted-foreground">
-          Tip: scroll horizontally to explore the analysis →
-        </p>
-
       </div>
     </section>
   );
