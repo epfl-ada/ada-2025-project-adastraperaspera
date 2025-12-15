@@ -27,9 +27,9 @@ const GeneExpressionChart = () => {
             className="
               hidden lg:block
               float-right
-              ml-6
+              ml-3
               mb-4
-              w-[520px]
+              w-[600px]
             "
           >
             <img
