@@ -26,7 +26,7 @@ const GeneExpressionChart = () => {
                 ml-6
                 mb-4
                 w-[650px]
-                max-w-[45%]
+                max-w-[65%]
               "
             >
               <img
