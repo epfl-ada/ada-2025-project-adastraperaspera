@@ -20,15 +20,13 @@ const GeneExpressionChart = () => {
                We are dealing with a spatial transcriptomics dataset which contains single cell gene expression measurements of 347 genes. The gene expression matrix tends to be sparse. For the transgenic mouse at 17.9 months of age, 302 out of 347 genes have zero median transcript count.
               Looking at the gene selection, out of 347 genes, 248 represent markers for 8 main cell types, canonical neuronal cortical layer markers, and non-neuronal markers; 83 genes related to activated microglia and astrocytes; and 16 PIGs curated from primary literature.
             </p>
-          </div>
-
-          {/* Figure (no card) */}
+            {/* Figure (no card) */}
           <figure
             className="
               hidden lg:block
               float-right
               ml-3
-              mb-4
+              mb-3
               w-[600px]
             "
           >
@@ -41,6 +39,7 @@ const GeneExpressionChart = () => {
               Microscopy cells unified
             </figcaption>
           </figure>
+          </div>
         </div>
 
 
