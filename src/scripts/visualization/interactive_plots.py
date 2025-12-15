@@ -965,28 +965,33 @@ def _to_data_uri(img: np.ndarray) -> str:
 
 def make_wt_tg_age_grid_scatter_from_csv(
     *,
-    csv_paths: dict[str, str | Path],  # e.g. {"wt2": "...csv", "tg2": "...csv", ...}
-    age_map: dict[str, tuple[str, str]],  # age_label -> (wt_key, tg_key)
+    csv_paths: dict[str, str | Path],                 # {"wt2": "...csv", "tg2": "...csv", ...}
+    age_map: dict[str, tuple[str, str]],              # age_label -> (wt_key, tg_key)
     title: str | None = "WT vs TG by age (interactive)",
     filename: str = "wt_tg_age_grid_scatter.html",
     out_dir: str = "frontend/public/plots",
-    max_points: int | None = 150_000,  # downsample for browser performance
+    max_points: int | None = 150_000,
     x_candidates=("x_centroid", "x"),
     y_candidates=("y_centroid", "y"),
-    # If your tissue coordinates behave like images (origin top-left), this makes it look right:
     reverse_y: bool = True,
-    # If x/y are truly swapped in your CSV, set this to True:
     swap_xy: bool = False,
-    # styling
+
+    # --- NEW: make all panels same color ---
+    uniform_color: str = "gold",
     marker_size: float = 1.8,
     marker_opacity: float = 0.65,
-    color_col: str | None = None,  # e.g. "prediction" (numeric) or None
+
+    # --- NEW: flip horizontally only for specific samples/keys ---
+    flip_h_keys: Iterable[str] = ("wt5", "tg17"),
+
     row_label_wt: str = "Wild type",
     row_label_tg: str = "Transgenic",
     row_label_font_size: int = 18,
 ) -> go.Figure:
     out_path = Path(out_dir) / filename
     out_path.parent.mkdir(parents=True, exist_ok=True)
+
+    flip_h_keys = set(flip_h_keys)
 
     # ---- helpers ----
     def pick_xy(df: pd.DataFrame):
@@ -999,97 +1004,86 @@ def make_wt_tg_age_grid_scatter_from_csv(
             )
         return xcol, ycol
 
-    def prep_df(key: str) -> tuple[pd.Series, pd.Series, pd.Series | None]:
+    def prep_df(key: str) -> tuple[pd.Series, pd.Series]:
         df = pd.read_csv(csv_paths[key])
 
         if max_points is not None and len(df) > max_points:
             df = df.sample(n=max_points, random_state=0)
 
         xcol, ycol = pick_xy(df)
-
         x = df[xcol].astype(float)
         y = df[ycol].astype(float)
 
         if swap_xy:
             x, y = y, x
 
-        c = None
-        if color_col is not None and color_col in df.columns:
-            c = df[color_col]
-        return x, y, c
+        # horizontal flip only for selected keys (mirror within that sample's bounds)
+        if key in flip_h_keys:
+            xmin, xmax = float(x.min()), float(x.max())
+            x = (xmin + xmax) - x
+
+        return x, y
 
     # fixed age order based on insertion order in age_map
     age_labels = list(age_map.keys())
     if len(age_labels) != 3:
-        # not required, but your target layout is 3 columns; raise early if inconsistent
         raise ValueError("age_map should contain exactly 3 ages for a 2×3 grid.")
 
     # ---- create subplot grid ----
     fig = make_subplots(
         rows=2,
         cols=3,
-        column_titles=[
-            f"{a} months" if a.replace(".", "", 1).isdigit() else f"{a} months" for a in age_labels
-        ],
-        horizontal_spacing=0.02,
-        vertical_spacing=0.06,
+        column_titles=[f"{a} months" for a in age_labels],
+        horizontal_spacing=0.01,
+        vertical_spacing=0.05,
     )
 
-    # Track global ranges so all panels match (no jumping/unequal zoom)
+    # Track global ranges so all panels match
     xmins, xmaxs, ymins, ymaxs = [], [], [], []
+
+    # single marker style for everything
+    marker_common = dict(
+        size=marker_size,
+        opacity=marker_opacity,
+        color=uniform_color,
+    )
 
     # ---- add traces ----
     for j, age in enumerate(age_labels, start=1):
         wt_key, tg_key = age_map[age]
 
         # WT (row 1)
-        x_wt, y_wt, c_wt = prep_df(wt_key)
-        xmins.append(float(x_wt.min()))
-        xmaxs.append(float(x_wt.max()))
-        ymins.append(float(y_wt.min()))
-        ymaxs.append(float(y_wt.max()))
-
-        marker_wt = dict(size=marker_size, opacity=marker_opacity)
-        if c_wt is not None and pd.api.types.is_numeric_dtype(c_wt):
-            marker_wt["color"] = c_wt
-            marker_wt["showscale"] = j == 3  # show colorbar only on last column
+        x_wt, y_wt = prep_df(wt_key)
+        xmins.append(float(x_wt.min())); xmaxs.append(float(x_wt.max()))
+        ymins.append(float(y_wt.min())); ymaxs.append(float(y_wt.max()))
 
         fig.add_trace(
             go.Scattergl(
                 x=x_wt,
                 y=y_wt,
                 mode="markers",
-                marker=marker_wt,
+                marker=marker_common,
                 showlegend=False,
                 hovertemplate=f"{row_label_wt}<br>Age: {age}<br>x=%{{x:.2f}}<br>y=%{{y:.2f}}<extra></extra>",
             ),
-            row=1,
-            col=j,
+            row=1, col=j
         )
 
         # TG (row 2)
-        x_tg, y_tg, c_tg = prep_df(tg_key)
-        xmins.append(float(x_tg.min()))
-        xmaxs.append(float(x_tg.max()))
-        ymins.append(float(y_tg.min()))
-        ymaxs.append(float(y_tg.max()))
-
-        marker_tg = dict(size=marker_size, opacity=marker_opacity)
-        if c_tg is not None and pd.api.types.is_numeric_dtype(c_tg):
-            marker_tg["color"] = c_tg
-            marker_tg["showscale"] = False  # already shown (if any) on WT last col
+        x_tg, y_tg = prep_df(tg_key)
+        xmins.append(float(x_tg.min())); xmaxs.append(float(x_tg.max()))
+        ymins.append(float(y_tg.min())); ymaxs.append(float(y_tg.max()))
 
         fig.add_trace(
             go.Scattergl(
                 x=x_tg,
                 y=y_tg,
                 mode="markers",
-                marker=marker_tg,
+                marker=marker_common,
                 showlegend=False,
                 hovertemplate=f"{row_label_tg}<br>Age: {age}<br>x=%{{x:.2f}}<br>y=%{{y:.2f}}<extra></extra>",
             ),
-            row=2,
-            col=j,
+            row=2, col=j
         )
 
     # ---- unify axes ----
@@ -1099,49 +1093,39 @@ def make_wt_tg_age_grid_scatter_from_csv(
     for r in (1, 2):
         for c in (1, 2, 3):
             fig.update_xaxes(
-                row=r,
-                col=c,
+                row=r, col=c,
                 range=xr,
                 showgrid=False,
                 zeroline=False,
                 visible=False,
             )
             fig.update_yaxes(
-                row=r,
-                col=c,
+                row=r, col=c,
                 range=yr,
                 showgrid=False,
                 zeroline=False,
                 visible=False,
-                scaleanchor=f"x{'' if (r == 1 and c == 1) else ( (r-1)*3 + c )}",
+                scaleanchor=f"x{'' if (r == 1 and c == 1) else ((r-1)*3 + c)}",
                 scaleratio=1,
                 autorange="reversed" if reverse_y else True,
             )
 
     # ---- row labels (bigger + bold) ----
-    # Add annotations on the left side, vertically centered per row
     fig.update_layout(
-        annotations=list(fig.layout.annotations)
-        + [
+        annotations=list(fig.layout.annotations) + [
             dict(
                 text=f"<b>{row_label_wt}</b>",
-                x=0.01,
-                y=0.97,  # ⬅ inside the plot
-                xref="paper",
-                yref="paper",
-                xanchor="left",
-                yanchor="middle",
+                x=0.01, y=0.97,
+                xref="paper", yref="paper",
+                xanchor="left", yanchor="middle",
                 showarrow=False,
                 font=dict(size=row_label_font_size),
             ),
             dict(
                 text=f"<b>{row_label_tg}</b>",
-                x=0.01,
-                y=0.50,  # ⬅ inside the plot
-                xref="paper",
-                yref="paper",
-                xanchor="left",
-                yanchor="middle",
+                x=0.01, y=0.50,
+                xref="paper", yref="paper",
+                xanchor="left", yanchor="middle",
                 showarrow=False,
                 font=dict(size=row_label_font_size),
             ),
@@ -1151,8 +1135,6 @@ def make_wt_tg_age_grid_scatter_from_csv(
     # ---- overall layout + transparency ----
     fig.update_layout(
         title=title,
-        # width=None,
-        # height=700,
         autosize=True,
         margin=dict(l=30, r=20, t=80 if title else 40, b=30),
         dragmode="pan",
@@ -1163,6 +1145,7 @@ def make_wt_tg_age_grid_scatter_from_csv(
 
     fig.write_html(str(out_path), include_plotlyjs="cdn")
     return fig
+
 
 
 def make_alignment_overlay_plot(

@@ -73,7 +73,7 @@ const GeneExpressionChart = () => {
             </p>
 
             <PlotFrame
-              src={`${base}plots/expression_distribution.html`}
+              src={`${base}figures/expression_distribution.png`}
               title="Gene expression distribution (log1p-transformed)"
               size="md"
             />
