@@ -23,17 +23,25 @@ const GeneExpressionChart = () => {
           </div>
 
           {/* Figure (no card) */}
-          <figure className="hidden lg:block float-right ml-10 mb-6 w-[520px]">
+          <figure
+            className="
+              hidden lg:block
+              float-right
+              ml-6
+              mb-4
+              w-[520px]
+            "
+          >
             <img
               src={`${base}figures/microscopy_cells_unified.png`}
               alt="Microscopy cells unified"
-              className="w-full rounded-2xl border border-border/60 shadow-md"
+              className="w-full"
             />
-            <figcaption className="mt-2 text-sm text-muted-foreground">
+            <figcaption className="mt-1 text-xs text-muted-foreground">
               Microscopy cells unified
             </figcaption>
           </figure>
-</div>
+        </div>
 
 
         {/* Scroll hint */}
