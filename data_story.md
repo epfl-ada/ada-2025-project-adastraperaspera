@@ -309,12 +309,12 @@ This heteroscedasticity implies that the model is missing important covariates.
   <br><em>Spatial diagnostics</em>
 </p>
 
-Looking at the per-cell residuals, we can see that the average error is largest in Hypothalamic GnRH1-expressing glutamatergic neurons. This is likely due to the fact that, as discussed before, these cells are located in the third ventricle, which is the furthest away from plaques than any other brain region. As a result, most residuals in this cluster are in the highly positive (over 10.6 µm) bracket. Meanwhile, Pons glutamatergic neurons exhibit the lowest mean absolute residuals, indicating that the model performs best in this region.
+Looking at the per-cell mean absolute residuals, we can see that the average error is largest in Hypothalamic GnRH1-expressing glutamatergic neurons. This is likely due to the fact that, as discussed before, these cells are located in the third ventricle, which is the furthest away from plaques than any other brain region. As a result, most residuals in this cluster are in the highly positive (over 10.6 µm) bracket. Meanwhile, Pons glutamatergic neurons exhibit the lowest mean absolute residuals, indicating that the model performs best in this region.
 
-| Cluster (Leiden) | Inferred cell type | n | Mean residual (µm) | Mean absolute residual (µm) |
-|---:|---|---:|---:|---:|
-| 15 | Hypothalamic GnRH1-expressing glutamatergic neurons | 917 | 2.8071 | 32.2295 |
-| 18 | Pons glutamatergic neurons | 499 | 1.7138 | 17.8746 |
+| Cluster (Leiden) | Inferred cell type | n | Mean absolute residual (µm) |
+|---:|---|---:|---:|
+| 15 | Hypothalamic GnRH1-expressing glutamatergic neurons | 917 | 32.2295 |
+| 18 | Pons glutamatergic neurons | 499 | 17.8746 |
 
 The top genes for predicting plaque distance are fairly consistent across all four models. Gfap and Spag16 appear in the top 5 for all models. Three out of four models rank Gfap (an astrocyte-associated PIG) as the top predictor of proximity to amyloid beta plaque, reinforcing our earlier findings. Other highly ranked genes include Spag16 and Lyz2, which are associated with glial and immune cells. Agreement across both the linear and the tree-based models suggests that the top genes have a robust relationship with plaque proximity. This agrees with our previous findings, which revealed that Gfap peaks within the first 10 µm and declines with distance. Meanwhile, lgf2 has an opposite trend, peaking at around 270 µm and declining towards the plaque.
 
