@@ -19,11 +19,12 @@ from numpy.typing import NDArray
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
-from scipy.stats import gaussian_kde, pearsonr, spearmanr
+from scipy.stats import pearsonr, spearmanr
 import seaborn as sns
 from shapely.geometry import MultiPolygon, Polygon
 from sklearn.metrics import r2_score
 from statsmodels.stats.multitest import multipletests
+from matplotlib.patches import Patch
 
 from src.utils.logging_utils import logger
 
@@ -1095,8 +1096,6 @@ def plot_model_performance(results_df):
         value_name="R²",
     )
     sns.barplot(data=results_melted, x="model", y="R²", hue="Dataset", palette="viridis")
-    plt.title("Model Performance Comparison (Train vs Test R²)")
-    plt.xlabel("Model")
     plt.ylabel("R²")
     plt.legend(title="")
     plt.tight_layout()
@@ -1125,9 +1124,8 @@ def plot_top_gene_importances(importance_df, top_n=20):
 
     plt.figure(figsize=(10, max(6, top_n * 0.3)))
     sns.heatmap(pivot, cmap="mako", linewidths=0.5, cbar_kws={"label": "Normalized Importance"})
-    plt.title(f"Top {top_n} Predictive Genes Across Models")
-    plt.xlabel("Model")
-    plt.ylabel("Gene")
+    plt.xlabel("")
+    plt.ylabel("")
     plt.tight_layout()
     plt.show()
 
@@ -2362,7 +2360,7 @@ def plot_top_genes_by_distance(
             f"The following genes are missing from `combined_df_normalized`: {missing}"
         )
 
-    # --- NEW: compute a consistent order + rounded labels for the distance bins
+    # --- compute a consistent order + rounded labels for the distance bins
     order, labels = _sorted_bins_and_labels(combined_df_normalized[distance_col])
 
     # ---- Layout (unchanged) ----
@@ -3343,235 +3341,538 @@ def plot_resid_vs_distance_scatter_pro(
     plt.show()
 
 
-#####
-
-from matplotlib.patches import Patch
-import numpy as np
-from scipy.stats import gaussian_kde
-
-
-def _bin_residual_three(residuals: pd.Series) -> pd.Series:
-    """
-    Bin residuals into 3 classes: Negative, Near 0, Positive.
-
-    We use absolute residual quantiles to define a 'near zero' band,
-    and sign to define negative vs positive.
-    """
-    abs_r = residuals.abs()
-    low, high = np.nanpercentile(abs_r, [33.3, 66.7])
-
-    def _lbl(r):
-        if np.isnan(r):
-            return np.nan
-        if abs(r) <= low:
-            return "Near 0"
-        elif r < 0:
-            return "Negative"
-        else:
-            return "Positive"
-
-    return residuals.map(_lbl).astype("category")
-
-
-def _format_interval(iv):
+def _format_interval(iv) -> str:
     """Format an interval as rounded bounds."""
-    left = iv.left
-    right = iv.right
-    # round to 1 decimal (you can change to 0 decimals if you prefer)
+    left = float(iv.left)
+    right = float(iv.right)
     return f"{left:.1f} to {right:.1f}"
 
 
+def _relative_luminance(rgb: tuple[float, float, float]) -> float:
+    """WCAG-ish relative luminance for deciding white vs black text on a color."""
+    r, g, b = rgb
+
+    def _lin(c: float) -> float:
+        return c / 12.92 if c <= 0.04045 else ((c + 0.055) / 1.055) ** 2.4
+
+    r_lin, g_lin, b_lin = _lin(r), _lin(g), _lin(b)
+    return 0.2126 * r_lin + 0.7152 * g_lin + 0.0722 * b_lin
+
+
+def _bivariate_palette_rowwise(
+    *,
+    n_resid: int,
+    n_dist: int,
+    neg_cmap: str = "Blues",
+    mid_cmap: str = "Greys",
+    pos_cmap: str = "Oranges",
+    dist_lo: float = 0.25,
+    dist_hi: float = 0.95,
+) -> "np.ndarray":
+    """
+    Build a bivariate palette where:
+      - residual bin selects the row hue family (neg=blue, mid=grey, pos=orange)
+      - distance bin selects lightness/saturation within that family (near=light, far=dark)
+
+    This intentionally creates strong, monotonic lightness steps so bins remain
+    distinguishable at very small marker sizes. :contentReference[oaicite:3]{index=3}
+    """
+    import numpy as np
+    import matplotlib as mpl
+
+    if n_resid != 3:
+        raise ValueError("rowwise palette is designed for n_bins=3 (neg/mid/pos residual bins).")
+
+    def sample_rgb(cmap_name: str) -> list[tuple[float, float, float]]:
+        cmap = mpl.cm.get_cmap(cmap_name)
+        vals = np.linspace(dist_lo, dist_hi, n_dist)
+        return [tuple(cmap(v)[:3]) for v in vals]
+
+    neg_row = sample_rgb(neg_cmap)
+    mid_row = sample_rgb(mid_cmap)
+    pos_row = sample_rgb(pos_cmap)
+
+    # rows: residual bins low->mid->high, cols: distance bins near->far
+    return np.array([neg_row, mid_row, pos_row], dtype=object)
+
+
 def plot_bivariate_resid_distance_spatial(
-    cells_df: pd.DataFrame,
-    y_true: pd.Series,
-    y_pred: np.ndarray,
+    cells_df: "pd.DataFrame",
+    y_true: "pd.Series",
+    y_pred: "np.ndarray",
     *,
     model_name: str = "model",
     dist_col: str = "nearest_plaque_center_dist",
     x_col: str = "x_centroid",
     y_col: str = "y_centroid",
     n_bins: int = 3,
-    ax: plt.Axes | None = None,
-) -> plt.Axes:
+    point_size: float = 3.0,
+    point_alpha: float = 0.90,
+    legend_show_counts: bool = True,
+    legend_count_fmt: str = "{:,}",
+    legend_count_fontsize: int = 7,
+    legend_count_min: int | None = None,
+    palette_dist_lo: float = 0.25,
+    palette_dist_hi: float = 0.95,
+    ax: "plt.Axes | None" = None,
+    # ---  plaque overlay ---
+    plaque_x_col: str = "plaque_x",
+    plaque_y_col: str = "plaque_y",
+    show_plaques: bool = True,
+    plaque_marker: str = "*",
+    plaque_color: str = "red",
+    plaque_edgecolor: str = "red",
+    plaque_size: float = 5,
+    plaque_alpha: float = 0.95,
+    plaque_linewidth: float = 0.8,
+    plaque_zorder: float = 5,
+    plaque_round_decimals: int | None = None,
+    plaque_label: str = "Plaque",
+    show_plaque_legend: bool = False,
+    show_marker_legend: bool = True,
+    marker_legend_loc: str = "lower right",
+    marker_legend_fontsize: int = 8,
+    marker_legend_framealpha: float = 0.90,
+    marker_legend_cell_markersize: float = 4.0,
+    marker_legend_plaque_markersize: float = 8.0,
+    marker_legend_pad: float = 0.25,
+) -> "plt.Axes":
     """
     Bivariate choropleth-style plot of residual bin × distance bin in spatial coordinates.
-    If `ax` is None, a new figure is created.
+
+    Adds:
+      - optional overlay of unique plaque locations from (plaque_x_col, plaque_y_col)
     """
     import numpy as np
     import pandas as pd
-    import seaborn as sns
+    import matplotlib.pyplot as plt
+
+    if n_bins != 3:
+        raise ValueError("This implementation expects n_bins=3 to map residual bins to neg/mid/pos.")
 
     if ax is None:
         _, ax = plt.subplots(figsize=(6, 6))
 
     df = cells_df.copy()
-    residuals = y_true - y_pred
-    df["_resid_"] = residuals
-    df["_dist_"] = df[dist_col]
+
+    # Robust alignment: assume y_true corresponds row-wise to cells_df
+    resid = np.asarray(y_true, dtype=float) - np.asarray(y_pred, dtype=float)
+    df["_resid_"] = resid
+    df["_dist_"] = pd.to_numeric(df[dist_col], errors="coerce")
+    df["_x_"] = pd.to_numeric(df[x_col], errors="coerce")
+    df["_y_"] = pd.to_numeric(df[y_col], errors="coerce")
+
+    # Drop non-finite (cells)
+    mask = np.isfinite(df["_resid_"].to_numpy()) & np.isfinite(df["_dist_"].to_numpy())
+    mask &= np.isfinite(df["_x_"].to_numpy()) & np.isfinite(df["_y_"].to_numpy())
+    df = df.loc[mask].copy()
 
     # Bin residuals and distances
     df["_resid_bin_"] = pd.qcut(df["_resid_"], q=n_bins, duplicates="drop")
     df["_dist_bin_"] = pd.qcut(df["_dist_"], q=n_bins, duplicates="drop")
 
-    resid_cats = df["_resid_bin_"].cat.categories
-    dist_cats = df["_dist_bin_"].cat.categories
-    df["_resid_idx_"] = df["_resid_bin_"].cat.codes
-    df["_dist_idx_"] = df["_dist_bin_"].cat.codes
+    # Enforce 3 bins (if qcut drops bins due to ties, fail loudly)
+    if df["_resid_bin_"].cat.categories.size != 3 or df["_dist_bin_"].cat.categories.size != 3:
+        raise ValueError(
+            "qcut produced fewer than 3 bins (ties). Consider adding small jitter "
+            "or switching to pd.cut with fixed edges."
+        )
 
-    # Build 3×3 color grid
-    base = sns.diverging_palette(240, 10, n=n_bins, as_cmap=False)  # blue→red
-    colors = []
-    for r in range(n_bins):
-        row = []
-        for d in range(n_bins):
-            frac = (d + 1) / n_bins
-            base_col = np.array(base[r])
-            mixed = (1 - frac) * np.array([1, 1, 1]) + frac * base_col
-            row.append(tuple(mixed))
-        colors.append(row)
-    colors = np.array(colors, dtype=object)
+    resid_cats = df["_resid_bin_"].cat.categories  # low->high
+    dist_cats = df["_dist_bin_"].cat.categories    # near->far (low->high)
 
-    cell_colors = [
-        colors[r, d]
-        for r, d in zip(df["_resid_idx_"].to_numpy(), df["_dist_idx_"].to_numpy(), strict=False)
-    ]
+    df["_resid_idx_"] = df["_resid_bin_"].cat.codes  # 0,1,2
+    df["_dist_idx_"] = df["_dist_bin_"].cat.codes    # 0,1,2
 
-    ax.scatter(
-        df[x_col],
-        df[y_col],
-        c=cell_colors,
-        s=4,
-        alpha=0.8,
-        edgecolors="none",
+    # Palette
+    colors = _bivariate_palette_rowwise(
+        n_resid=3,
+        n_dist=3,
+        dist_lo=palette_dist_lo,
+        dist_hi=palette_dist_hi,
     )
+
+    # Point colors
+    ridx = df["_resid_idx_"].to_numpy()
+    didx = df["_dist_idx_"].to_numpy()
+    point_colors = [colors[r, d] for r, d in zip(ridx, didx, strict=False)]
+
+    # Cells
+    ax.scatter(
+        df["_x_"],
+        df["_y_"],
+        c=point_colors,
+        s=point_size,
+        alpha=point_alpha,
+        edgecolors="none",
+        rasterized=True,
+        zorder=2,
+    )
+
+    # --- Plaques (unique coordinates) ---
+    if show_plaques and (plaque_x_col in cells_df.columns) and (plaque_y_col in cells_df.columns):
+        plaques = cells_df[[plaque_x_col, plaque_y_col]].copy()
+        plaques["_px_"] = pd.to_numeric(plaques[plaque_x_col], errors="coerce")
+        plaques["_py_"] = pd.to_numeric(plaques[plaque_y_col], errors="coerce")
+        plaques = plaques.loc[np.isfinite(plaques["_px_"].to_numpy()) & np.isfinite(plaques["_py_"].to_numpy())]
+
+        # Optional rounding helps if plaque coords are floats with tiny noise
+        if plaque_round_decimals is not None:
+            plaques["_px_"] = plaques["_px_"].round(plaque_round_decimals)
+            plaques["_py_"] = plaques["_py_"].round(plaque_round_decimals)
+
+        plaques = plaques.drop_duplicates(subset=["_px_", "_py_"])
+
+        ax.scatter(
+            plaques["_px_"],
+            plaques["_py_"],
+            marker=plaque_marker,
+            s=plaque_size,
+            c=plaque_color,
+            alpha=plaque_alpha,
+            edgecolors=plaque_edgecolor,
+            linewidths=plaque_linewidth,
+            rasterized=False,   # keep plaque markers crisp in vector exports
+            zorder=plaque_zorder,
+            label=plaque_label,
+        )
+
     ax.set_aspect("equal", "box")
+    ax.set_xlabel("X (µm)", fontsize=10)
+    ax.set_ylabel("Y (µm)", fontsize=10)
+
+    import matplotlib.ticker as mticker
+    ax.xaxis.set_major_locator(mticker.MultipleLocator(1000))
+    ax.yaxis.set_major_locator(mticker.MultipleLocator(1000))
+    ax.xaxis.set_minor_locator(mticker.AutoMinorLocator(2))
+    ax.yaxis.set_minor_locator(mticker.AutoMinorLocator(2))
+
+    ax.tick_params(axis="both", which="major", direction="out", length=4, width=1, labelsize=9)
+    ax.tick_params(axis="both", which="minor", direction="out", length=2, width=0.8)
     ax.invert_yaxis()
-    ax.set_xticks([])
-    ax.set_yticks([])
     ax.set_title("Residual vs distance bivariate map", fontsize=10)
 
-    # Bivariate legend as inset
-    inset = ax.inset_axes([-0.32, 0.25, 0.28, 0.50])
-    # x = -0.32 moves it outside the left side
-    # y = 0.25 centers it vertically
-    # width = 0.28, height = 0.50 chosen to keep aspect
-    for i in range(n_bins):
-        for j in range(n_bins):
-            inset.add_patch(
-                plt.Rectangle(
-                    (j, n_bins - 1 - i),
-                    1,
-                    1,
-                    color=colors[i, j],
-                    transform=inset.transData,
-                )
-            )
-    inset.set_xlim(0, n_bins)
-    inset.set_ylim(0, n_bins)
-    inset.set_xticks(np.arange(n_bins) + 0.5)
-    inset.set_yticks(np.arange(n_bins) + 0.5)
+    # Counts for legend squares
+    counts = (
+        df.groupby(["_resid_idx_", "_dist_idx_"], observed=True)
+        .size()
+        .reindex(pd.MultiIndex.from_product([range(3), range(3)]), fill_value=0)
+        .to_numpy()
+        .reshape(3, 3)
+    )
+
+    # Legend inset (placed outside left)
+    inset = ax.inset_axes([-0.44, 0.25, 0.30, 0.50])
+
+    for r in range(3):
+        for d in range(3):
+            y0 = 2 - r
+            x0 = d
+            rgb = colors[r, d]
+            inset.add_patch(plt.Rectangle((x0, y0), 1, 1, color=rgb, transform=inset.transData))
+
+            if legend_show_counts:
+                n = int(counts[r, d])
+                if (legend_count_min is None) or (n >= legend_count_min):
+                    txt_color = "black" if _relative_luminance(rgb) > 0.55 else "white"
+                    inset.text(
+                        x0 + 0.5, y0 + 0.5,
+                        legend_count_fmt.format(n),
+                        ha="center", va="center",
+                        fontsize=legend_count_fontsize,
+                        color=txt_color,
+                    )
+
+    inset.set_xlim(0, 3)
+    inset.set_ylim(0, 3)
+
+    inset.set_xticks(np.arange(3) + 0.5)
+    inset.set_yticks(np.arange(3) + 0.5)
 
     inset.set_xticklabels(
-        [f"{dist_cats[j].left:.0f}-{dist_cats[j].right:.0f} µm" for j in range(n_bins)],
+        [f"{dist_cats[j].left:.0f}-{dist_cats[j].right:.0f} µm" for j in range(3)],
         rotation=45,
         ha="right",
         fontsize=7,
     )
+    inset.set_yticklabels([_format_interval(c) for c in resid_cats[::-1]], fontsize=7)
 
-    inset.set_yticklabels(
-        [_format_interval(c) for c in resid_cats[::-1]],
-        fontsize=7,
-    )
     inset.set_xlabel("Distance bin", fontsize=7)
     inset.set_ylabel("Residual bin", fontsize=7)
     inset.tick_params(length=0)
     for spine in inset.spines.values():
         spine.set_visible(False)
+    
+    # --- Marker legend (bottom-right): star = plaque centroid; circles = cells (all 9 colors) ---
+    if show_marker_legend:
+        from matplotlib.lines import Line2D
+        from matplotlib.legend_handler import HandlerTuple
 
+        handles = []
+        labels = []
+
+        # Plaque centroid handle (only if plaques are actually shown)
+        if show_plaques:
+            plaque_handle = Line2D(
+                [0], [0],
+                marker=plaque_marker,
+                linestyle="None",
+                color="none",
+                markerfacecolor=plaque_color,
+                markeredgecolor=plaque_edgecolor,
+                markeredgewidth=plaque_linewidth,
+                markersize=marker_legend_plaque_markersize,
+            )
+            handles.append(plaque_handle)
+            labels.append("Plaque centroid")
+
+        # Cells: show all 9 colors, but compactly as 3 rows (residual bins) × 3 cols (distance bins)
+        # Each legend row is a tuple of 3 colored circles (near->far left->right)
+        cell_row_labels = ["Cell (low residual)", "Cell (mid residual)", "Cell (high residual)"]
+        for r in range(3):  # 0,1,2 matches your palette rows
+            row = tuple(
+                Line2D(
+                    [0], [0],
+                    marker="o",
+                    linestyle="None",
+                    color="none",
+                    markerfacecolor=colors[r, d],
+                    markeredgecolor="none",
+                    markersize=marker_legend_cell_markersize,
+                )
+                for d in range(3)
+            )
+            handles.append(row)
+            labels.append(cell_row_labels[r])
+
+        ax.legend(
+            handles,
+            labels,
+            handler_map={tuple: HandlerTuple(ndivide=None, pad=marker_legend_pad)},
+            loc=marker_legend_loc,
+            frameon=True,
+            framealpha=marker_legend_framealpha,
+            fontsize=marker_legend_fontsize,
+            borderpad=0.35,
+            handletextpad=0.6,
+            labelspacing=0.5,
+        )
     return ax
 
 
 def plot_radius_color_spatial(
-    cells_df: pd.DataFrame,
-    y_true: pd.Series,
-    y_pred: np.ndarray,
+    cells_df: "pd.DataFrame",
+    y_true: "pd.Series",
+    y_pred: "np.ndarray",
     *,
     model_name: str = "model",
     dist_col: str = "nearest_plaque_center_dist",
     x_col: str = "x_centroid",
     y_col: str = "y_centroid",
-    cmap: str = "coolwarm",
-    ax: plt.Axes | None = None,
-) -> plt.Axes:
+    # NEW defaults for dense data:
+    render: str = "binned_rgba",  # {"binned_rgba", "scatter"}
+    gridsize: int = 300,
+    dist_cmap: str = "cividis",   # sequential; distance as color :contentReference[oaicite:6]{index=6}
+    min_alpha: float = 0.05,
+    max_alpha: float = 1.00,
+    # scatter-mode controls (only used if render="scatter")
+    max_points: int = 250_000,
+    size_min: float = 4.0,
+    size_max: float = 36.0,
+    size_gamma: float = 0.6,
+    scatter_alpha: float = 0.35,
+    ax: "plt.Axes | None" = None,
+) -> "plt.Axes":
     """
-    One point = one cell:
-    - x,y   = spatial coords
-    - radius = true distance to plaque
-    - color  = residual (blue = negative, red = positive)
-    If `ax` is None, a new figure is created.
+    Residuals in space (improved for heavy overplotting).
+
+    Default render="binned_rgba":
+      - distance to plaque -> color (sequential colormap)
+      - mean |residual|    -> opacity (alpha)
+      This avoids the “all points overlap so size doesn't register” problem and is a
+      standard approach for large scatter/dense point clouds. :contentReference[oaicite:7]{index=7}
+
+    Optional render="scatter":
+      - distance -> color (sequential)
+      - |residual| -> size
+      - sign(residual) -> marker shape (o vs v)
+      Automatically subsamples if too many points.
     """
     import numpy as np
+    import pandas as pd
+    import matplotlib.pyplot as plt
+    import matplotlib as mpl
+    from matplotlib.patches import Patch
 
     if ax is None:
         _, ax = plt.subplots(figsize=(6, 6))
 
     df = cells_df.copy()
-    residuals = y_true - y_pred
-    df["_resid_"] = residuals
-    df["_dist_"] = df[dist_col]
+    resid = np.asarray(y_true, dtype=float) - np.asarray(y_pred, dtype=float)
 
-    d = df["_dist_"].to_numpy()
-    d_scaled = (d - d.min()) / (d.max() - d.min() + 1e-9)
-    sizes = 5 + 25 * d_scaled  # 5–30
+    df["_resid_"] = resid
+    df["_abs_resid_"] = np.abs(resid)
+    df["_dist_"] = pd.to_numeric(df[dist_col], errors="coerce")
+    df["_x_"] = pd.to_numeric(df[x_col], errors="coerce")
+    df["_y_"] = pd.to_numeric(df[y_col], errors="coerce")
 
-    v = np.percentile(np.abs(residuals), 99)
-    sc = ax.scatter(
-        df[x_col],
-        df[y_col],
-        c=df["_resid_"],
-        s=sizes,
-        cmap=cmap,
-        vmin=-v,
-        vmax=v,
-        alpha=0.8,
-        edgecolors="none",
-    )
+    # Drop non-finite
+    m = np.isfinite(df["_x_"].to_numpy()) & np.isfinite(df["_y_"].to_numpy())
+    m &= np.isfinite(df["_dist_"].to_numpy()) & np.isfinite(df["_resid_"].to_numpy())
+    df = df.loc[m].copy()
+
+    x = df["_x_"].to_numpy()
+    y = df["_y_"].to_numpy()
+    dist = df["_dist_"].to_numpy()
+    absr = df["_abs_resid_"].to_numpy()
+    r = df["_resid_"].to_numpy()
+
     ax.set_aspect("equal", "box")
-    ax.invert_yaxis()
     ax.set_xticks([])
     ax.set_yticks([])
     ax.set_xlabel("x coordinate (µm)", fontsize=10)
     ax.set_ylabel("y coordinate (µm)", fontsize=10)
 
-    ax.set_title(
-        "Residuals in space\ncolor = residual, size = true distance",
-        fontsize=10,
-    )
+    if render == "binned_rgba":
+        # 2D binning in (y, x) so imshow aligns naturally
+        H, yedges, xedges = np.histogram2d(y, x, bins=gridsize)
+        sum_dist, _, _ = np.histogram2d(y, x, bins=[yedges, xedges], weights=dist)
+        sum_absr, _, _ = np.histogram2d(y, x, bins=[yedges, xedges], weights=absr)
 
-    cbar = plt.colorbar(sc, ax=ax, fraction=0.046, pad=0.02)
-    cbar.set_label("True − predicted distance (µm)")
+        with np.errstate(invalid="ignore", divide="ignore"):
+            mean_dist = np.divide(sum_dist, H, out=np.full_like(sum_dist, np.nan), where=H > 0)
+            mean_absr = np.divide(sum_absr, H, out=np.full_like(sum_absr, np.nan), where=H > 0)
 
-    # Size legend
-    for rr, label in zip(
-        [np.percentile(d, p) for p in (10, 50, 90)],
-        ["near", "mid", "far"],
-        strict=False,
-    ):
-        s = 5 + 25 * ((rr - d.min()) / (d.max() - d.min() + 1e-9))
-        ax.scatter([], [], s=s, c="gray", alpha=0.7, label=f"{label} distance")
+        # Robust scaling
+        if np.isfinite(mean_dist).any():
+            d_lo, d_hi = np.nanpercentile(mean_dist, [1, 99])
+        else:
+            d_lo, d_hi = float(np.nanmin(dist)), float(np.nanmax(dist))
 
-    handles, labels = ax.get_legend_handles_labels()
-    if handles:
-        ax.legend(
-            handles[-3:],
-            labels[-3:],
-            title="True distance",
-            loc="upper right",
-            frameon=True,
-            framealpha=0.8,
+        if np.isfinite(mean_absr).any():
+            a_lo, a_hi = np.nanpercentile(mean_absr, [50, 99])
+        else:
+            a_lo, a_hi = float(np.nanmin(absr)), float(np.nanmax(absr))
+
+        if not np.isfinite(d_lo) or not np.isfinite(d_hi) or d_lo == d_hi:
+            d_lo, d_hi = float(np.nanmin(dist)), float(np.nanmax(dist))
+        if not np.isfinite(a_lo) or not np.isfinite(a_hi) or a_lo == a_hi:
+            a_lo, a_hi = float(np.nanmin(absr)), float(np.nanmax(absr) + 1e-9)
+
+        dist_norm = mpl.colors.Normalize(vmin=d_lo, vmax=d_hi, clip=True)
+        abs_norm = mpl.colors.Normalize(vmin=a_lo, vmax=a_hi, clip=True)
+
+        cmap = mpl.cm.get_cmap(dist_cmap)
+
+        # Convert mean_dist -> RGBA via colormap
+        mean_dist_filled = np.nan_to_num(mean_dist, nan=d_lo)
+        rgba = cmap(dist_norm(mean_dist_filled))  # (H,W,4)
+
+        # Opacity from mean |residual|
+        mean_absr_filled = np.nan_to_num(mean_absr, nan=a_lo)
+        alpha = min_alpha + (max_alpha - min_alpha) * abs_norm(mean_absr_filled)
+        alpha = np.clip(alpha, 0.0, 1.0)
+        alpha[H == 0] = 0.0
+        rgba[..., 3] = alpha
+
+        ax.imshow(
+            rgba,
+            extent=[xedges[0], xedges[-1], yedges[0], yedges[-1]],
+            origin="lower",
+            interpolation="nearest",
+            rasterized=True,
+        )
+        ax.invert_yaxis()
+
+        ax.set_title(
+            "Residuals in space\ncolor = mean distance, opacity = mean |residual|",
+            fontsize=10,
         )
 
-    return ax
+        # Distance colorbar
+        sm = mpl.cm.ScalarMappable(norm=dist_norm, cmap=cmap)
+        sm.set_array([])
+        cbar = plt.colorbar(sm, ax=ax, fraction=0.046, pad=0.02)
+        cbar.set_label("Mean distance to plaque center (µm)")
+
+        # Opacity legend (categorical, but derived from continuous mapping)
+        handles = [
+            Patch(facecolor="black", alpha=min_alpha + 0.25 * (max_alpha - min_alpha), label="small |residual|"),
+            Patch(facecolor="black", alpha=min_alpha + 0.60 * (max_alpha - min_alpha), label="medium |residual|"),
+            Patch(facecolor="black", alpha=min_alpha + 0.95 * (max_alpha - min_alpha), label="large |residual|"),
+        ]
+        ax.legend(
+            handles=handles,
+            title="Mean |residual|\n(opacity)",
+            loc="upper right",
+            frameon=True,
+            framealpha=0.85,
+        )
+
+        return ax
+
+    if render == "scatter":
+        # Subsample to keep plotting interactive and reduce overplotting
+        n = x.shape[0]
+        if n > max_points:
+            rng = np.random.default_rng(0)
+            idx = rng.choice(n, size=max_points, replace=False)
+            x, y, dist, absr, r = x[idx], y[idx], dist[idx], absr[idx], r[idx]
+
+        # Robust scaling for size
+        vmax = np.nanpercentile(absr, 99) if np.isfinite(absr).any() else float(np.nanmax(absr))
+        vmax = max(vmax, 1e-9)
+        t = np.clip(absr / vmax, 0.0, 1.0) ** size_gamma
+        sizes = size_min + (size_max - size_min) * t
+
+        # Robust scaling for distance color
+        d_lo, d_hi = np.nanpercentile(dist, [1, 99]) if np.isfinite(dist).any() else (np.nanmin(dist), np.nanmax(dist))
+        dist_norm = mpl.colors.Normalize(vmin=d_lo, vmax=d_hi, clip=True)
+
+        # Split by sign (marker encodes sign)
+        pos = r >= 0
+        neg = ~pos
+
+        sc1 = ax.scatter(
+            x[pos],
+            y[pos],
+            c=dist[pos],
+            s=sizes[pos],
+            cmap=dist_cmap,
+            norm=dist_norm,
+            alpha=scatter_alpha,
+            marker="o",
+            edgecolors="none",
+            rasterized=True,
+            label="residual ≥ 0",
+        )
+        ax.scatter(
+            x[neg],
+            y[neg],
+            c=dist[neg],
+            s=sizes[neg],
+            cmap=dist_cmap,
+            norm=dist_norm,
+            alpha=scatter_alpha,
+            marker="v",
+            edgecolors="none",
+            rasterized=True,
+            label="residual < 0",
+        )
+
+        ax.invert_yaxis()
+        ax.set_title(
+            "Residuals in space\ncolor = distance, size = |residual|, marker = sign",
+            fontsize=10,
+        )
+
+        cbar = plt.colorbar(sc1, ax=ax, fraction=0.046, pad=0.02)
+        cbar.set_label("Distance to plaque center (µm)")
+
+        ax.legend(loc="upper right", frameon=True, framealpha=0.85)
+        return ax
+
+    raise ValueError(f"Unknown render='{render}'. Use 'binned_rgba' or 'scatter'.")
 
 
 def plot_true_pred_kde(
@@ -3579,33 +3880,89 @@ def plot_true_pred_kde(
     y_pred: np.ndarray,
     *,
     model_name: str = "Model",
-    figsize: tuple[float, float] = (6, 4),
+    figsize: tuple[float, float] = (10, 4),
+    show_qq: bool = True,
+    kde_points: int = 400,
+    qq_points: int | None = 200,   # None => use min(len(y_true), len(y_pred))
+    qq_ref_line: bool = True,
+    qq_log: bool = False,          # helpful for heavy right tails (requires all values > 0)
 ) -> None:
     """
-    KDE curves of true vs predicted distance on the same axes.
+    KDE curves of true vs predicted distance, optionally with a two-sample Q-Q plot.
+
+    Left panel: KDE(y_true) vs KDE(y_pred)
+    Right panel (optional): Q-Q plot comparing empirical quantiles of y_true vs y_pred
     """
-    y_true = pd.Series(y_true).dropna()
-    y_pred = pd.Series(y_pred).dropna()
-    common_min = min(y_true.min(), y_pred.min())
-    common_max = max(y_true.max(), y_pred.max())
+    # Clean + coerce numeric + drop NaN/inf
+    y_true_s = pd.Series(y_true)
+    y_pred_s = pd.Series(y_pred)
 
-    xs = np.linspace(common_min, common_max, 400)
+    y_true_arr = pd.to_numeric(y_true_s, errors="coerce").to_numpy()
+    y_pred_arr = pd.to_numeric(y_pred_s, errors="coerce").to_numpy()
 
-    fig, ax = plt.subplots(figsize=figsize)
+    y_true_arr = y_true_arr[np.isfinite(y_true_arr)]
+    y_pred_arr = y_pred_arr[np.isfinite(y_pred_arr)]
 
-    # True
-    kde_true = gaussian_kde(y_true.to_numpy())
-    ax.plot(xs, kde_true(xs), label="True distance", lw=2)
+    if y_true_arr.size == 0 or y_pred_arr.size == 0:
+        raise ValueError("y_true and y_pred must each contain at least one finite numeric value.")
 
-    # Pred
-    kde_pred = gaussian_kde(y_pred.to_numpy())
-    ax.plot(xs, kde_pred(xs), label="Predicted distance", lw=2, linestyle="--")
+    # Figure layout
+    if show_qq:
+        fig, (ax_kde, ax_qq) = plt.subplots(ncols=2, figsize=figsize)
+    else:
+        fig, ax_kde = plt.subplots(figsize=figsize)
+        ax_qq = None
 
-    ax.set_xlabel("Distance to plaque (µm)")
-    ax.set_ylabel("Density")
-    ax.set_title(" Distribution of true vs predicted distances")
-    ax.legend(frameon=False)
-    ax.grid(alpha=0.25, linestyle="--", linewidth=0.5)
+    # -------- KDE panel --------
+    common_min = float(min(y_true_arr.min(), y_pred_arr.min()))
+    common_max = float(max(y_true_arr.max(), y_pred_arr.max()))
+    xs = np.linspace(common_min, common_max, kde_points)
+
+    kde_true = gaussian_kde(y_true_arr)
+    ax_kde.plot(xs, kde_true(xs), label="True distance", lw=2)
+
+    kde_pred = gaussian_kde(y_pred_arr)
+    ax_kde.plot(xs, kde_pred(xs), label="Predicted distance", lw=2, linestyle="--")
+
+    ax_kde.set_xlabel("Distance to plaque (µm)")
+    ax_kde.set_ylabel("Density")
+    ax_kde.set_title(f"{model_name}: KDE")
+    ax_kde.legend(frameon=False)
+    ax_kde.grid(alpha=0.25, linestyle="--", linewidth=0.5)
+
+    # -------- Two-sample Q-Q panel --------
+    if show_qq and ax_qq is not None:
+        n = min(y_true_arr.size, y_pred_arr.size)
+        if qq_points is not None:
+            n = min(n, int(qq_points))
+
+        if n < 2:
+            raise ValueError("Need at least 2 points in each array to draw a Q-Q plot.")
+
+        # Plotting positions (avoid exact 0 and 1)
+        ps = (np.arange(1, n + 1) - 0.5) / n
+
+        # Empirical quantiles (works for non-normal, skewed, heavy-tailed data)
+        q_true = np.quantile(y_true_arr, ps, method="linear")
+        q_pred = np.quantile(y_pred_arr, ps, method="linear")
+
+        ax_qq.scatter(q_true, q_pred, s=18, alpha=0.7)
+
+        if qq_ref_line:
+            lo = float(min(q_true.min(), q_pred.min()))
+            hi = float(max(q_true.max(), q_pred.max()))
+            ax_qq.plot([lo, hi], [lo, hi], linestyle="--", linewidth=1)
+
+        ax_qq.set_xlabel("True quantiles")
+        ax_qq.set_ylabel("Predicted quantiles")
+        ax_qq.set_title(f"{model_name}: Q-Q (two-sample)")
+        ax_qq.grid(alpha=0.25, linestyle="--", linewidth=0.5)
+
+        if qq_log:
+            if (q_true <= 0).any() or (q_pred <= 0).any():
+                raise ValueError("qq_log=True requires all values to be strictly positive.")
+            ax_qq.set_xscale("log")
+            ax_qq.set_yscale("log")
 
     plt.tight_layout()
     plt.show()
@@ -3643,7 +4000,7 @@ def plot_residual_vs_distance(
         alpha=0.5,
         edgecolor=None,
         ax=ax,
-        label=f"Cells (n={len(y_true)})",
+        # label=f"Cells (n={len(y_true)})",
     )
 
     # Optional LOWESS-like smoother via rolling median (cheap)
@@ -3663,15 +4020,16 @@ def plot_residual_vs_distance(
 
     ax.axhline(0, color="red", linestyle="--", linewidth=1)
 
-    ax.set_xlabel("True distance to plaque (µm)")
-    ax.set_ylabel("Residual (true - predicted, µm)")
-    ax.set_title("Residuals vs distance")
+    ax.set_xlabel("True distance to plaque, µm")
+    ax.set_ylabel("True - predicted, µm")
+    # ax.set_title("Residuals vs distance")
 
     # Add Pearson r as a separate legend entry
-    dummy = plt.Line2D([], [], color="none", label=f"Pearson r = {r:.2f}")
+    # dummy = plt.Line2D([], [], color="none", label=f"Pearson r = {r:.2f}")
+    print(f"Pearson r = {r:.2f}")
     handles, labels = ax.get_legend_handles_labels()
-    handles.append(dummy)
-    labels.append(dummy.get_label())
+    # handles.append(dummy)
+    # labels.append(dummy.get_label())
     ax.legend(handles, labels, frameon=False, loc="upper right")
 
     ax.grid(alpha=0.25, linestyle="--", linewidth=0.5)
