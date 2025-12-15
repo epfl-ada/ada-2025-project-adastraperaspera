@@ -219,7 +219,6 @@ def run_gene_distance_modeling(
     # Optional performance plots
     if plot_model_performance is not None:
         plot_model_performance(results_df)
-        plot_model_performance_interactive(results_df)
     if plot_top_gene_importances is not None and not importance_df.empty:
         plot_top_gene_importances(importance_df, top_n_importances_for_plot)
 
