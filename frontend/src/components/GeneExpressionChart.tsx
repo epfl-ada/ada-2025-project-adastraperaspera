@@ -76,6 +76,7 @@ const GeneExpressionChart = () => {
               src={`${base}figures/expression_distribution.png`}
               title="Gene expression distribution (log1p-transformed)"
               size="md"
+              fit="contain"
             />
 
             <p className="text-lg text-muted-foreground">
