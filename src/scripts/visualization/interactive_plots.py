@@ -15,6 +15,9 @@ from plotly.subplots import make_subplots
 from scipy.stats import gaussian_kde
 from shapely.affinity import rotate as shp_rotate
 from shapely.geometry import MultiPolygon, Polygon
+from scipy.stats import spearmanr
+from statsmodels.stats.multitest import multipletests
+
 
 # Get current directory
 vis_dir = os.path.dirname(os.path.abspath(__file__))
@@ -23,7 +26,7 @@ src_dir = os.path.dirname(scripts_dir)
 figures_dir = os.path.join(src_dir, "data", "figures")
 
 
-def interactive_comp_pig_regression_grid(agg, PIGS, bin_order):
+def interactive_comp_pig_regression_grid(agg, PIGS, bin_order,figures_dir):
     # Create a 4x4 grid of subplots for up to 16 genes
     n = len(PIGS)
     rows = 4
@@ -68,7 +71,7 @@ def interactive_comp_pig_regression_grid(agg, PIGS, bin_order):
                     line=dict(width=0),
                     name=f"{bt} ± 1.96×SEM",
                     legendgroup=bt,
-                    showlegend=False,  # Error band excluded from legend
+                    showlegend=False,
                     hoverinfo="skip",
                 ),
                 row=row,
@@ -83,7 +86,7 @@ def interactive_comp_pig_regression_grid(agg, PIGS, bin_order):
                     mode="lines+markers",
                     name=bt,
                     legendgroup=bt,
-                    showlegend=(i == 0),  # legend only in the first subplot
+                    showlegend=(i == 0),
                     hovertemplate=(
                         f"Gene: {gene}<br>Type: {bt}<br>Bin: %{{x}}<br>"
                         "Mean expr: %{y:.3f}<extra></extra>"
@@ -93,7 +96,6 @@ def interactive_comp_pig_regression_grid(agg, PIGS, bin_order):
                 col=col,
             )
 
-        # Update axes titles on diagonal or last column/row
         fig.update_xaxes(
             title_text="Distance bin",
             row=row,
@@ -116,11 +118,26 @@ def interactive_comp_pig_regression_grid(agg, PIGS, bin_order):
             x=0,
         ),
         margin=dict(t=120, b=60, l=60, r=60),
+
+        # transparent background (ONLY change)
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
     )
 
     fig.show()
-    fig.write_html(os.path.join(figures_dir, "pig_by_distance_grid.html"))
-    logging.info(f"Saved to {os.path.join(figures_dir, 'pig_by_distance_grid.html')}")
+
+    out_path = os.path.join(figures_dir, "interactive_PIG_by_broad_type.html")
+    fig.write_html(
+        out_path,
+        include_plotlyjs="cdn",
+        full_html=True,
+        config={"responsive": True, "displayModeBar": False},
+        default_width="100%",
+        default_height="100%",
+    )
+
+    logging.info(f"Saved to {out_path}")
+
 
 
 def plot_gene_trends_interactive(
@@ -837,7 +854,8 @@ def plot_gene_expression_by_distance_interactive(
     use_ci95: bool = True,  # multiply SEM by 1.96
 ):
     """
-    Interactive line plot with gene selector and CI bands (±1.96×SEM ≈ 95% CI).
+    Interactive line plot with ALL genes overlaid (different colors) and CI bands.
+    Saves to frontend/public/plots/PIG_expression_vs_distance.html with transparent background.
     """
 
     df = summary_df.copy()
@@ -860,69 +878,64 @@ def plot_gene_expression_by_distance_interactive(
 
     fig = go.Figure()
 
-    buttons = []
-    traces_per_gene = 2  # main line + shaded band
-
-    for i, gene in enumerate(pig_genes):
+    for gene in pig_genes:
         sub = df[df[gene_col] == gene].sort_values("bin_label")
 
         m = sub[mean_col].to_numpy(float)
         s = sub[sem_col].to_numpy(float) * scale
         x = sub["bin_label"].tolist()
 
-        # mean line
+        # mean line (each gene gets a different default Plotly color)
         fig.add_trace(
             go.Scatter(
                 x=x,
                 y=m,
                 mode="lines+markers",
                 name=f"{gene}",
-                visible=(i == 0),
                 line=dict(width=2),
                 marker=dict(size=7),
             )
         )
 
-        # SEM (shaded band)
+        # SEM/CI (shaded band) — same trace color family will be used automatically
         fig.add_trace(
             go.Scatter(
                 x=x + x[::-1],
                 y=(m + s).tolist() + (m - s)[::-1].tolist(),
                 fill="toself",
-                fillcolor="rgba(31, 119, 180, 0.18)",
                 line=dict(width=0),
                 hoverinfo="skip",
                 name=f"{gene} CI",
-                visible=(i == 0),
-            )
-        )
-
-        # button to toggle visibility
-        vis = [False] * (len(pig_genes) * traces_per_gene)
-        vis[i * traces_per_gene : (i + 1) * traces_per_gene] = [True, True]
-
-        buttons.append(
-            dict(
-                label=gene,
-                method="update",
-                args=[{"visible": vis}, {"title": f"{title}<br><sup>{gene}</sup>"}],
+                opacity=0.18,
             )
         )
 
     fig.update_layout(
-        updatemenus=[
-            dict(buttons=buttons, direction="down", x=0.5, xanchor="center", y=1.15, yanchor="top")
-        ],
         title=title,
         xaxis_title=x_label,
         yaxis_title=y_label,
         autosize=True,
         template="plotly_white",
         margin=dict(t=120, l=60, r=20, b=60),
+
+        # transparent background
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+    )
+
+    out_path = Path("frontend/public/plots") / "PIG_expression_vs_distance.html"
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    fig.write_html(
+        str(out_path),
+        include_plotlyjs="cdn",
+        full_html=True,
+        config={"responsive": True, "displayModeBar": False, "scrollZoom": True},
+        default_width="100%",
+        default_height="100%",
     )
 
     fig.show()
-
+    return fig
 
 def _infer_grid_shape(key_to_pos: dict[str, tuple[int, int]]) -> tuple[int, int]:
     rs = [r for r, _ in key_to_pos.values()]
@@ -1836,3 +1849,811 @@ def make_expression_distribution_selector_plotly(
     )
 
     return fig
+
+def make_joint_clustering_umap_grid_plotly(
+    adata_by_mouse: Mapping[str, "AnnData"],
+    order: Sequence[str],
+    *,
+    n_cols: int = 3,
+    title: str | None = "Leiden clusters across mice",
+    filename: str = "joint_clustering_umap.html",
+    out_dir: str = "frontend/public/plots",
+    marker_size: float = 2.0,
+    marker_opacity: float = 0.75,
+    max_points: int | None = 250_000,
+    reverse_y: bool = False,
+) -> go.Figure:
+    """
+    Interactive Plotly UMAP grid colored by Leiden clusters (NO LEGEND).
+
+    - One subplot per mouse
+    - Consistent cluster colors across panels
+    - Transparent background, zoom/pan enabled
+    """
+
+    n = len(order)
+    n_cols = max(1, int(n_cols))
+    n_rows = (n + n_cols - 1) // n_cols
+
+    # Collect global Leiden categories
+    all_leiden = []
+    for mouse in order:
+        ad = adata_by_mouse.get(mouse)
+        if ad is None:
+            continue
+        if "leiden" not in ad.obs:
+            raise ValueError(f"{mouse}: missing 'leiden' in adata.obs")
+        all_leiden.append(ad.obs["leiden"].astype(str).to_numpy())
+
+    if not all_leiden:
+        raise ValueError("No valid mice found.")
+
+    leiden_levels = list(pd.Categorical(np.concatenate(all_leiden)).categories)
+
+    fig = make_subplots(
+        rows=n_rows,
+        cols=n_cols,
+        subplot_titles=[str(m) for m in order],
+        horizontal_spacing=0.04,
+        vertical_spacing=0.08,
+    )
+
+    for i, mouse in enumerate(order):
+        r, c = divmod(i, n_cols)
+        row, col = r + 1, c + 1
+
+        ad = adata_by_mouse.get(mouse)
+        if ad is None:
+            fig.add_annotation(
+                text=f"{mouse}<br>(no data)",
+                x=0.5,
+                y=0.5,
+                xref=f"x{'' if i == 0 else i+1} domain",
+                yref=f"y{'' if i == 0 else i+1} domain",
+                showarrow=False,
+            )
+            fig.update_xaxes(visible=False, row=row, col=col)
+            fig.update_yaxes(visible=False, row=row, col=col)
+            continue
+
+        umap = ad.obsm["X_umap"]
+        x = umap[:, 0].astype(float)
+        y = umap[:, 1].astype(float)
+        labels = ad.obs["leiden"].astype(str).to_numpy()
+
+        if max_points is not None and len(x) > max_points:
+            rng = np.random.default_rng(0)
+            idx = rng.choice(len(x), size=max_points, replace=False)
+            x, y, labels = x[idx], y[idx], labels[idx]
+
+        for k in leiden_levels:
+            mask = labels == k
+            if not np.any(mask):
+                continue
+
+            fig.add_trace(
+                go.Scattergl(
+                    x=x[mask],
+                    y=y[mask],
+                    mode="markers",
+                    marker=dict(size=marker_size, opacity=marker_opacity),
+                    showlegend=False,   # NO LEGEND
+                    hovertemplate=(
+                        f"Mouse: {mouse}<br>"
+                        f"Leiden: {k}<br>"
+                        "UMAP1=%{x:.3f}<br>"
+                        "UMAP2=%{y:.3f}<extra></extra>"
+                    ),
+                ),
+                row=row,
+                col=col,
+            )
+
+        fig.update_xaxes(visible=False, showgrid=False, zeroline=False, row=row, col=col)
+        fig.update_yaxes(
+            visible=False,
+            showgrid=False,
+            zeroline=False,
+            autorange="reversed" if reverse_y else True,
+            row=row,
+            col=col,
+        )
+
+    fig.update_layout(
+        title=title,
+        autosize=True,
+        margin=dict(l=20, r=20, t=70 if title else 30, b=20),
+        template="simple_white",
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+        dragmode="pan",
+    )
+
+    out_path = Path(out_dir) / filename
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    fig.write_html(
+        str(out_path),
+        include_plotlyjs="cdn",
+        full_html=True,
+        config={"responsive": True, "displayModeBar": False, "scrollZoom": True},
+        default_width="100%",
+        default_height="100%",
+    )
+
+    return fig
+
+def make_leiden_spatial_grid_plotly(
+    df_by_mouse: Mapping[str, pd.DataFrame],
+    order: Sequence[str],
+    *,
+    n_cols: int = 3,
+    sample_for_scatter: int | None = 20_000,
+    random_state: int = 0,
+    title: str | None = "Spatial map of Leiden clusters across mice",
+    filename: str = "joint_clustering_overlayed.html",
+    out_dir: str = "frontend/public/plots",
+    marker_size: float = 2.5,
+    marker_opacity: float = 0.7,
+    reverse_y: bool = True,  # matches ax.invert_yaxis()
+) -> go.Figure:
+    """
+    Interactive Plotly spatial scatter grid colored by Leiden clusters (no legend).
+    Expects columns: x_centroid, y_centroid, cluster_leiden
+    """
+
+    n = len(order)
+    n_cols = max(1, int(n_cols))
+    n_rows = (n + n_cols - 1) // n_cols
+
+    required = {"x_centroid", "y_centroid", "cluster_leiden"}
+
+    # global cluster levels -> consistent colors across panels
+    all_clusters = []
+    for mouse in order:
+        df = df_by_mouse.get(mouse)
+        if df is None or not required.issubset(df.columns):
+            continue
+        all_clusters.append(df["cluster_leiden"].astype(str).to_numpy())
+    if not all_clusters:
+        raise ValueError("No valid mice with required columns found.")
+    cluster_levels = list(pd.Categorical(np.concatenate(all_clusters)).categories)
+
+    fig = make_subplots(
+        rows=n_rows,
+        cols=n_cols,
+        subplot_titles=[str(m) for m in order],
+        horizontal_spacing=0.04,
+        vertical_spacing=0.08,
+    )
+
+    rng = np.random.default_rng(random_state)
+
+    for i, mouse in enumerate(order):
+        r, c = divmod(i, n_cols)
+        row, col = r + 1, c + 1
+
+        df = df_by_mouse.get(mouse)
+        if df is None:
+            fig.add_annotation(
+                text=f"{mouse}<br>(no data)",
+                x=0.5, y=0.5,
+                xref=f"x{'' if i == 0 else i+1} domain",
+                yref=f"y{'' if i == 0 else i+1} domain",
+                showarrow=False,
+                font=dict(size=12),
+            )
+            fig.update_xaxes(visible=False, row=row, col=col)
+            fig.update_yaxes(visible=False, row=row, col=col)
+            continue
+
+        missing = sorted(required - set(df.columns))
+        if missing:
+            fig.add_annotation(
+                text=f"{mouse}<br>(missing {missing})",
+                x=0.5, y=0.5,
+                xref=f"x{'' if i == 0 else i+1} domain",
+                yref=f"y{'' if i == 0 else i+1} domain",
+                showarrow=False,
+                font=dict(size=12),
+            )
+            fig.update_xaxes(visible=False, row=row, col=col)
+            fig.update_yaxes(visible=False, row=row, col=col)
+            continue
+
+        plot_df = df
+        if sample_for_scatter is not None and sample_for_scatter < len(df):
+            idx = rng.choice(len(df), size=int(sample_for_scatter), replace=False)
+            plot_df = df.iloc[idx]
+
+        x = plot_df["x_centroid"].astype(float).to_numpy()
+        y = plot_df["y_centroid"].astype(float).to_numpy()
+        cl = plot_df["cluster_leiden"].astype(str).to_numpy()
+
+        # add one trace per cluster for consistent coloring (legend disabled)
+        for k in cluster_levels:
+            msk = (cl == k)
+            if not np.any(msk):
+                continue
+            fig.add_trace(
+                go.Scattergl(
+                    x=x[msk],
+                    y=y[msk],
+                    mode="markers",
+                    marker=dict(size=marker_size, opacity=marker_opacity),
+                    showlegend=False,
+                    hovertemplate=(
+                        f"Mouse: {mouse}<br>"
+                        f"Leiden: {k}<br>"
+                        "x=%{x:.1f} µm<br>"
+                        "y=%{y:.1f} µm<extra></extra>"
+                    ),
+                ),
+                row=row, col=col,
+            )
+
+        # axes style (like your seaborn version)
+        fig.update_xaxes(
+            title_text="X (µm)" if row == n_rows else "",
+            showgrid=False,
+            zeroline=False,
+            visible=False,              # hide ticks like your other plots
+            row=row, col=col,
+        )
+        fig.update_yaxes(
+            title_text="Y (µm)" if col == 1 else "",
+            showgrid=False,
+            zeroline=False,
+            visible=False,
+            autorange="reversed" if reverse_y else True,
+            scaleanchor=f"x{'' if (row == 1 and col == 1) else (i+1)}",
+            scaleratio=1,
+            row=row, col=col,
+        )
+
+    fig.update_layout(
+        title=title,
+        autosize=True,
+        margin=dict(l=20, r=20, t=70 if title else 30, b=20),
+        template="simple_white",
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+        dragmode="pan",
+        showlegend=False,
+    )
+
+    out_path = Path(out_dir) / filename
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    fig.write_html(
+        str(out_path),
+        include_plotlyjs="cdn",
+        full_html=True,
+        config={"responsive": True, "displayModeBar": False, "scrollZoom": True},
+        default_width="100%",
+        default_height="100%",
+    )
+
+    return fig
+
+def make_cluster_frequency_vs_distance_plotly(
+    freq_df: pd.DataFrame,
+    logit_df: pd.DataFrame,
+    *,
+    p_adj_thresh: float = 0.01,
+    title: str = "Cluster frequency (%) vs. distance to nearest plaque",
+    filename: str = "cluster_frequency_distance_to_plaque.html",
+    out_dir: str = "frontend/public/plots",
+    marker_size: int = 7,
+    line_width: int = 2,
+    opacity: float = 0.75,
+) -> go.Figure:
+    """
+    Interactive Plotly version of:
+      sns.lineplot(x='bin_mid', y='pct', hue='cluster_leiden')
+
+    Uses ONLY outputs already produced by analyze_leiden_spatial().
+    """
+
+    if freq_df.empty:
+        raise ValueError("freq_df is empty.")
+
+    required = {"bin_mid", "pct", "cluster_leiden"}
+    missing = required - set(freq_df.columns)
+    if missing:
+        raise ValueError(f"freq_df missing required columns: {sorted(missing)}")
+
+    dfp = freq_df.copy()
+    dfp["bin_mid"] = pd.to_numeric(dfp["bin_mid"], errors="coerce")
+    dfp["pct"] = pd.to_numeric(dfp["pct"], errors="coerce")
+    dfp["cluster_leiden"] = dfp["cluster_leiden"].astype(str)
+    dfp = dfp.dropna(subset=["bin_mid", "pct", "cluster_leiden"])
+
+    # ---------------------------------------
+    # Filter to significant clusters (same as seaborn)
+    # ---------------------------------------
+    if logit_df is not None and not logit_df.empty and "adj_pval" in logit_df.columns:
+        sig_clusters = (
+            logit_df.loc[logit_df["adj_pval"] < p_adj_thresh, "cluster"]
+            .astype(str)
+            .unique()
+        )
+        dfp = dfp[dfp["cluster_leiden"].isin(sig_clusters)]
+
+    if dfp.empty:
+        raise ValueError("No data left after significance filtering.")
+
+    dfp = dfp.sort_values(["cluster_leiden", "bin_mid"])
+
+    fig = go.Figure()
+
+    # one line per Leiden cluster
+    for cl, sub in dfp.groupby("cluster_leiden"):
+        fig.add_trace(
+            go.Scatter(
+                x=sub["bin_mid"],
+                y=sub["pct"],
+                mode="lines+markers",
+                line=dict(width=line_width),
+                marker=dict(size=marker_size),
+                opacity=opacity,
+                showlegend=False,  # ✅ no legend
+                hovertemplate=(
+                    f"Leiden cluster: {cl}<br>"
+                    "Distance bin mid: %{x:.1f} µm<br>"
+                    "Frequency: %{y:.2f}%<extra></extra>"
+                ),
+            )
+        )
+
+    fig.update_layout(
+        title=title,
+        autosize=True,
+        margin=dict(l=70, r=20, t=80, b=60),
+        template="simple_white",
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+        hovermode="x unified",
+    )
+
+    fig.update_xaxes(
+        title="Distance to nearest plaque (µm)",
+        showgrid=False,
+        zeroline=False,
+    )
+    fig.update_yaxes(
+        title="Cluster frequency (%)",
+        rangemode="tozero",
+        showgrid=True,
+        gridcolor="rgba(0,0,0,0.08)",
+        zeroline=False,
+    )
+
+    out_path = Path(out_dir) / filename
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    fig.write_html(
+        str(out_path),
+        include_plotlyjs="cdn",
+        full_html=True,
+        config={
+            "responsive": True,
+            "displayModeBar": False,
+            "scrollZoom": True,
+        },
+        default_width="100%",
+        default_height="100%",
+    )
+
+    return fig
+
+def make_marker_enrichment_heatmap_plotly(
+    expr_z: pd.DataFrame,
+    *,
+    title: str = "Marker gene enrichment (z-scored across clusters)",
+    filename: str = "expression_per_cluster.html",
+    out_dir: str = "frontend/public/plots",
+    z_clip: float = 3.0,                # clip colors to [-z_clip, z_clip]
+    show_values: bool = False,          # set True if you want numbers in cells
+) -> go.Figure:
+    """
+    Interactive Plotly heatmap for expr_z from analyze_leiden_spatial().
+
+    expr_z: DataFrame indexed by cluster, columns=genes, values=z-scores.
+    """
+
+    if expr_z is None or expr_z.empty:
+        raise ValueError("expr_z is empty. (No marker genes found or enrichment skipped.)")
+
+    # Ensure numeric matrix
+    mat = expr_z.copy()
+    mat = mat.apply(pd.to_numeric, errors="coerce")
+
+    # Optional: drop columns that are all NaN
+    mat = mat.loc[:, mat.notna().any(axis=0)]
+    if mat.empty:
+        raise ValueError("expr_z has no numeric values after cleaning.")
+
+    # Clip to keep colormap stable
+    z = mat.to_numpy(dtype=float)
+    z = np.clip(z, -float(z_clip), float(z_clip))
+
+    fig = go.Figure(
+        data=go.Heatmap(
+            z=z,
+            x=mat.columns.astype(str),
+            y=mat.index.astype(str),
+            zmin=-float(z_clip),
+            zmax=float(z_clip),
+            zmid=0.0,
+            colorscale="RdBu",
+            colorbar=dict(title="Z-score"),
+            hovertemplate=(
+                "Cluster: %{y}<br>"
+                "Gene: %{x}<br>"
+                "Z-score: %{z:.2f}<extra></extra>"
+            ),
+        )
+    )
+
+    if show_values:
+        # overlays text values (can get crowded if many genes)
+        fig.update_traces(
+            text=np.round(z, 2),
+            texttemplate="%{text}",
+        )
+
+    fig.update_layout(
+        title=title,
+        autosize=True,
+        margin=dict(l=120, r=30, t=80, b=80),
+        template="simple_white",
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+    )
+
+    fig.update_xaxes(
+        title="",
+        tickangle=-45,
+        showgrid=False,
+        zeroline=False,
+    )
+    fig.update_yaxes(
+        title="",
+        showgrid=False,
+        zeroline=False,
+        autorange="reversed",  # keeps top row at top (like seaborn)
+    )
+
+    out_path = Path(out_dir) / filename
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    fig.write_html(
+        str(out_path),
+        include_plotlyjs="cdn",
+        full_html=True,
+        config={"responsive": True, "displayModeBar": False},
+        default_width="100%",
+        default_height="100%",
+    )
+    return fig
+
+
+def make_pig_type_spearman_heatmap_plotly(
+    pig_mat: pd.DataFrame,
+    prop_mat: pd.DataFrame,
+    pig_cols: Sequence[str],
+    *,
+    fdr_alpha: float = 0.01,
+    show_values: bool = True,
+    title: str = "PIG correlation ↔ cellular type proportion (per bins distance)",
+    filename: str = "PIG_type_spearman.html",
+    out_dir: str = "frontend/public/plots",
+) -> go.Figure:
+    """
+    Interactive Plotly version of plot_pig_comp_heatmap().
+
+    - Computes Spearman correlations + p-values
+    - BH-FDR correction
+    - Masks non-significant cells (q > fdr_alpha) as NaN
+    - Displays NaNs as black (like seaborn set_bad('black'))
+    """
+
+    pig_cols = [g for g in pig_cols if g in pig_mat.columns]
+    if not pig_cols:
+        raise ValueError("None of pig_cols are present in pig_mat columns.")
+    if prop_mat.shape[1] == 0:
+        raise ValueError("prop_mat has no columns (cell types).")
+
+    # ---- correlations + p-values ----
+    corrs = pd.DataFrame(index=pig_cols, columns=prop_mat.columns, dtype=float)
+    pvals = pd.DataFrame(index=pig_cols, columns=prop_mat.columns, dtype=float)
+
+    for g in pig_cols:
+        y = pd.to_numeric(pig_mat[g], errors="coerce").to_numpy(dtype=float)
+        for ct in prop_mat.columns:
+            x = pd.to_numeric(prop_mat[ct], errors="coerce").to_numpy(dtype=float)
+            if len(y) >= 2:
+                r, p = spearmanr(y, x, nan_policy="omit")
+            else:
+                r, p = (np.nan, np.nan)
+            corrs.loc[g, ct] = float(r) if np.isfinite(r) else np.nan
+            pvals.loc[g, ct] = float(p) if np.isfinite(p) else np.nan
+
+    # ---- FDR correction ----
+    mask = np.isfinite(pvals.to_numpy())
+    flat = pvals.to_numpy()[mask]
+    q = pvals.copy()
+
+    if flat.size > 0:
+        _, qvals, _, _ = multipletests(flat, method="fdr_bh")
+        q.to_numpy()[mask] = qvals
+    else:
+        q[:] = np.nan
+
+    sig = (q <= float(fdr_alpha))
+    corrs_masked = corrs.where(sig)  # non-sig -> NaN
+
+    # ---- Plotly heatmap ----
+    z = corrs_masked.to_numpy(dtype=float)
+
+    # Text annotations only for significant cells
+    text = None
+    if show_values:
+        text = np.where(np.isfinite(z), np.round(z, 2).astype(str), "")
+
+    # Make NaNs appear black: use a separate "background" heatmap layer in black,
+    # then overlay the coolwarm heatmap with NaNs transparent.
+    # Layer 1: black background
+    fig = go.Figure()
+    fig.add_trace(
+        go.Heatmap(
+            z=np.zeros_like(z),
+            x=corrs_masked.columns.astype(str),
+            y=corrs_masked.index.astype(str),
+            colorscale=[[0, "black"], [1, "black"]],
+            showscale=False,
+            hoverinfo="skip",
+        )
+    )
+
+    # Layer 2: coolwarm-like heatmap for significant cells only
+    # (Plotly's RdBu is close; we reverse it to match coolwarm orientation)
+    fig.add_trace(
+        go.Heatmap(
+            z=z,
+            x=corrs_masked.columns.astype(str),
+            y=corrs_masked.index.astype(str),
+            zmin=-1,
+            zmax=1,
+            zmid=0,
+            colorscale="RdBu",
+            reversescale=True,  # closer to seaborn coolwarm
+            colorbar=dict(title="Spearman ρ"),
+            text=text,
+            texttemplate="%{text}" if show_values else None,
+            hovertemplate=(
+                "PIG: %{y}<br>"
+                "Cell type: %{x}<br>"
+                "Spearman ρ: %{z:.2f}<extra></extra>"
+            ),
+        )
+    )
+
+    fig.update_layout(
+        title=title,
+        autosize=True,
+        margin=dict(l=140, r=30, t=80, b=80),
+        template="simple_white",
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+    )
+
+    fig.update_xaxes(title="Cellular type", tickangle=-35)
+    fig.update_yaxes(title="PIG Gene", autorange="reversed")
+
+    out_path = Path(out_dir) / filename
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    fig.write_html(
+        str(out_path),
+        include_plotlyjs="cdn",
+        full_html=True,
+        config={"responsive": True, "displayModeBar": False},
+        default_width="100%",
+        default_height="100%",
+    )
+
+    return fig
+
+
+def make_half_distance_plotly(
+    df: pd.DataFrame,
+    *,
+    gene_col: str = "gene",
+    slope_col: str = "slope",
+    qval_col: str | None = "qval",
+    filter_negative: bool = True,
+    sort: str = "half",  # "half" | "abs_half_desc" | "qval_then_half"
+    top_n: int | None = None,
+    log_scale: bool = False,
+    tissue_radius_um: float | None = None,
+    annotate: bool = True,
+    title: str | None = None,
+    filename: str = "distances_to_halve_expression.html",
+    out_dir: str = "frontend/public/plots",
+) -> tuple[go.Figure, pd.DataFrame]:
+    """
+    Interactive Plotly version of plot_half_distance().
+
+    Returns
+    -------
+    fig : plotly.graph_objects.Figure
+    plot_df : DataFrame indexed by gene with column 'half_dist_um'
+    """
+
+    # -----------------------------
+    # Filtering
+    # -----------------------------
+    if filter_negative:
+        work = df.loc[
+            df[slope_col] < 0,
+            [gene_col, slope_col] + ([qval_col] if qval_col else []),
+        ].copy()
+    else:
+        work = df[[gene_col, slope_col] + ([qval_col] if qval_col else [])].copy()
+
+    # -----------------------------
+    # Compute half-distance
+    # -----------------------------
+    work["half_dist_um"] = np.log(2) / work[slope_col].abs()
+    work.replace([np.inf, -np.inf], np.nan, inplace=True)
+    work.dropna(subset=["half_dist_um"], inplace=True)
+
+    # -----------------------------
+    # Sorting
+    # -----------------------------
+    if sort == "half":
+        work.sort_values("half_dist_um", ascending=True, inplace=True)
+    elif sort == "abs_half_desc":
+        work["abs_half"] = work["half_dist_um"].abs()
+        work.sort_values("abs_half", ascending=False, inplace=True)
+    elif sort == "qval_then_half":
+        if qval_col is None or qval_col not in work.columns:
+            raise ValueError("qval_then_half requires qval_col.")
+        work.sort_values([qval_col, "half_dist_um"], ascending=[True, True], inplace=True)
+    else:
+        raise ValueError("Invalid sort option.")
+
+    if top_n is not None:
+        work = work.head(int(top_n))
+
+    plot_df = work.set_index(gene_col)
+
+    n = len(plot_df)
+    if n == 0:
+        raise ValueError("No rows to plot after filtering.")
+
+    # -----------------------------
+    # Plotly figure
+    # -----------------------------
+    fig = go.Figure()
+
+    fig.add_trace(
+        go.Bar(
+            x=plot_df["half_dist_um"],
+            y=plot_df.index.astype(str),
+            orientation="h",
+            marker=dict(color="hsl(180, 60%, 35%)"),
+            hovertemplate="Gene: %{y}<br>d₁/₂: %{x:,.1f} µm<extra></extra>",
+        )
+    )
+
+    # Reference line for tissue radius
+    if tissue_radius_um is not None:
+        fig.add_vline(
+            x=tissue_radius_um,
+            line_dash="dash",
+            line_width=1,
+            annotation_text=f"radius = {tissue_radius_um:,.0f} µm",
+            annotation_position="top right",
+        )
+
+    # -----------------------------
+    # Layout
+    # -----------------------------
+    fig.update_layout(
+        title=title or f"Half-distance expression for {n} genes",
+        xaxis_title="Distance to halve expression (µm)",
+        yaxis_title="Gene",
+        yaxis=dict(autorange="reversed"),  # shortest at top
+        autosize=True,
+        margin=dict(l=140, r=30, t=80, b=60),
+        template="simple_white",
+
+        # transparent background
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+    )
+
+    if log_scale:
+        fig.update_xaxes(type="log")
+
+    # -----------------------------
+    # Annotations
+    # -----------------------------
+    if annotate:
+        for gene, v in plot_df["half_dist_um"].items():
+            if not np.isfinite(v):
+                continue
+            fig.add_annotation(
+                x=v,
+                y=str(gene),
+                text=f"{v:,.0f} µm",
+                showarrow=False,
+                xanchor="left",
+                xshift=6,
+                font=dict(size=11),
+            )
+
+    # -----------------------------
+    # Save HTML
+    # -----------------------------
+    out_path = Path(out_dir) / filename
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    fig.write_html(
+        str(out_path),
+        include_plotlyjs="cdn",
+        full_html=True,
+        config={"responsive": True, "displayModeBar": False, "scrollZoom": True},
+        default_width="100%",
+        default_height="100%",
+    )
+
+    fig.show()
+    return fig, plot_df
+
+
+def plot_model_performance_interactive(
+    results_df: pd.DataFrame,
+    *,
+    title: str = "Model performance (R²)",
+    filename: str = "model_performance_predict_dist.html",
+    out_dir: str = "frontend/public/plots",
+):
+    """Interactive bar plot comparing R² scores across models (train vs test)."""
+
+    results_melted = results_df.melt(
+        id_vars="model",
+        value_vars=["train_r2", "test_r2"],
+        var_name="Dataset",
+        value_name="R²",
+    )
+
+    fig = px.bar(
+        results_melted,
+        x="model",
+        y="R²",
+        color="Dataset",
+        barmode="group",
+        title=title,
+    )
+
+    fig.update_layout(
+        autosize=True,
+        template="simple_white",
+        margin=dict(l=60, r=20, t=70, b=60),
+        paper_bgcolor="rgba(0,0,0,0)",  # transparent background
+        plot_bgcolor="rgba(0,0,0,0)",   # transparent plot area
+        legend_title_text="",
+    )
+
+    out_path = Path(out_dir) / filename
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    fig.write_html(
+        str(out_path),
+        include_plotlyjs="cdn",
+        full_html=True,
+        config={"responsive": True, "displayModeBar": False},
+        default_width="100%",
+        default_height="100%",
+    )
+
+    fig.show()
+    return fig
+

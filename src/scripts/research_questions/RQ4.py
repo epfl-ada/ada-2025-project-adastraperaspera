@@ -12,6 +12,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 
 
+
 class ModelRunner(Protocol):
     """
     Protocol for model runner callables.
@@ -60,6 +61,7 @@ def run_gene_distance_modeling(
     n_top_genes_for_overlay: int = 5,
     top_n_importances_for_plot: int = 20,
     plot_model_performance: Callable[[pd.DataFrame], None] | None = None,
+    plot_model_performance_interactive: (Callable[[pd.DataFrame], None] | None) = None,
     plot_top_gene_importances: Callable[[pd.DataFrame, int], None] | None = None,
     plot_spatial_overlay: Callable[[pd.DataFrame, str], None] | None = None,
     plot_multi_gene_signature: (Callable[[pd.DataFrame, Sequence[str]], None] | None) = None,
@@ -217,6 +219,7 @@ def run_gene_distance_modeling(
     # Optional performance plots
     if plot_model_performance is not None:
         plot_model_performance(results_df)
+        plot_model_performance_interactive(results_df)
     if plot_top_gene_importances is not None and not importance_df.empty:
         plot_top_gene_importances(importance_df, top_n_importances_for_plot)
 
