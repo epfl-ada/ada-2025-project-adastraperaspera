@@ -16,6 +16,7 @@ from scipy.optimize import linear_sum_assignment
 import seaborn as sns
 from sklearn.metrics import adjusted_mutual_info_score, adjusted_rand_score
 import statsmodels.formula.api as smf
+import matplotlib.patches as mpatches
 
 
 def evaluate_cluster_alignment(
@@ -356,7 +357,6 @@ def plot_leiden_umap_grid(
     fig.tight_layout()
     plt.show()
 
-
 def plot_leiden_spatial_grid(
     df_by_mouse: Mapping[str, pd.DataFrame],
     order: Sequence[str],
@@ -366,62 +366,121 @@ def plot_leiden_spatial_grid(
     sample_for_scatter: int | None = 20_000,
     random_state: int = 0,
     suptitle: str | None = "Spatial map of Leiden clusters across mice",
+    add_legend_column: bool = True,
+    legend_title: str = "Leiden cluster",
+    palette_name: str = "tab20",
 ) -> None:
     """
     Plot a grid of spatial scatterplots colored by Leiden clusters for a given mouse order.
+    If add_legend_column=True, allocate an extra column on the right with a single legend
+    describing the cluster_id → color mapping (shared across all panels).
     """
-    n = len(order)
-    n_cols = max(1, n_cols)
-    n_rows = (n + n_cols - 1) // n_cols
+    # Determine all clusters across inputs to ensure a consistent color mapping
+    required = {"x_centroid", "y_centroid", "cluster_leiden"}
+    clusters = []
+    for m in order:
+        df = df_by_mouse.get(m)
+        if df is None or not required.issubset(df.columns):
+            continue
+        clusters.extend(pd.unique(df["cluster_leiden"]))
+    unique_clusters = pd.unique(pd.Series(clusters))
 
-    fig, axes = plt.subplots(n_rows, n_cols, figsize=figsize, squeeze=False)
+    # Robust sort (numeric first in numeric order, then others by string)
+    def _safe_sort_key(x):
+        try:
+            return (0, float(x))
+        except Exception:
+            return (1, str(x))
+    hue_order = sorted(unique_clusters, key=_safe_sort_key)
+
+    # Build a stable cluster -> color mapping
+    # Seaborn will cycle if more than the base palette size.
+    colors = sns.color_palette(palette_name, n_colors=len(hue_order))
+    cluster_to_color = {cl: col for cl, col in zip(hue_order, colors)}
+
+    # Grid with optional legend column
+    plot_cols = max(1, n_cols)
+    total_cols = plot_cols + (1 if add_legend_column else 0)
+    n = len(order)
+    n_rows = (n + plot_cols - 1) // plot_cols
+
+    # Widen the figure to accommodate the legend column, preserving per-panel width
+    if add_legend_column:
+        fig_w = figsize[0] * (total_cols / plot_cols)
+        fig_h = figsize[1]
+        use_figsize = (fig_w, fig_h)
+    else:
+        use_figsize = figsize
+
+    fig, axes = plt.subplots(n_rows, total_cols, figsize=use_figsize, squeeze=False)
+
+    # Draw the scatters
     for i, mouse in enumerate(order):
-        r, c = divmod(i, n_cols)
+        r, c = divmod(i, plot_cols)
         ax = axes[r][c]
-        if mouse not in df_by_mouse or df_by_mouse[mouse] is None:
+        df = df_by_mouse.get(mouse)
+        if df is None:
             ax.axis("off")
             ax.text(0.5, 0.5, f"{mouse}\n(no data)", ha="center", va="center", fontsize=10)
             continue
-        df = df_by_mouse[mouse]
-        required = {"x_centroid", "y_centroid", "cluster_leiden"}
+
         if not required.issubset(df.columns):
+            missing = sorted(required - set(df.columns))
             ax.axis("off")
-            ax.text(
-                0.5,
-                0.5,
-                f"{mouse}\n(missing {sorted(required - set(df.columns))})",
-                ha="center",
-                va="center",
-                fontsize=10,
-            )
+            ax.text(0.5, 0.5, f"{mouse}\n(missing {missing})", ha="center", va="center", fontsize=10)
             continue
+
         plot_df = df
         if sample_for_scatter is not None and sample_for_scatter < len(df):
             plot_df = df.sample(sample_for_scatter, random_state=random_state)
+
         sns.scatterplot(
             data=plot_df,
             x="x_centroid",
             y="y_centroid",
             hue="cluster_leiden",
-            palette="tab20",
+            hue_order=hue_order,
+            palette=cluster_to_color,
             s=6,
             linewidth=0,
             alpha=0.7,
             ax=ax,
-            legend=False,
+            legend=False,  # suppress per-axes legends
         )
         ax.invert_yaxis()
         ax.set_title(str(mouse))
         ax.set_xlabel("X coordinate (µm)")
         ax.set_ylabel("Y coordinate (µm)")
-    # Hide any unused axes
-    for j in range(n, n_rows * n_cols):
-        r, c = divmod(j, n_cols)
+
+    # Hide any unused plotting axes (excluding the legend column)
+    total_plot_slots = n_rows * plot_cols
+    for j in range(n, total_plot_slots):
+        r, c = divmod(j, plot_cols)
         axes[r][c].axis("off")
+
+    # Build the legend column, once
+    if add_legend_column:
+        # Use the top-right cell for the legend; hide others in the legend column
+        legend_ax = axes[0][total_cols - 1]
+        for row in range(1, n_rows):
+            axes[row][total_cols - 1].axis("off")
+
+        # Compose legend handles
+        handles = [mpatches.Patch(color=cluster_to_color[cl], label=str(cl)) for cl in hue_order]
+        legend_ax.legend(
+            handles=handles,
+            title=legend_title,
+            loc="center left",
+            frameon=False,
+        )
+        legend_ax.axis("off")
+
     if suptitle:
         fig.suptitle(suptitle)
+
     fig.tight_layout()
     plt.show()
+
 
 
 @dataclass

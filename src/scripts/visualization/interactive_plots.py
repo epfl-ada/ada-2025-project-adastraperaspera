@@ -107,14 +107,7 @@ def interactive_comp_pig_regression_grid(agg, PIGS, bin_order):
         height=1500,
         width=3000,
         title_text="PIG Expression by Distance and Cell Type (4×4 grid)",
-        showlegend=True,
-        legend=dict(
-            orientation="h",
-            yanchor="bottom",
-            y=1.02,
-            xanchor="left",
-            x=0,
-        ),
+        showlegend=False,
         margin=dict(t=120, b=60, l=60, r=60),
     )
 
