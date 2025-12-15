@@ -17,18 +17,19 @@ const GeneExpressionChart = () => {
               Gene expression
             </h2>
             <p className="text-lg text-muted-foreground max-w-3xl">
-              We are dealing with a spatial transcriptomics dataset which contains single cell gene expression measurements of 347 genes...
+               We are dealing with a spatial transcriptomics dataset which contains single cell gene expression measurements of 347 genes. The gene expression matrix tends to be sparse. For the transgenic mouse at 17.9 months of age, 302 out of 347 genes have zero median transcript count.
+              Looking at the gene selection, out of 347 genes, 248 represent markers for 8 main cell types, canonical neuronal cortical layer markers, and non-neuronal markers; 83 genes related to activated microglia and astrocytes; and 16 PIGs curated from primary literature.
             </p>
           </div>
 
           {/* Figure (no card) */}
-          <figure className="lg:sticky lg:top-24">
+          <figure className="hidden lg:block float-right ml-10 mb-6 w-[520px]">
             <img
               src={`${base}figures/microscopy_cells_unified.png`}
               alt="Microscopy cells unified"
-              className="w-full rounded-xl border border-border/60 shadow-sm"
+              className="w-full rounded-2xl border border-border/60 shadow-md"
             />
-            <figcaption className="mt-2 text-xs text-muted-foreground">
+            <figcaption className="mt-2 text-sm text-muted-foreground">
               Microscopy cells unified
             </figcaption>
           </figure>
