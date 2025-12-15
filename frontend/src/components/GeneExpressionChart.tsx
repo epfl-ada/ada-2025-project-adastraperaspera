@@ -22,16 +22,15 @@ const GeneExpressionChart = () => {
             </p>
           </div>
 
-          {/* 
+          
           <div className="bg-card rounded-2xl border border-border p-4">
             <PlotFrame
-              src={`${base}plots/microscopy_cells_unified.html`}
+              src={`${base}figures/microscopy_cells_unified.png`}
               title="Microscopy cells unified"
               size="sm"
             />
            
           </div>
-           Small microscopy card */}
         </div>
 
         {/* Scroll hint */}
@@ -75,7 +74,7 @@ const GeneExpressionChart = () => {
             <PlotFrame
               src={`${base}figures/expression_distribution.png`}
               title="Gene expression distribution (log1p-transformed)"
-              size="lg"
+              size="md"
               fit="contain"
             />
 
