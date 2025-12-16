@@ -76,49 +76,52 @@ const RQ1Section = () => {
       <div className="container mx-auto px-6 max-w-6xl">
         {/* Layout: sticky left panel + scrollable content right */}
         <div className="grid gap-10 lg:grid-cols-[320px_1fr] items-start">
-            {/* Sticky LEFT panel */}
-          <aside className="lg:col-span-4">
-            <div className="lg:sticky lg:top-24 rounded-2xl border border-border bg-card p-6 shadow-sm">
-              <div className="flex items-start gap-3">
-                <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
-                  <Brain className="w-5 h-5 text-primary" />
-                </div>
-                <div className="space-y-1">
-                  <div className="text-sm font-semibold text-foreground">
-                    Research Question 1
-                  </div>
-                  <div className="text-xs text-muted-foreground">
-                    How does cell type composition change in plaque proximity?
-                  </div>
-                </div>
-              </div>
 
-              <nav className="mt-6 space-y-2 text-sm">
+          {/* Sticky RQ panel */}
+          <aside className="lg:sticky lg:top-24">
+            <div className="rounded-2xl border border-border bg-card p-6 shadow-md">
+              <div className="text-xs uppercase tracking-wide text-muted-foreground">Research Question 1</div>
+              <h2 className="mt-2 text-xl font-bold text-foreground leading-snug">
+                How does cell type composition change in plaque proximity?
+              </h2>
+
+              <div className="mt-5 space-y-3 text-sm">
                 <a
                   href="#rq1-method"
-                  className="block rounded-xl px-3 py-2 text-muted-foreground hover:text-foreground hover:bg-muted/50 transition"
+                  className="block rounded-xl border border-border bg-background/40 px-4 py-3 hover:bg-background/70 transition"
                 >
-                  Method
+                  <div className="font-medium text-foreground">Method</div>
+                  <div className="text-muted-foreground">Logistic regression vs distance</div>
                 </a>
+
                 <a
                   href="#rq1-slopes"
-                  className="block rounded-xl px-3 py-2 text-muted-foreground hover:text-foreground hover:bg-muted/50 transition"
+                  className="block rounded-xl border border-border bg-background/40 px-4 py-3 hover:bg-background/70 transition"
                 >
-                  Key coefficients
+                  <div className="font-medium text-foreground">Key coefficients</div>
+                  <div className="text-muted-foreground">p(0), p(100), Δp</div>
                 </a>
+
                 <a
                   href="#rq1-frequency"
-                  className="block rounded-xl px-3 py-2 text-muted-foreground hover:text-foreground hover:bg-muted/50 transition"
+                  className="block rounded-xl border border-border bg-background/40 px-4 py-3 hover:bg-background/70 transition"
                 >
-                  Frequency vs distance
+                  <div className="font-medium text-foreground">Frequency vs distance</div>
+                  <div className="text-muted-foreground">Binned cluster proportions</div>
                 </a>
+
                 <a
                   href="#rq1-markers"
-                  className="block rounded-xl px-3 py-2 text-muted-foreground hover:text-foreground hover:bg-muted/50 transition"
+                  className="block rounded-xl border border-border bg-background/40 px-4 py-3 hover:bg-background/70 transition"
                 >
-                  Marker enrichment
+                  <div className="font-medium text-foreground">Marker enrichment</div>
+                  <div className="text-muted-foreground">Z-scored heatmap</div>
                 </a>
-              </nav>
+              </div>
+
+              <div className="mt-6 text-xs text-muted-foreground">
+                Tip: use the links above, or just scroll the analysis on the right.
+              </div>
             </div>
           </aside>
 
