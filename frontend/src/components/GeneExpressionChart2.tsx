@@ -7,7 +7,6 @@ const GeneExpressionSection2 = () => {
   return (
     <section id="gene-expression" className="py-24 bg-muted/30 scroll-mt-24">
       <div className="container mx-auto px-6 max-w-7xl">
-
         {/* =========================
             HEADER
            ========================= */}
@@ -24,8 +23,7 @@ const GeneExpressionSection2 = () => {
         {/* =========================
             STICKY LEFT + FLOW RIGHT
            ========================= */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
-
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
           {/* =========================
               LEFT STICKY PANEL
              ========================= */}
@@ -66,6 +64,9 @@ const GeneExpressionSection2 = () => {
                 </a>
               </nav>
 
+              <div className="mt-6 text-xs text-muted-foreground">
+                Tip: scroll or use the navigation above.
+              </div>
             </div>
           </aside>
 
@@ -73,7 +74,6 @@ const GeneExpressionSection2 = () => {
               RIGHT ANALYSIS FLOW
              ========================= */}
           <div className="lg:col-span-8 space-y-12">
-
             {/* =========================
                 INTRO SECTION
                ========================= */}
@@ -116,90 +116,59 @@ const GeneExpressionSection2 = () => {
               </div>
             </section>
 
-            {/* Scroll hint */}
-            <p className="text-xs text-muted-foreground">
-              Tip: scroll horizontally to explore the analysis →
-            </p>
+            {/* =========================
+                DISTRIBUTION SECTION
+               ========================= */}
+            <section
+              id="gene-expression-distribution"
+              className="scroll-mt-24 bg-card rounded-2xl border border-border p-8 space-y-6"
+            >
+              <h3 className="text-xl font-semibold text-foreground">
+                Expression distributions
+              </h3>
+
+              <p className="text-lg text-muted-foreground">
+                First, let us explore the data by visualizing the distribution of
+                log1p-transformed transcript counts for the 16 PIGs against the
+                average distribution of all 347 genes. We will focus on the mouse
+                with the most advanced stage of the Alzheimer's disease
+                (transgenic at 17.9 months of age).
+              </p>
+
+              <PlotFrame
+                src={`${base}figures/expression_distribution.png`}
+                title="Gene expression distribution (log1p-transformed)"
+                size="md"
+                fit="contain"
+              />
+
+              <p className="text-lg text-muted-foreground">
+                We can observe that for 13 out of 16 PIGs, the distribution has a
+                mode at zero. Above zero, the support gradually drops off at
+                higher transcript counts; however, different PIGs have a
+                different rate of the density decay.
+              </p>
+            </section>
 
             {/* =========================
-                HORIZONTAL ANALYSIS STRIP
+                WEIRDNESS SECTION
                ========================= */}
-            <div
-              className="
-                relative
-                flex
-                flex-row
-                gap-12
-                overflow-x-auto
-                overflow-y-hidden
-                snap-x snap-mandatory
-                pb-6
-              "
+            <section
+              id="gene-expression-weirdness"
+              className="scroll-mt-24 bg-card rounded-2xl border border-border p-8 space-y-6"
             >
-              {/* =========================
-                  BLOCK 1
-                 ========================= */}
-              <div
-                id="gene-expression-distribution"
-                className="
-                  snap-start
-                  min-w-[700px]
-                  max-w-[700px]
-                  bg-card
-                  rounded-2xl
-                  border border-border
-                  p-8
-                  flex-shrink-0
-                  space-y-6
-                "
-              >
-                <p className="text-lg text-muted-foreground">
-                  First, let us explore the data by visualizing the distribution of
-                  log1p-transformed transcript counts for the 16 PIGs against the
-                  average distribution of all 347 genes. We will focus on the mouse
-                  with the most advanced stage of the Alzheimer's disease
-                  (transgenic at 17.9 months of age).
-                </p>
+              <h3 className="text-xl font-semibold text-foreground">
+                Weird genes diagnostics
+              </h3>
 
-                <PlotFrame
-                  src={`${base}figures/expression_distribution.png`}
-                  title="Gene expression distribution (log1p-transformed)"
-                  size="md"
-                  fit="contain"
-                />
+              <p className="text-lg text-muted-foreground leading-relaxed">
+                Next, we diagnose the PIGs with the most unusual expression
+                patterns. To that end, we combine several diagnostic metrics
+                (among which, zero-inflation, dispersion, and shape) into a
+                composite score.
+              </p>
 
-                <p className="text-lg text-muted-foreground">
-                  We can observe that for 13 out of 16 PIGs, the distribution has a
-                  mode at zero. Above zero, the support gradually drops off at
-                  higher transcript counts; however, different PIGs have a
-                  different rate of the density decay.
-                </p>
-              </div>
-
-              {/* =========================
-                  BLOCK 2
-                 ========================= */}
-              <div
-                id="gene-expression-weirdness"
-                className="
-                  snap-start
-                  min-w-[500px]
-                  max-w-[500px]
-                  bg-card
-                  rounded-2xl
-                  border border-border
-                  p-8
-                  flex-shrink-0
-                  space-y-6
-                "
-              >
-                <p className="text-lg text-muted-foreground leading-relaxed">
-                  Next, we diagnose the PIGs with the most unusual expression
-                  patterns. To that end, we combine several diagnostic metrics
-                  (among which, zero-inflation, dispersion, and shape) into a
-                  composite score.
-                </p>
-
+              <div className="overflow-x-auto">
                 <table className="min-w-full text-sm">
                   <thead className="bg-muted/50">
                     <tr>
@@ -239,15 +208,15 @@ const GeneExpressionSection2 = () => {
                     ))}
                   </tbody>
                 </table>
-
-                <p className="text-lg text-muted-foreground leading-relaxed">
-                  We find that among the 5 most unusual PIGs, Cxcl10 and Cd74
-                  clearly stand out. Both have the weirdness score exceeding 8;
-                  the next highest is Serpina3n with a score an order of magnitude
-                  lower at 0.79.
-                </p>
               </div>
-            </div>
+
+              <p className="text-lg text-muted-foreground leading-relaxed">
+                We find that among the 5 most unusual PIGs, Cxcl10 and Cd74
+                clearly stand out. Both have the weirdness score exceeding 8;
+                the next highest is Serpina3n with a score an order of magnitude
+                lower at 0.79.
+              </p>
+            </section>
           </div>
         </div>
       </div>

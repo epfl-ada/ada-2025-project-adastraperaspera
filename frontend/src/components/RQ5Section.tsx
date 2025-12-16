@@ -24,7 +24,73 @@ const RQ5Section = () => {
     <section id="rq-5" className="py-24 bg-background">
       <div className="container mx-auto px-6 max-w-6xl">
         <div className="grid gap-10 lg:grid-cols-[320px_1fr] items-start">
-          {/* Sticky left panel */}
+            <aside className="lg:sticky lg:top-24">
+                            <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+                                {/* Header (same pattern as GeneExpression / Microscopy) */}
+                                <div className="flex items-start gap-3">
+                                <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+                                    <Brain className="w-5 h-5 text-primary" />
+                                </div>
+                                <div>
+                                    <div className="text-sm font-semibold text-foreground">
+                                    Research Question 5
+                                    </div>
+                                    <div className="text-xs text-muted-foreground">
+                                    Which features matter most for predicting plaque distance?
+                                    </div>
+                                </div>
+                                </div>
+            
+                                {/* Navigation (identical hover / spacing / typography) */}
+                                <nav className="mt-6 space-y-2 text-sm">
+                                <a
+                                    href="#rq5-linear"
+                                    className="block rounded-xl px-3 py-2 text-muted-foreground hover:text-foreground hover:bg-muted/50 transition"
+                                >
+                                    Linear models
+                                </a>
+            
+                                <a
+                                    href="#rq5-ablation"
+                                    className="block rounded-xl px-3 py-2 text-muted-foreground hover:text-foreground hover:bg-muted/50 transition"
+                                >
+                                    Modality ablation
+                                </a>
+            
+                                <a
+                                    href="#rq5-spatial-diagnostics"
+                                    className="block rounded-xl px-3 py-2 text-muted-foreground hover:text-foreground hover:bg-muted/50 transition"
+                                >
+                                    Spatial-only diagnostics
+                                </a>
+            
+                                <a
+                                    href="#rq5-zscore-framework"
+                                    className="block rounded-xl px-3 py-2 text-muted-foreground hover:text-foreground hover:bg-muted/50 transition"
+                                >
+                                    Z-normalized signatures
+                                </a>
+                                <a
+                                    href="#rq5-disease-age"
+                                    className="block rounded-xl px-3 py-2 text-muted-foreground hover:text-foreground hover:bg-muted/50 transition"
+                                >
+                                   Disease + age progression
+                                </a>
+                                <a
+                                    href="#rq5-ad-specific"
+                                    className="block rounded-xl px-3 py-2 text-muted-foreground hover:text-foreground hover:bg-muted/50 transition"
+                                >
+                                   AD-specific genes
+                                </a>
+                                </nav>
+            
+                                {/* Footer hint */}
+                                <div className="mt-6 text-xs text-muted-foreground">
+                                Tip: scroll or use the navigation above.
+                                </div>
+                            </div>
+                        </aside>
+          {/* 
           <aside className="lg:sticky lg:top-24">
             <div className="rounded-2xl border border-border bg-card p-6 shadow-md">
               <div className="text-xs uppercase tracking-wide text-muted-foreground">
@@ -89,7 +155,7 @@ const RQ5Section = () => {
                 <span className="font-mono">frontend/public/plots</span>.
               </div>
             </div>
-          </aside>
+          </aside>Sticky left panel */}
 
           {/* Main content */}
           <div className="space-y-12">
