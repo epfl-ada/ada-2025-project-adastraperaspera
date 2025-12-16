@@ -328,3 +328,147 @@ The top genes for predicting plaque distance are fairly consistent across all fo
 | 5 | Igf2 | 2.907111 | Igf2 | 2.949014 | B2m | 0.034584 | Strip2 | 0.013022 |
 
 
+## RQ5: When modeling plaque distance, which features are most important?
+
+### Linear models
+
+To improve the performance of the linear model while also exploring the feature importance, we added the following features in addition to simply the 347 gene expression features:
+
+- Coordinates of the cell centroid
+- Cell area
+- Nucleus area
+- Cell type (encoded as a Leiden cluster ID)
+
+As a result, we obtain 4 groups of features which we will call modalities:
+
+- Genes: 347 expression values
+- Morphology: cell area and nucleus area
+- Spatial: coordinates of the cell centroid
+- Cluster: Leiden cluster indicating the cell type
+
+Further, we explored a partial least squares (PLS) regression model in addition to the ordinary least squares (OLS) regression model. As a result of the analysis, we obtained the following performance:
+
+| Model        | Train R² | Test R² |
+|--------------|---------:|--------:|
+| Linear       |     0.25 |    0.24 |
+| PLS          |     0.19 |    0.19 |
+
+### Tree models
+### Performance
+
+We can see that compared to the previous gene-only OLS and Lasso models, the OLS model with extra features performs significantly better, reducing the gap to XGB performance. The OLS model achieved test R² of ~0.24, indicating that a purely linear combination of gene expression, morphology, spatial coordinates, and cluster identity explains roughly one quarter of the variance in plaque distance. This performance aligns with biological expectations: plaque-induced transcriptional changes are real but modest, and much of the microenvironmental heterogeneity is nonlinear or cell-type–specific. The small train–test gap shows the model generalizes well and is not overfitting, suggesting that the linear component of the plaque effect is stable and reproducible across cells.
+
+The PLS model produced train/test R² values of ~0.19, slightly lower than ordinary linear regression. This is expected because PLS constrains the model to learn a small number of latent components that best correlate with plaque distance. As a result, the model captures only the dominant, global plaque-related axis rather than all available linear variation. The near-identical train and test R² values show excellent stability, indicating that the inferred latent axis is robust and suitable for transfer to other mice.
+
+Next, we will analyze the linear models as well as the more complex models by performing modality ablation.
+
+<p align="center">
+  <!-- This was obtained with plot_ablation_heatmap; usage in results.ipynb -->
+  <img src="figures/modality_ablation.png" width="160">
+  <br><em>Spatial diagnostics</em>
+</p>
+
+<p align="center">
+  <!-- This was obtained with plot_best_model_per_modality; usage in results.ipynb -->
+  <img src="figures/best_model_per_modality.png" width="160">
+  <br><em>Spatial diagnostics</em>
+</p>
+
+Ablation analysis reveals that predictive performance varies strongly across modalities and model classes. Linear models (Ridge, Lasso, PLS) achieve modest accuracy (R² ≈ 0.20–0.24) when gene expression is included, and perform near chance levels when only morphology or spatial coordinates are used. Nonlinear models, particularly gradient-boosting approaches, extract substantially richer structure. Surprisingly, the highest single-modality performance arises from spatial-only models, where HistGradientBoosting reaches R² ≈ 0.64, exceeding even the full multimodal model. This suggests that in the 17.9-month Tg mouse, plaque distribution is highly region-dependent, enabling spatial coordinates to act as a strong proxy for expected plaque proximity. Gene-only and gene+cluster modalities produce moderate improvements for tree models (R² ≈ 0.26–0.28), while adding morphology contributes little. Overall, the analysis shows that (1) nonlinear models capture complex biological interactions that linear models miss, (2) gene expression carries real but limited spatial information, and (3) spatial-only performance is inflated by anatomical biases and must be interpreted cautiously rather than as true geometric distance prediction.
+
+Spatial-only models achieve surprisingly high accuracy in the 17.9-month Tg mouse because plaque deposition is not spatially uniform: certain anatomical regions (e.g., cortical layers, subcortical boundaries) accumulate far more plaques than others. As a result, the model learns region-specific vulnerability, not geometric proximity. To understand whether this spatial vulnerability is a genuine disease-related phenotype or simply a conserved anatomical pattern, we will compare the spatial structure of the Tg-17 model with the spatial structure of other mice, including younger Tg animals and age-matched WT controls. If the WT and early-stage Tg mice do not show the same spatial signature (i.e., their spatial coordinate distributions produce very different LightGBM/HGB outputs), this supports the idea that region-specific plaque vulnerability emerges only in pathology and is a meaningful disease feature. Conversely, if WT mice show similar spatial predictions, then the spatial-only R² reflects anatomical confounding rather than a biologically interpretable disease signal. This comparison will help determine whether spatial information should be incorporated, controlled for, or partially removed in the final plaque-proximity signature.Spatial-only models achieve surprisingly high accuracy in the 17.9-month Tg mouse because plaque deposition is not spatially uniform: certain anatomical regions (e.g., cortical layers, subcortical boundaries) accumulate far more plaques than others. As a result, the model learns region-specific vulnerability, not geometric proximity. To understand whether this spatial vulnerability is a genuine disease-related phenotype or simply a conserved anatomical pattern, we will compare the spatial structure of the Tg-17 model with the spatial structure of other mice, including younger Tg animals and age-matched WT controls. If the WT and early-stage Tg mice do not show the same spatial signature (i.e., their spatial coordinate distributions produce very different LightGBM/HGB outputs), this supports the idea that region-specific plaque vulnerability emerges only in pathology and is a meaningful disease feature. Conversely, if WT mice show similar spatial predictions, then the spatial-only R² reflects anatomical confounding rather than a biologically interpretable disease signal. This comparison will help determine whether spatial information should be incorporated, controlled for, or partially removed in the final plaque-proximity signature.
+
+### Diagnostics
+
+Let us see why the spatial model performs so well. First, let us explore predictions for different mice to see if it can generalize. We find that predictions for each mouse are very similar.
+
+<p align="center">
+  <!-- This was obtained with plot_spatial_compare; usage in results.ipynb -->
+  <img src="figures/predicted_plaque_distance.png" width="160">
+  <br><em>Spatial predictions comparison</em>
+</p>
+
+Our initial attempt to model plaque proximity using spatial coordinates alone revealed a fundamental limitation. Although the spatial-only model achieved a deceptively high R² of 0.64 in the 17.9-month transgenic mouse, further analysis showed that this predictive power was entirely artifactual. 
+
+Let us compare the predicted plaque-distance distributions across all Tg and WT animals looking at the following diagram. We can see that the model produced nearly identical means, variances, and distribution shapes in every mouse, regardless of genotype or age. A spatial-only model outputs nearly the same score distribution for every mouse. The model’s output distributions differ by at most 6% at any point. This is not the behavior of a pathology-sensitive model.
+
+<p align="center">
+  <!-- This was obtained with plot_hist_comparison; usage in results.ipynb -->
+  <img src="figures/distribution_across_mice.png" width="160">
+  <br><em>Distribution across mice</em>
+</p>
+
+We can also compute the Jensen-Shannon divergence between the predictions for different mice. We can see that Tg mice are slightly closer to each other than Tg vs WT. Still, WT and Tg mice have extremely similar predicted-score distributions. Minor differences exist, but not in a way that correlates with disease progression.
+
+The Jensen–Shannon divergence matrix shows that all mice—regardless of genotype or age—have extremely similar predicted plaque-score distributions, with JSD values mostly between 0.05–0.10 and only slightly higher (~0.14–0.16) for comparisons involving the WT-13 mouse. This indicates that the spatial-only model produces nearly indistinguishable score distributions across Tg and WT mice. Consistent with this, pairwise Kolmogorov–Smirnov tests show very small effect sizes (KS statistics mostly 0.02–0.08), even though p-values are extremely significant due to the very large number of cells.
+
+Together, these results confirm that differences between mice are statistically detectable but biologically negligible. ANOVA across Tg mice yields a highly significant p-value (p ≈ 3.6e−22), but again the effect size is trivial, and the mean predicted scores do not increase with age. Overall, these analyses demonstrate that the spatial-only model does not capture disease progression or genotype differences; instead, it learns conserved anatomical structure that remains nearly identical across all mice.
+
+<p align="center">
+  <!-- This was obtained with plot_jsd_heatmap; usage in results.ipynb -->
+  <img src="figures/JS_Divergence.png" width="160">
+  <br><em>Jensen-Shannon divergence</em>
+</p>
+
+
+These findings demonstrate that the model did not detect plaque-related pathology and instead exploited conserved tissue geometry such as cortical curvature and laminar structure. The high predictive accuracy was therefore driven by anatomical bias rather than biological signal.
+
+Because of this, we shifted from pure spatial prediction toward gene expression based and age-aware analyses. This change was necessary for several reasons. First, plaque-induced transcriptional responses are cell-state specific. Microglia, astrocytes, and some oligodendrocyte populations exhibit strong gene expression changes near plaques that cannot be inferred from spatial position alone. Second, direct normalization of transcriptomic values across different mice is unreliable. Differences in tissue orientation, capture area, imaging depth, and detection efficiency create batch-like distortions that classical approaches such as global scaling or quantile matching cannot safely correct. These adjustments often distort biological gradients or suppress real disease variance. Third, commonly used multi-sample harmonization methods such as Harmony, mutual nearest neighbors, or scVI are not ideal for Xenium data. The gene panel is sparse, the number of cells is very large, and plaque-associated variance is not a batch effect that should be removed. For these reasons, cross-mouse alignment would obscure rather than clarify AD-dependent patterns.
+
+We therefore adopted an approach based on within-cluster and within-gene z-normalized signatures. We then average the z-scores across the 16 PIGs and obtain a unified "plaque-induced gene activation score" per cluster (see the Figure below). This avoids all cross-mouse normalization pitfalls while allowing us to isolate expression changes that are cell-type specific, disease dependent, and age progressive. 
+
+<p align="center">
+  <!-- This was obtained with plot_pig_z_scores_per_cluster_per_mouse; usage in results.ipynb -->
+  <img src="figures/mean_PIG_per_mouse.png" width="160">
+  <br><em>Mean PIG per mouse</em>
+</p>
+
+With this framework in place, we analyzed two independent biological dimensions: disease status (TG versus WT) and age progression (2 to 5 to 17 months). For each Leiden cluster, we computed a disease-specific gene activation score that identifies genes highly expressed in Tg mice but minimally expressed in WT controls. This identifies genes whose expression is linked to amyloid pathology rather than to general aging or baseline glial identity. We then ranked clusters by the mean disease specificity of all genes to quantify how selectively each cluster responds to plaques (see the Figures below).
+
+<p align="center">
+  <!-- This was obtained with plot_volcano; usage in results.ipynb -->
+  <img src="figures/disease_effect_age_progression.png" width="160">
+  <br><em>Disease effect and age progression</em>
+</p>
+
+<p align="center">
+  <!-- This was obtained with plot_age_progression; usage in results.ipynb -->
+  <img src="figures/age_progression.png" width="160">
+  <br><em>Age progression</em>
+</p>
+
+Plotting the PCA-based projections of the 19 clusters, we can clearly see that the WT and TG mice are separated within each cluster: the WT mice tend to occupy the bulk of the cluster, whereas the Tg mice are pushed towards the periphery. This highlights the anomalous gene expression patterns even within the same cell type.
+
+<p align="center">
+  <!-- This was obtained with plot_cluster_pcas; usage in results.ipynb -->
+  <img src="figures/PCA_clusters.png" width="160">
+  <br><em>PCA clusters</em>
+</p>
+
+Our analysis reveals that cluster 8 (microglia) showed the strongest AD-specific activation, followed by cluster 18 (astrocytes). In these clusters, disease-specific genes such as Syngr1, Gfap, and Sparcl1 had large positive specificity scores, indicating strong induction in Tg animals while remaining mostly silent in WT mice. These genes are well-established markers of glial reactivity, complement activation, and inflammatory remodeling, underscoring the biological relevance of the observed signatures.
+
+<p align="center">
+  <!-- This was obtained with plot_ad_specific_heatmap; usage in results.ipynb -->
+  <img src="figures/ad_specific_genes.png" width="160">
+  <br><em>AD-specific genes</em>
+</p>
+
+
+To ensure that these disease-specific signals were not driven by differences in cell-type abundance, we incorporated TG versus WT differential expression and age progression analyses. TG minus WT effect sizes showed that microglia and astrocytes had the largest positive shifts in PIG expression, confirming true disease-driven activation. 
+
+
+<p align="center">
+  <!-- This was obtained with plot_top_de_heatmap; usage in results.ipynb -->
+  <img src="figures/top_genes_per_glial.png" width="160">
+  <br><em>Top genes per glial cluster</em>
+</p>
+
+When examining age trajectories, Tg mice displayed monotonic increases from 2 to 5 to 17 months in these clusters, whereas WT mice remained stable or declined slightly. This divergence indicates that the transcriptional changes arise from plaque-dependent progressive glial activation rather than normal aging.
+
+<p align="center">
+  <!-- This was obtained with plot_age_curves_by_cluster; usage in results.ipynb -->
+  <img src="figures/age_progression_wt_tg.png" width="160">
+  <br><em>Age progression WT vs Tg</em>
+</p>
+
+Taken together, these analyses show that specific glial clusters, particularly microglia (cluster 8) and astrocytes (cluster 18), undergo robust and progressive transcriptional activation driven by amyloid pathology. These signatures intensify with age in Tg mice but remain absent in age-matched WT animals. This confirms that the responses we observe are AD-specific, age progressive, and localized to biologically relevant glial populations. In contrast to spatial-only modeling, the gene-level and age-resolved strategy yields a stable, interpretable, and pathology-driven understanding of how glial states evolve around amyloid plaques.
