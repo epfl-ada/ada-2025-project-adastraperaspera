@@ -315,20 +315,26 @@ After computing neighborhood mean expression features for PIG genes, we can now 
   <br><em>Neighbor mean PIG</em>
 </p>
 
-Note that the matrix above is not symmetric since the target/neighbor relationship is not commutative. From the figure above, we can see that the following top 10 strongest relationships:
+Note that the matrix above is not symmetric since the target/neighbor relationship is not commutative. From the figure above, we can see that the following top 3 strongest relationships:
 
 | Target PIG | Neighbor PIG | Pearson correlation |
 |---|---|---:|
 | Gfap | C4b | 0.47 |
 | Gfap | Tyrobp | 0.45 |
 | Gfap | Lyz2 | 0.44 |
-| Cst3 | Hexb | 0.35 |
-| Cst3 | Apoe | 0.35 |
-| C4b | Gfap | 0.33 |
-| Gfap | Serpina3n | 0.32 |
-| Cst3 | B2m | 0.31 |
-| Apoe | Cd63 | 0.31 |
-| Cst3 | Cd63 | 0.30 |
+
+Let us explore each of these relationships in more detail.
+
+- Gfap/C4b
+    - Gfap marks reactive astrogliosis around plaques, and C4b is part of the complement cascade that is repeatedly implicated in the plaque-associated glial response. C4a/C4b is expressed in astrocytes, making co-variation with Gfap expected
+- Gfap/Tyrobp
+    - Tyrobp is a core microglial immune adaptor that is known to be involved in Alzheimer's disease (AD) microglial activation and plaque responses.
+    - In the plaque niche, microglial activation and astrogliosis rise together.
+    - Existing research on plaque proximity similarly emphasizes coordinated microglial activation near plaques.
+- Gfap/Lyz2
+    - Lyz2 is a canonical myeloid activation marker and appears in microglial genes used for spatial plaque analyses.
+    - It is also known to be involved in plaque-related gene expression.
+    - Thus, Gfap/Lyz2 is due to the fact that reactive astrocyte domains are associated with plaque-associated microglia.
 
 ## RQ4: Inferring plaque distance from gene expression
 
