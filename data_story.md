@@ -270,6 +270,14 @@ All 16 PIGs exhibit a statistically significant negative slope at 0.01 FDR level
   <br><em>Distances to halve expression for the 16 PIGs</em>
 </p>
 
+### Extended linear regression
+
+<p align="center">
+  <!-- This was obtained with plot_multi_plaque_proximity; usage in results.ipynb -->
+  <img src="figures/multi_plaque_proximity.png" width="480">
+  <br><em>Multi-plaque proximity</em>
+</p>
+
 ## RQ4: Inferring plaque distance from gene expression
 
 In this section, we benchmark a number of predictive models to estimate the distance to plaque from a 347-gene expression vector. 
