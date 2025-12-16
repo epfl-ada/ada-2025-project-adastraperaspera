@@ -72,10 +72,6 @@ const MicroscopySection2 = () => {
                 </a>
               </nav>
 
-              <div className="mt-6 pt-6 border-t border-border text-xs text-muted-foreground leading-relaxed">
-                Fixed panel for the microscopy workflow. Scroll on the right to
-                read the analysis and inspect plots.
-              </div>
             </div>
           </aside>
 

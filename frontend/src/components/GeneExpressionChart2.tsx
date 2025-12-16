@@ -66,10 +66,6 @@ const GeneExpressionSection2 = () => {
                 </a>
               </nav>
 
-              <div className="mt-6 pt-6 border-t border-border text-xs text-muted-foreground leading-relaxed">
-                This panel stays fixed while you explore expression patterns and
-                diagnostics on the right.
-              </div>
             </div>
           </aside>
 
