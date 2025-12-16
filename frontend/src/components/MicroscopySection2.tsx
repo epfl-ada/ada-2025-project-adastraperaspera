@@ -22,6 +22,58 @@ const MicroscopySection2 = () => {
             Sticky-left + right flow
            ========================= */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+          {/* Sticky LEFT panel */}
+          <aside className="lg:col-span-4">
+            <div className="lg:sticky lg:top-24 rounded-2xl border border-border bg-card p-6 shadow-sm">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+                  <Microscope className="w-5 h-5 text-primary" />
+                </div>
+                <div className="space-y-1">
+                  <div className="text-sm font-semibold text-foreground">
+                    Microscopy
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    Navigation
+                  </div>
+                </div>
+              </div>
+
+              <nav className="mt-6 space-y-2 text-sm">
+                <a
+                  href="#microscopy-study"
+                  className="block rounded-xl px-3 py-2 text-muted-foreground hover:text-foreground hover:bg-muted/50 transition"
+                >
+                  Study Design & Spatial Context
+                </a>
+                <a
+                  href="#microscopy-wt-tg"
+                  className="block rounded-xl px-3 py-2 text-muted-foreground hover:text-foreground hover:bg-muted/50 transition"
+                >
+                  Mutation & Immunofluorescence Plaques
+                </a>
+                <a
+                  href="#microscopy-plaques"
+                  className="block rounded-xl px-3 py-2 text-muted-foreground hover:text-foreground hover:bg-muted/50 transition"
+                >
+                  Plaque Detection & Coordinate Transformation
+                </a>
+                <a
+                  href="#microscopy-distances"
+                  className="block rounded-xl px-3 py-2 text-muted-foreground hover:text-foreground hover:bg-muted/50 transition"
+                >
+                  Cell-to-Plaque Distances
+                </a>
+                <a
+                  href="#microscopy-summary"
+                  className="block rounded-xl px-3 py-2 text-muted-foreground hover:text-foreground hover:bg-muted/50 transition"
+                >
+                  Microscopy Summary
+                </a>
+              </nav>
+
+            </div>
+          </aside>
 
           {/* RIGHT flow */}
           <div className="lg:col-span-8">
