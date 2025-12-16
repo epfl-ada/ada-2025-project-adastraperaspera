@@ -30,7 +30,7 @@ const GeneExpressionChart = () => {
               "
             >
               <img
-                src={`${base}figures/microscopy_cells_unified.png`}
+                src={`${base}figures/microscopy_.png`}
                 alt="Microscopy cells unified"
                 className="w-full h-auto rounded-xl border border-border"
               />

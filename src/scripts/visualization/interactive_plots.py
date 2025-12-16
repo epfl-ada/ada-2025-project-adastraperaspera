@@ -2650,3 +2650,1455 @@ def plot_model_performance_interactive(
     fig.show()
     return fig
 
+def plot_residual_vs_distance_interactive(
+    y_true: pd.Series,
+    y_pred: np.ndarray,
+    *,
+    model_name: str = "Model",
+    out_dir: str = "frontend/public/plots",
+    filename: str = "residuals_diagnostics.html",
+) -> go.Figure:
+    """
+    Interactive scatter of residual (y_true - y_pred) vs true distance,
+    with rolling-median smoother and Pearson r printed (and shown in title).
+    Transparent background + responsive HTML export.
+    """
+
+    y_true_s = pd.to_numeric(pd.Series(y_true), errors="coerce")
+    y_pred_s = pd.to_numeric(pd.Series(y_pred), errors="coerce")
+
+    residuals = y_true_s - y_pred_s
+
+    mask = ~(y_true_s.isna() | residuals.isna())
+    y_true_s = y_true_s[mask]
+    residuals = residuals[mask]
+
+    if len(y_true_s) == 0:
+        raise ValueError("No finite values for residual vs distance scatter.")
+
+    r = float(np.corrcoef(y_true_s.to_numpy(), residuals.to_numpy())[0, 1])
+    print(f"Pearson r = {r:.2f}")
+
+    # --- rolling median smoother (same idea as your matplotlib version) ---
+    order = np.argsort(y_true_s.to_numpy())
+    x_sorted = y_true_s.to_numpy()[order]
+    y_sorted = residuals.to_numpy()[order]
+    window = max(20, len(x_sorted) // 50)
+
+    y_smooth = None
+    if window > 5:
+        y_smooth = (
+            pd.Series(y_sorted)
+            .rolling(window, center=True)
+            .median()
+            .to_numpy()
+        )
+
+    fig = go.Figure()
+
+    # scatter points
+    fig.add_trace(
+        go.Scattergl(
+            x=y_true_s.to_numpy(),
+            y=residuals.to_numpy(),
+            mode="markers",
+            marker=dict(size=6, opacity=0.5),
+            name=f"Cells (n={len(y_true_s)})",
+            hovertemplate=(
+                "True distance: %{x:.1f} µm<br>"
+                "Residual: %{y:.1f} µm<extra></extra>"
+            ),
+        )
+    )
+
+    # smoother line
+    if y_smooth is not None:
+        fig.add_trace(
+            go.Scatter(
+                x=x_sorted,
+                y=y_smooth,
+                mode="lines",
+                line=dict(width=2, color="black"),
+                name="Rolling median residual",
+                hoverinfo="skip",
+            )
+        )
+
+    # y=0 reference line
+    fig.add_hline(y=0, line_dash="dash", line_width=1, line_color="red")
+
+    fig.update_layout(
+        title=f"{model_name}: Residuals vs distance (Pearson r = {r:.2f})",
+        xaxis_title="True distance to plaque (µm)",
+        yaxis_title="True − predicted (µm)",
+        autosize=True,
+        template="simple_white",
+        margin=dict(l=70, r=20, t=80, b=60),
+
+        # transparent background
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=1.02,
+            xanchor="left",
+            x=0,
+        ),
+    )
+
+    out_path = Path(out_dir) / filename
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    fig.write_html(
+        str(out_path),
+        include_plotlyjs="cdn",
+        full_html=True,
+        config={"responsive": True, "displayModeBar": False, "scrollZoom": True},
+        default_width="100%",
+        default_height="100%",
+    )
+
+    fig.show()
+    return fig
+
+def plot_model_performance_interactive(
+    results_df: pd.DataFrame,
+    *,
+    title: str = "Model performance (R²)",
+    filename: str = "model_performance_predict_dist.html",
+    out_dir: str = "frontend/public/plots",
+):
+    """Interactive bar plot comparing R² scores across models (train vs test)."""
+
+    results_melted = results_df.melt(
+        id_vars="model",
+        value_vars=["train_r2", "test_r2"],
+        var_name="Dataset",
+        value_name="R²",
+    )
+
+    fig = px.bar(
+        results_melted,
+        x="model",
+        y="R²",
+        color="Dataset",
+        barmode="group",
+        title=title,
+    )
+
+    fig.update_layout(
+        autosize=True,
+        template="simple_white",
+        margin=dict(l=60, r=20, t=70, b=60),
+        paper_bgcolor="rgba(0,0,0,0)",  # transparent background
+        plot_bgcolor="rgba(0,0,0,0)",   # transparent plot area
+        legend_title_text="",
+    )
+
+    out_path = Path(out_dir) / filename
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    fig.write_html(
+        str(out_path),
+        include_plotlyjs="cdn",
+        full_html=True,
+        config={"responsive": True, "displayModeBar": False},
+        default_width="100%",
+        default_height="100%",
+    )
+
+    fig.show()
+    return fig
+
+def plot_true_pred_kde_interactive(
+    y_true: pd.Series,
+    y_pred: np.ndarray,
+    *,
+    model_name: str = "Model",
+    show_qq: bool = True,
+    kde_points: int = 400,
+    qq_points: int | None = 200,
+    qq_ref_line: bool = True,
+    qq_log: bool = False,
+    out_dir: str = "frontend/public/plots",
+    filename: str = "true_vs_predicted.html",
+):
+    """
+    Interactive KDE(true vs predicted) + optional two-sample Q-Q plot.
+    Background is transparent.
+    """
+
+    # -----------------------------
+    # Clean & validate
+    # -----------------------------
+    y_true_arr = pd.to_numeric(pd.Series(y_true), errors="coerce").to_numpy()
+    y_pred_arr = pd.to_numeric(pd.Series(y_pred), errors="coerce").to_numpy()
+
+    y_true_arr = y_true_arr[np.isfinite(y_true_arr)]
+    y_pred_arr = y_pred_arr[np.isfinite(y_pred_arr)]
+
+    if y_true_arr.size == 0 or y_pred_arr.size == 0:
+        raise ValueError("y_true and y_pred must each contain finite numeric values.")
+
+    # -----------------------------
+    # Figure layout
+    # -----------------------------
+    cols = 2 if show_qq else 1
+    fig = make_subplots(
+        cols=cols,
+        rows=1
+    )
+
+    # -----------------------------
+    # KDE panel
+    # -----------------------------
+    common_min = float(min(y_true_arr.min(), y_pred_arr.min()))
+    common_max = float(max(y_true_arr.max(), y_pred_arr.max()))
+    xs = np.linspace(common_min, common_max, kde_points)
+
+    kde_true = gaussian_kde(y_true_arr)(xs)
+    kde_pred = gaussian_kde(y_pred_arr)(xs)
+
+    fig.add_trace(
+        go.Scatter(
+            x=xs,
+            y=kde_true,
+            mode="lines",
+            name="True distance",
+            line=dict(width=2),
+        ),
+        row=1,
+        col=1,
+    )
+
+    fig.add_trace(
+        go.Scatter(
+            x=xs,
+            y=kde_pred,
+            mode="lines",
+            name="Predicted distance",
+            line=dict(width=2, dash="dash"),
+        ),
+        row=1,
+        col=1,
+    )
+
+    fig.update_xaxes(title_text="Distance to plaque (µm)", row=1, col=1)
+    fig.update_yaxes(title_text="Density", row=1, col=1)
+
+    # -----------------------------
+    # Q-Q panel
+    # -----------------------------
+    if show_qq:
+        n = min(y_true_arr.size, y_pred_arr.size)
+        if qq_points is not None:
+            n = min(n, int(qq_points))
+        if n < 2:
+            raise ValueError("Need at least 2 points to draw Q-Q plot.")
+
+        ps = (np.arange(1, n + 1) - 0.5) / n
+        q_true = np.quantile(y_true_arr, ps)
+        q_pred = np.quantile(y_pred_arr, ps)
+
+        fig.add_trace(
+            go.Scatter(
+                x=q_true,
+                y=q_pred,
+                mode="markers",
+                marker=dict(size=6, opacity=0.7),
+                name="Quantiles",
+            ),
+            row=1,
+            col=2,
+        )
+
+        if qq_ref_line:
+            lo = float(min(q_true.min(), q_pred.min()))
+            hi = float(max(q_true.max(), q_pred.max()))
+            fig.add_trace(
+                go.Scatter(
+                    x=[lo, hi],
+                    y=[lo, hi],
+                    mode="lines",
+                    line=dict(dash="dash", width=1),
+                    name="y = x",
+                    showlegend=False,
+                ),
+                row=1,
+                col=2,
+            )
+
+        fig.update_xaxes(title_text="True quantiles", row=1, col=2)
+        fig.update_yaxes(title_text="Predicted quantiles", row=1, col=2)
+
+        if qq_log:
+            if (q_true <= 0).any() or (q_pred <= 0).any():
+                raise ValueError("qq_log=True requires strictly positive values.")
+            fig.update_xaxes(type="log", row=1, col=2)
+            fig.update_yaxes(type="log", row=1, col=2)
+
+    # -----------------------------
+    # Layout & export
+    # -----------------------------
+    fig.update_layout(
+        height=420,
+        width=1000 if show_qq else 600,
+        title_text=f"{model_name}: True vs Predicted Distance",
+        template="simple_white",
+        margin=dict(t=80, l=60, r=40, b=60),
+
+        # transparent background
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=1.02,
+            xanchor="left",
+            x=0,
+        ),
+    )
+
+    out_path = Path(out_dir) / filename
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    fig.write_html(
+        str(out_path),
+        include_plotlyjs="cdn",
+        full_html=True,
+        config={"responsive": True, "displayModeBar": False},
+        default_width="100%",
+        default_height="100%",
+    )
+
+    fig.show()
+    return fig
+
+def plot_bivariate_resid_distance_spatial_interactive(
+    cells_df: pd.DataFrame,
+    y_true: pd.Series,
+    y_pred: np.ndarray,
+    *,
+    model_name: str = "model",
+    dist_col: str = "nearest_plaque_center_dist",
+    x_col: str = "x_centroid",
+    y_col: str = "y_centroid",
+    n_bins: int = 3,
+    point_size: float = 3.0,
+    point_alpha: float = 0.90,
+    legend_show_counts: bool = True,
+    legend_count_fmt: str = "{:,}",
+    legend_count_fontsize: int = 11,   # plotly font sizes differ from mpl
+    legend_count_min: int | None = None,
+    palette_dist_lo: float = 0.25,
+    palette_dist_hi: float = 0.95,
+    # --- plaque overlay ---
+    plaque_x_col: str = "plaque_x",
+    plaque_y_col: str = "plaque_y",
+    show_plaques: bool = True,
+    plaque_marker: str = "*",          # kept for API compatibility (mapped to Plotly star)
+    plaque_color: str = "red",
+    plaque_edgecolor: str = "red",
+    plaque_size: float = 8,
+    plaque_alpha: float = 0.95,
+    plaque_linewidth: float = 0.8,
+    plaque_zorder: float = 5,
+    plaque_round_decimals: int | None = None,
+    plaque_label: str = "Plaque",
+    show_marker_legend: bool = True,
+    marker_legend_loc: str = "lower right",  # mapped to plotly position
+    marker_legend_fontsize: int = 12,
+    marker_legend_framealpha: float = 0.90,
+    # output
+    title: str = "Residual vs distance bivariate map",
+    out_dir: str = "frontend/public/plots",
+    filename: str = "residuals_vs_distance.html",
+) -> go.Figure:
+    """
+    Interactive version of the original matplotlib figure:
+      - Left panel: 3×3 bivariate legend (residual bins × distance bins), with optional counts
+      - Right panel: spatial scatter colored by bivariate bin, plus optional plaque centroids
+    Saves to frontend/public/plots/residuals_vs_distance.html and returns a go.Figure.
+    """
+
+    if n_bins != 3:
+        raise ValueError("This implementation expects n_bins=3 to map residual bins to neg/mid/pos.")
+
+    df = cells_df.copy()
+
+    # robust alignment: assume row-wise y_true corresponds to cells_df
+    resid = np.asarray(y_true, dtype=float) - np.asarray(y_pred, dtype=float)
+    df["_resid_"] = resid
+    df["_dist_"] = pd.to_numeric(df[dist_col], errors="coerce")
+    df["_x_"] = pd.to_numeric(df[x_col], errors="coerce")
+    df["_y_"] = pd.to_numeric(df[y_col], errors="coerce")
+
+    # drop non-finite (cells)
+    mask = (
+        np.isfinite(df["_resid_"].to_numpy())
+        & np.isfinite(df["_dist_"].to_numpy())
+        & np.isfinite(df["_x_"].to_numpy())
+        & np.isfinite(df["_y_"].to_numpy())
+    )
+    df = df.loc[mask].copy()
+
+    # bin residuals and distances (qcut)
+    df["_resid_bin_"] = pd.qcut(df["_resid_"], q=n_bins, duplicates="drop")
+    df["_dist_bin_"] = pd.qcut(df["_dist_"], q=n_bins, duplicates="drop")
+
+    if df["_resid_bin_"].cat.categories.size != 3 or df["_dist_bin_"].cat.categories.size != 3:
+        raise ValueError(
+            "qcut produced fewer than 3 bins (ties). Consider adding small jitter "
+            "or switching to pd.cut with fixed edges."
+        )
+
+    resid_cats = df["_resid_bin_"].cat.categories  # low->high
+    dist_cats = df["_dist_bin_"].cat.categories    # near->far (low->high)
+
+    df["_resid_idx_"] = df["_resid_bin_"].cat.codes  # 0,1,2
+    df["_dist_idx_"] = df["_dist_bin_"].cat.codes    # 0,1,2
+
+    # --- palette helpers (self-contained) ---
+    def _hex(rgb: tuple[float, float, float]) -> str:
+        r, g, b = (int(round(255 * v)) for v in rgb)
+        return f"#{r:02x}{g:02x}{b:02x}"
+
+    def _relative_luminance(rgb: tuple[float, float, float]) -> float:
+        r, g, b = rgb
+        # sRGB relative luminance
+        return 0.2126 * r + 0.7152 * g + 0.0722 * b
+
+    def _bivariate_palette_rowwise(*, n_resid: int, n_dist: int, dist_lo: float, dist_hi: float) -> np.ndarray:
+        """
+        Returns array shape (n_resid, n_dist, 3) in [0,1].
+        Residual controls base hue row-wise, distance controls brightness col-wise.
+        """
+        # Base colors for residual bins (low/mid/high)
+        base = np.array(
+            [
+                [0.25, 0.55, 0.85],  # bluish
+                [0.55, 0.75, 0.55],  # greenish
+                [0.90, 0.45, 0.45],  # reddish
+            ],
+            dtype=float,
+        )
+        base = base[:n_resid]
+
+        # distance brightness factors from dist_lo..dist_hi
+        if n_dist == 1:
+            factors = np.array([dist_hi])
+        else:
+            factors = np.linspace(dist_lo, dist_hi, n_dist)
+
+        out = np.zeros((n_resid, n_dist, 3), dtype=float)
+        for r in range(n_resid):
+            for d in range(n_dist):
+                # blend towards white depending on distance factor
+                f = factors[d]
+                out[r, d] = base[r] * (0.35 + 0.65 * f) + (1.0 - (0.35 + 0.65 * f)) * np.array([1, 1, 1])
+                out[r, d] = np.clip(out[r, d], 0, 1)
+        return out
+
+    colors = _bivariate_palette_rowwise(
+        n_resid=3,
+        n_dist=3,
+        dist_lo=palette_dist_lo,
+        dist_hi=palette_dist_hi,
+    )
+
+    # counts for legend squares
+    counts = (
+        df.groupby(["_resid_idx_", "_dist_idx_"], observed=True)
+        .size()
+        .reindex(pd.MultiIndex.from_product([range(3), range(3)]), fill_value=0)
+        .to_numpy()
+        .reshape(3, 3)
+    )
+
+    # ---- build figure: 2 columns (legend heatmap | spatial) ----
+    fig = make_subplots(
+        rows=1,
+        cols=2,
+        column_widths=[0.33, 0.67],
+        horizontal_spacing=0.06,
+        subplot_titles=("Bivariate legend (Residual × Distance)", title),
+    )
+
+    # LEFT: legend heatmap (3x3). y inverted so row 0 at top => show high residual on top like mpl (2-r)
+    # We'll construct z as just indices; color comes from a custom colorscale made of 9 discrete colors.
+    z = np.arange(9).reshape(3, 3)  # dummy
+
+    # Discrete colorscale for the 9 cells
+    flat_colors = [colors[r, d] for r in range(3) for d in range(3)]
+    flat_hex = [_hex(tuple(c)) for c in flat_colors]
+
+    # Map each integer 0..8 to its own color
+    # Plotly colorscale expects pairs in [0,1]
+    cs = []
+    for i, h in enumerate(flat_hex):
+        t0 = i / 8 if 8 else 0
+        cs.append([t0, h])
+        cs.append([t0 + 1e-9, h])
+    cs[-1][0] = 1.0  # ensure last stops at 1
+
+    # Put the colors in the same r,d order as z:
+    # z[0,0]=0 -> colors[0,0], z[0,1]=1 -> colors[0,1], ...
+    heat = go.Heatmap(
+        z=z,
+        colorscale=cs,
+        showscale=False,
+        hoverinfo="skip",
+    )
+    fig.add_trace(heat, row=1, col=1)
+
+    # Axis ticks/labels for the legend panel
+    dist_labels = [f"{dist_cats[j].left:.0f}-{dist_cats[j].right:.0f} µm" for j in range(3)]
+    resid_labels = [str(c) for c in resid_cats]  # Interval string
+    # show high residual at top => reverse labels on y
+    resid_labels_topdown = resid_labels[::-1]
+
+    fig.update_xaxes(
+        row=1, col=1,
+        tickmode="array",
+        tickvals=[0, 1, 2],
+        ticktext=dist_labels,
+        tickangle=45,
+        title_text="Distance bin",
+        showgrid=False,
+        zeroline=False,
+    )
+    fig.update_yaxes(
+        row=1, col=1,
+        tickmode="array",
+        tickvals=[0, 1, 2],
+        ticktext=resid_labels_topdown,
+        title_text="Residual bin",
+        showgrid=False,
+        zeroline=False,
+        autorange="reversed",  # so 0 is at top visually, matching labels
+    )
+
+    # Add count annotations in legend squares (optional)
+    if legend_show_counts:
+        annotations = []
+        for r in range(3):
+            for d in range(3):
+                n = int(counts[r, d])
+                if (legend_count_min is not None) and (n < legend_count_min):
+                    continue
+                rgb = tuple(colors[r, d])
+                txt_color = "black" if _relative_luminance(rgb) > 0.55 else "white"
+                # heatmap cell centers are at integer coords (0..2)
+                # but y is reversed; to place text aligned with visible cell,
+                # use y=2-r (top row is r=0 => y=2)
+                annotations.append(
+                    dict(
+                        x=d,
+                        y=2 - r,
+                        xref="x1",
+                        yref="y1",
+                        text=legend_count_fmt.format(n),
+                        showarrow=False,
+                        font=dict(size=legend_count_fontsize, color=txt_color),
+                    )
+                )
+        fig.update_layout(annotations=list(fig.layout.annotations) + annotations)
+
+    # RIGHT: spatial scatter colored by bivariate bin (9 discrete colors)
+    ridx = df["_resid_idx_"].to_numpy()
+    didx = df["_dist_idx_"].to_numpy()
+    color_idx = (ridx * 3 + didx).astype(int)
+    marker_colors = [flat_hex[i] for i in color_idx]
+
+    fig.add_trace(
+        go.Scattergl(
+            x=df["_x_"],
+            y=df["_y_"],
+            mode="markers",
+            marker=dict(size=point_size, color=marker_colors, opacity=point_alpha),
+            name="Cells",
+            showlegend=False,
+            customdata=np.c_[df["_resid_"], df["_dist_"]],
+            hovertemplate=(
+                "x: %{x:.1f} µm<br>"
+                "y: %{y:.1f} µm<br>"
+                "Residual: %{customdata[0]:.2f}<br>"
+                "Nearest-plaque dist: %{customdata[1]:.1f} µm<extra></extra>"
+            ),
+        ),
+        row=1,
+        col=2,
+    )
+
+    # plaques (unique coords)
+    if show_plaques and (plaque_x_col in cells_df.columns) and (plaque_y_col in cells_df.columns):
+        plaques = cells_df[[plaque_x_col, plaque_y_col]].copy()
+        plaques["_px_"] = pd.to_numeric(plaques[plaque_x_col], errors="coerce")
+        plaques["_py_"] = pd.to_numeric(plaques[plaque_y_col], errors="coerce")
+        plaques = plaques.loc[
+            np.isfinite(plaques["_px_"].to_numpy()) & np.isfinite(plaques["_py_"].to_numpy())
+        ]
+
+        if plaque_round_decimals is not None:
+            plaques["_px_"] = plaques["_px_"].round(plaque_round_decimals)
+            plaques["_py_"] = plaques["_py_"].round(plaque_round_decimals)
+
+        plaques = plaques.drop_duplicates(subset=["_px_", "_py_"])
+
+        fig.add_trace(
+            go.Scatter(
+                x=plaques["_px_"],
+                y=plaques["_py_"],
+                mode="markers",
+                marker=dict(
+                    symbol="star",
+                    size=plaque_size,
+                    color=plaque_color,
+                    opacity=plaque_alpha,
+                    line=dict(color=plaque_edgecolor, width=plaque_linewidth),
+                ),
+                name=plaque_label,
+                showlegend=bool(show_marker_legend),
+                hoverinfo="skip",
+            ),
+            row=1,
+            col=2,
+        )
+
+    # axes formatting: equal aspect + invert y like matplotlib
+    fig.update_xaxes(row=1, col=2, title_text="X (µm)", showgrid=False, zeroline=False)
+    fig.update_yaxes(
+        row=1, col=2,
+        title_text="Y (µm)",
+        showgrid=False,
+        zeroline=False,
+        autorange="reversed",
+        scaleanchor="x2",
+        scaleratio=1,
+    )
+
+    # marker legend (compact): Plotly cannot replicate mpl HandlerTuple exactly,
+    # but we keep plaque entry (and keep cells hidden since they are 9 colors already shown in heatmap)
+    fig.update_layout(
+        title=f"{model_name}: Residual bin × distance bin (bivariate) — spatial map",
+        autosize=True,
+        template="simple_white",
+        margin=dict(l=60, r=30, t=90, b=60),
+
+        # transparent background
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=1.02,
+            xanchor="left",
+            x=0,
+            font=dict(size=marker_legend_fontsize),
+            bgcolor=f"rgba(255,255,255,{marker_legend_framealpha})",
+        ),
+    )
+
+    # write HTML
+    out_path = Path(out_dir) / filename
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    fig.write_html(
+        str(out_path),
+        include_plotlyjs="cdn",
+        full_html=True,
+        config={"responsive": True, "displayModeBar": False, "scrollZoom": True},
+        default_width="100%",
+        default_height="100%",
+    )
+
+    return fig
+
+def plot_top_gene_importances_interactive(
+    importance_df: pd.DataFrame,
+    top_n: int = 20,
+    *,
+    title: str = "Top predictive genes across models (normalized importance)",
+    filename: str = "top_gene_importance.html",
+    out_dir: str = "frontend/public/plots",
+) -> go.Figure:
+    """Interactive heatmap of top predictive genes across models (Plotly)."""
+
+    # Normalize importance per model
+    normed = importance_df.groupby("model", group_keys=False).apply(
+        lambda d: d.assign(norm_importance=d["importance"] / d["importance"].max())
+    )
+
+    # Take top_n per model
+    top_genes = normed.groupby("model", group_keys=False).apply(
+        lambda d: d.nlargest(top_n, "norm_importance")
+    )
+
+    # Pivot for heatmap
+    pivot = top_genes.pivot_table(
+        index="gene", columns="model", values="norm_importance", fill_value=0
+    )
+
+    # Order genes by average importance
+    pivot = pivot.loc[pivot.mean(axis=1).sort_values(ascending=False).index]
+
+    fig = go.Figure(
+        data=go.Heatmap(
+            z=pivot.to_numpy(dtype=float),
+            x=pivot.columns.astype(str),
+            y=pivot.index.astype(str),
+            colorscale="Mako",
+            colorbar=dict(title="Normalized Importance"),
+            hovertemplate="Gene: %{y}<br>Model: %{x}<br>Norm importance: %{z:.3f}<extra></extra>",
+        )
+    )
+
+    fig.update_layout(
+        title=title,
+        autosize=True,
+        template="simple_white",
+        margin=dict(l=140, r=30, t=70, b=60),
+        paper_bgcolor="rgba(0,0,0,0)",  # transparent background
+        plot_bgcolor="rgba(0,0,0,0)",   # transparent plot area
+    )
+
+    out_path = Path(out_dir) / filename
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    fig.write_html(
+        str(out_path),
+        include_plotlyjs="cdn",
+        full_html=True,
+        config={"responsive": True, "displayModeBar": False},
+        default_width="100%",
+        default_height="100%",
+    )
+
+    fig.show()
+    return fig
+
+def make_plaques_detected_plotly(
+    *,
+    df: pd.DataFrame,
+    brain_geom: Polygon | None = None,
+    sample_hulls: int = 20,
+    seed: int = 42,
+    rotate_180: bool = True,
+    rotation_origin: tuple[float, float] | str = "auto",
+    title: str | None = None,
+    figsize_px: tuple[int, int] = (820, 820),
+    filename: str = "plaques_detected.html",
+    out_dir: str = "frontend/public/plots",
+) -> go.Figure:
+    """
+    Interactive Plotly visualization of detected Aβ plaques.
+
+    Color encoding
+    --------------
+    - Blue   : Brain ROI
+    - Green  : Convex plaques
+    - Red    : Non-convex plaques
+    - Orange : Sampled convex hulls
+
+    All geometries are optionally rotated by 180° for orientation consistency.
+    """
+
+    # ------------------ sanity checks ------------------
+    if "geometry" not in df.columns:
+        raise ValueError("df must contain a 'geometry' column with shapely objects.")
+    if "is_convex" not in df.columns:
+        raise ValueError("df must contain an 'is_convex' boolean column.")
+
+    P = df.copy()
+
+    if "plaque_id" not in P.columns:
+        P["plaque_id"] = np.arange(1, len(P) + 1, dtype=int)
+    if "area" not in P.columns:
+        P["area"] = P["geometry"].map(lambda g: getattr(g, "area", np.nan))
+
+    # ------------------ helpers ------------------
+    def iter_polygons(g):
+        if isinstance(g, Polygon):
+            yield g
+        elif isinstance(g, MultiPolygon):
+            for sub in g.geoms:
+                if isinstance(sub, Polygon):
+                    yield sub
+
+    def compute_auto_origin():
+        bounds = []
+        for g in P["geometry"]:
+            if g is not None and hasattr(g, "bounds"):
+                bounds.append(g.bounds)
+        if brain_geom is not None:
+            bounds.append(brain_geom.bounds)
+
+        arr = np.array(bounds, dtype=float)
+        minx, miny = arr[:, 0].min(), arr[:, 1].min()
+        maxx, maxy = arr[:, 2].max(), arr[:, 3].max()
+        return (minx + maxx) / 2, (miny + maxy) / 2
+
+    if rotation_origin == "auto":
+        origin = compute_auto_origin()
+    else:
+        origin = rotation_origin
+
+    def rot(g):
+        if rotate_180 and g is not None:
+            return shp_rotate(g, 180.0, origin=origin, use_radians=False)
+        return g
+
+    fig = go.Figure()
+
+    # ------------------ brain ROI ------------------
+    if brain_geom is not None and brain_geom.is_valid:
+        g = rot(brain_geom)
+        x, y = map(list, g.exterior.xy)   # IMPORTANT FIX
+        fig.add_trace(
+            go.Scatter(
+                x=x,
+                y=y,
+                mode="lines",
+                name="Brain ROI",
+                line=dict(color="blue", width=1.4),
+                hoverinfo="skip",
+            )
+        )
+
+    # ------------------ plaques ------------------
+    for row in P.itertuples(index=False):
+        g = getattr(row, "geometry", None)
+        is_convex = bool(getattr(row, "is_convex", False))
+        pid = getattr(row, "plaque_id", None)
+        area = getattr(row, "area", np.nan)
+
+        if g is None:
+            continue
+
+        g = rot(g)
+
+        for poly in iter_polygons(g):
+            if poly.is_empty or not poly.is_valid:
+                continue
+
+            x, y = map(list, poly.exterior.xy)   # IMPORTANT FIX
+
+            fig.add_trace(
+                go.Scatter(
+                    x=x,
+                    y=y,
+                    mode="lines",
+                    line=dict(
+                        color="green" if is_convex else "red",
+                        width=0.9,
+                        dash="solid" if is_convex else "dash",
+                    ),
+                    hovertemplate=(
+                        f"Plaque {pid}<br>"
+                        f"Area: {area:,.0f} µm²<extra></extra>"
+                    ),
+                    showlegend=False,
+                )
+            )
+
+    # ------------------ convex hull overlays ------------------
+    rng = np.random.default_rng(seed)
+    n = min(len(P), int(sample_hulls))
+    if n > 0:
+        sample = P.sample(n=n, random_state=seed)
+        for row in sample.itertuples(index=False):
+            g = getattr(row, "geometry", None)
+            if g is None:
+                continue
+
+            hull = rot(g.convex_hull)
+            x, y = map(list, hull.exterior.xy)   # IMPORTANT FIX
+
+            fig.add_trace(
+                go.Scatter(
+                    x=x,
+                    y=y,
+                    mode="lines",
+                    line=dict(color="orange", width=1.2, dash="dot"),
+                    hoverinfo="skip",
+                    showlegend=False,
+                )
+            )
+
+    # ------------------ layout ------------------
+    fig.update_layout(
+        title=title or "Detected Aβ plaques after normalization",
+        #width=figsize_px[0],
+        #height=figsize_px[1],
+        autosize=True,
+        template="simple_white",
+        margin=dict(l=40, r=40, t=60, b=40),
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=1.02,
+            xanchor="right",
+            x=1,
+        ),
+    )
+
+    fig.update_xaxes(
+        title="X coordinate (µm)",
+        showgrid=False,
+        zeroline=False,
+        scaleanchor="y",
+        scaleratio=1,
+    )
+    fig.update_yaxes(
+        title="Y coordinate (µm)",
+        showgrid=False,
+        zeroline=False,
+    )
+
+    # ------------------ save ------------------
+    out_path = Path(out_dir) / filename
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    fig.write_html(out_path, include_plotlyjs="cdn")
+
+    return fig
+
+def make_cell_to_plaque_distance_map_plotly(
+    *,
+    cells_df: pd.DataFrame,
+    plaques_gdf: pd.DataFrame | None = None,
+    x_col: str = "x_centroid",
+    y_col: str = "y_centroid",
+    dist_col: str = "distance_to_plaque",
+    clip_quantiles: tuple[float, float] = (0.01, 0.99),
+    vmin: float | None = None,
+    vmax: float | None = None,
+    max_points: int | None = None,
+    point_size: float = 4,
+    point_alpha: float = 0.85,
+    plaque_edgecolor: str = "cyan",
+    plaque_linewidth: float = 1.2,
+    invert_y: bool = False,
+    title: str = "Cell–plaque distance map (µm)",
+    figsize_px: tuple[int, int] = (820, 700),
+    filename: str = "cell_to_plaque_distance_map.html",
+    out_dir: str = "frontend/public/plots",
+) -> go.Figure:
+    """
+    Interactive spatial map of distance from each cell to nearest plaque.
+    """
+
+    # ------------------ cells ------------------
+    C = cells_df.copy()
+
+    if max_points is not None and len(C) > max_points:
+        C = C.sample(n=max_points, random_state=0)
+
+    dvals = C[dist_col].astype(float)
+
+    lo = np.quantile(dvals, clip_quantiles[0]) if vmin is None else vmin
+    hi = np.quantile(dvals, clip_quantiles[1]) if vmax is None else vmax
+
+    # ------------------ main scatter ------------------
+    fig = go.Figure()
+
+    fig.add_trace(
+        go.Scatter(
+            x=C[x_col],
+            y=C[y_col],
+            mode="markers",
+            marker=dict(
+                size=point_size,
+                color=C[dist_col],
+                colorscale="Plasma",
+                cmin=lo,
+                cmax=hi,
+                opacity=point_alpha,
+                colorbar=dict(
+                    title="Distance to plaque (µm)",
+                    ticks="outside",
+                ),
+            ),
+            hovertemplate=(
+                "Cell<br>"
+                f"Distance: %{{marker.color:.1f}} µm<extra></extra>"
+            ),
+            #name="Cells",
+        )
+    )
+
+    # ------------------ plaque overlays ------------------
+    def iter_polygons(g):
+        if isinstance(g, Polygon):
+            yield g
+        elif isinstance(g, MultiPolygon):
+            for sub in g.geoms:
+                if isinstance(sub, Polygon):
+                    yield sub
+
+    if plaques_gdf is not None and len(plaques_gdf):
+        for row in plaques_gdf.itertuples(index=False):
+            geom = getattr(row, "geometry", None)
+            if geom is None:
+                continue
+
+            for poly in iter_polygons(geom):
+                if poly.is_empty or not poly.is_valid:
+                    continue
+
+                x, y = map(list, poly.exterior.xy)
+
+                fig.add_trace(
+                    go.Scatter(
+                        x=x,
+                        y=y,
+                        mode="lines",
+                        line=dict(
+                            color=plaque_edgecolor,
+                            width=plaque_linewidth,
+                        ),
+                        hoverinfo="skip",
+                        showlegend=False,
+                    )
+                )
+
+    # ------------------ layout ------------------
+    fig.update_layout(
+        title=title,
+        width=figsize_px[0],
+        height=figsize_px[1],
+        template="simple_white",
+        margin=dict(l=60, r=40, t=60, b=50),
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+    )
+
+    fig.update_xaxes(
+        title="X (µm)",
+        showgrid=False,
+        zeroline=False,
+        scaleanchor="y",
+        scaleratio=1,
+    )
+
+    fig.update_yaxes(
+        title="Y (µm)",
+        showgrid=False,
+        zeroline=False,
+        autorange="reversed" if invert_y else True,
+    )
+
+    # ------------------ save ------------------
+    out_path = Path(out_dir) / filename
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    fig.write_html(out_path, include_plotlyjs="cdn")
+
+    return fig
+
+def _infer_grid_shape(key_to_pos: dict[str, tuple[int, int]]) -> tuple[int, int]:
+    rs = [r for r, _ in key_to_pos.values()]
+    cs = [c for _, c in key_to_pos.values()]
+    return (max(rs) + 1, max(cs) + 1)
+
+
+def _load_png_rgb(path: Path) -> np.ndarray:
+    img = Image.open(path).convert("RGB")
+    return np.array(img)
+
+
+def _pad_to_max(img: np.ndarray, *, target_h: int, target_w: int) -> np.ndarray:
+    h, w = img.shape[:2]
+    if h == target_h and w == target_w:
+        return img
+    out = np.zeros((target_h, target_w, 3), dtype=img.dtype)
+    # top-left pad (matches typical "imshow" alignment)
+    out[:h, :w, :] = img
+    return out
+
+
+def make_image_grid_interactive(
+    *,
+    files: dict[str, Path],
+    key_to_pos: dict[str, tuple[int, int]],
+    col_ticks: Iterable[str],
+    row_ticks: Iterable[str],
+    flip_h_keys: Iterable[str] = (),
+    # output
+    title: str | None = None,
+    filename: str = "image_grid.html",
+    out_dir: str = "frontend/public/plots",
+) -> go.Figure:
+    """
+    Interactive image grid (Plotly) with unified row/col labels.
+
+    Notes
+    -----
+    - Each image is horizontally flipped if its key is in flip_h_keys.
+    - Each image is vertically cropped to remove the bottom 10% strip.
+    - Images are padded to a common (max_h, max_w) before plotting.
+    - Transparent background, responsive HTML export.
+    """
+    flip_h_keys = set(flip_h_keys)
+
+    # 1) Load images + crop bottom 10%
+    imgs: dict[str, np.ndarray] = {}
+    shapes: list[tuple[int, int]] = []
+
+    for key, path in files.items():
+        img = _load_png_rgb(Path(path))
+        if key in flip_h_keys:
+            img = np.fliplr(img)
+
+        h = img.shape[0]
+        keep_h = max(1, int(round(h * 0.9)))  # keep top 90%
+        img = img[:keep_h, ...]
+
+        imgs[key] = img
+        shapes.append(img.shape[:2])
+
+    if not shapes:
+        raise ValueError("No images loaded. `files` is empty?")
+
+    # 2) Target size
+    max_h = max(h for h, _ in shapes)
+    max_w = max(w for _, w in shapes)
+
+    # 3) Grid shape
+    n_rows, n_cols = _infer_grid_shape(key_to_pos)
+
+    # 4) Create subplot grid
+    fig = make_subplots(
+        rows=n_rows,
+        cols=n_cols,
+        horizontal_spacing=0.02,
+        vertical_spacing=0.02,
+    )
+
+    # 5) Add images
+    for key, (r0, c0) in key_to_pos.items():
+        if key not in imgs:
+            continue
+        img = _pad_to_max(imgs[key], target_h=max_h, target_w=max_w)
+
+        # Plotly rows/cols are 1-indexed
+        r = r0 + 1
+        c = c0 + 1
+
+        fig.add_trace(go.Image(z=img), row=r, col=c)
+
+        # Hide per-panel axes and lock aspect like imshow(aspect="equal")
+        fig.update_xaxes(visible=False, row=r, col=c)
+        fig.update_yaxes(visible=False, row=r, col=c, scaleanchor=f"x{(r-1)*n_cols + c}", scaleratio=1)
+
+    # 6) Unified row/col labels (annotations)
+    col_ticks = list(col_ticks)
+    row_ticks = list(row_ticks)
+
+    # Column labels (top, centered over each column)
+    for j in range(n_cols):
+        x_center = (j + 0.5) / n_cols
+        fig.add_annotation(
+            x=x_center,
+            y=1.02,
+            xref="paper",
+            yref="paper",
+            text=str(col_ticks[j]) if j < len(col_ticks) else "",
+            showarrow=False,
+            font=dict(size=12),
+        )
+
+    # Row labels (left, centered on each row) — note Plotly y=0 is bottom in paper coords
+    for i in range(n_rows):
+        y_center = 1 - (i + 0.5) / n_rows
+        fig.add_annotation(
+            x=-0.02,
+            y=y_center,
+            xref="paper",
+            yref="paper",
+            text=str(row_ticks[i]) if i < len(row_ticks) else "",
+            showarrow=False,
+            xanchor="right",
+            font=dict(size=12),
+        )
+
+    # Axis titles (like your big_ax labels)
+    fig.add_annotation(
+        x=0.5,
+        y=-0.06,
+        xref="paper",
+        yref="paper",
+        text="Age (months)",
+        showarrow=False,
+        font=dict(size=13),
+    )
+    fig.add_annotation(
+        x=-0.09,
+        y=0.5,
+        xref="paper",
+        yref="paper",
+        text="Type",
+        showarrow=False,
+        textangle=-90,
+        font=dict(size=13),
+    )
+
+    # 7) Layout: transparent background + tidy margins
+    fig.update_layout(
+        title=title,
+        autosize=True,
+        margin=dict(l=90, r=20, t=80 if title else 55, b=80),
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+    )
+
+    # 8) Save HTML
+    out_path = Path(out_dir) / filename
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    fig.write_html(
+        str(out_path),
+        include_plotlyjs="cdn",
+        full_html=True,
+        config={"responsive": True, "displayModeBar": False, "scrollZoom": True},
+        default_width="100%",
+        default_height="100%",
+    )
+
+    return fig
+
+def plot_leiden_logit_slopes_interactive(
+    logit_df: pd.DataFrame,
+    my_label_to_type: Mapping[int, str],
+    *,
+    pval_col: str = "adj_pval",
+    slope_col: str = "slope",
+    cluster_col: str = "cluster",
+    pval_threshold: float = 0.01,
+    blue: str = "#4C78A8",
+    red: str = "#E45756",
+    gap: int = 1,
+    fig_width_min: float = 900,
+    fig_width_per_bar: float = 35,
+    fig_height: float = 600,
+    ypad_scale: float = 0.001,
+    rotation: int = 90,
+    title: str | None = None,
+    out_dir: str = "frontend/public/plots",
+    filename: str = "slopes_types.html",
+) -> tuple[go.Figure, pd.DataFrame]:
+    """
+    Interactive split bar plot of significant Leiden logistic slopes.
+    Returns (fig, sig_df).
+    """
+
+    required = {pval_col, slope_col, cluster_col}
+    missing = required - set(logit_df.columns)
+    if missing:
+        raise KeyError(f"logit_df is missing required columns: {sorted(missing)}")
+
+    # 1) sort + filter significant
+    df = logit_df.sort_values(pval_col, ascending=True).reset_index(drop=True)
+    sig = df.loc[df[pval_col] < pval_threshold].copy()
+
+    # map cluster → cell type
+    def _map_cluster(x: Any) -> str:
+        try:
+            return my_label_to_type[int(x)]
+        except Exception:
+            return str(x)
+
+    sig["cell_type"] = sig[cluster_col].apply(_map_cluster)
+
+    # split
+    neg = sig.loc[sig[slope_col] < 0].sort_values(slope_col, ascending=True)
+    pos = sig.loc[sig[slope_col] > 0].sort_values(slope_col, ascending=True)
+
+    nL, nR = len(neg), len(pos)
+    xL = np.arange(nL)
+    xR = np.arange(nR) + nL + gap
+
+    fig_width = max(fig_width_min, fig_width_per_bar * (nL + nR + gap))
+
+    fig = go.Figure()
+
+    # --- bars ---
+    fig.add_bar(
+        x=xL,
+        y=neg[slope_col],
+        marker_color=blue,
+        name="Negative slope",
+        hovertemplate="Cell type: %{customdata}<br>Slope: %{y:.4f}<extra></extra>",
+        customdata=neg["cell_type"],
+    )
+
+    fig.add_bar(
+        x=xR,
+        y=pos[slope_col],
+        marker_color=red,
+        name="Positive slope",
+        hovertemplate="Cell type: %{customdata}<br>Slope: %{y:.4f}<extra></extra>",
+        customdata=pos["cell_type"],
+    )
+
+    # zero reference line
+    fig.add_hline(y=0, line_width=1, line_color="black")
+
+    # --- annotations ---
+    max_abs = float(sig[slope_col].abs().max()) if len(sig) else 1.0
+    ypad = ypad_scale * max_abs if max_abs > 0 else 0.1
+
+    annotations = []
+
+    # negative labels (bottom)
+    for x, y, txt in zip(xL, neg[slope_col], neg["cell_type"], strict=False):
+        annotations.append(
+            dict(
+                x=x,
+                y=y - ypad,
+                text=str(txt),
+                showarrow=False,
+                textangle=rotation,
+                xanchor="center",
+                yanchor="top",
+                font=dict(size=11),
+            )
+        )
+
+    # positive labels (top)
+    for x, y, txt in zip(xR, pos[slope_col], pos["cell_type"], strict=False):
+        annotations.append(
+            dict(
+                x=x,
+                y=y + ypad,
+                text=str(txt),
+                showarrow=False,
+                textangle=rotation,
+                xanchor="center",
+                yanchor="bottom",
+                font=dict(size=11),
+            )
+        )
+
+    fig.update_layout(
+        title=title,
+        annotations=annotations,
+        xaxis=dict(showticklabels=False),
+        yaxis=dict(title=slope_col),
+        autosize=False,
+        width=fig_width,
+        height=fig_height,
+        margin=dict(l=80, r=30, t=80 if title else 50, b=40),
+
+        # transparent background
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=1.02,
+            xanchor="left",
+            x=0,
+        ),
+    )
+
+    # save
+    out_path = Path(out_dir) / filename
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    fig.write_html(
+        str(out_path),
+        include_plotlyjs="cdn",
+        full_html=True,
+        config={"responsive": True, "displayModeBar": False},
+        default_width="100%",
+        default_height="100%",
+    )
+
+    return fig, sig
+
+def make_cluster_frequency_distance_to_plaque_plotly(
+    freq_df: pd.DataFrame,
+    *,
+    expanded_types: Mapping | None = None,
+    cluster_col: str = "cluster_leiden",
+    x_col: str = "bin_mid",
+    y_col: str = "pct",
+    title: str = "Cluster frequency (%) vs. distance to nearest plaque",
+    filename: str = "cluster_frequency_distance_to_plaque.html",
+    out_dir: str = "frontend/public/plots",
+) -> "px.Figure":
+    """
+    Interactive version of the seaborn lineplot:
+      x = distance bin midpoint
+      y = % of cells in each bin
+      hue = cluster name (expanded_types mapping if provided)
+
+    Expects freq_df to already contain columns: [cluster_col, x_col, y_col].
+    """
+
+    dfp = freq_df.copy()
+
+    # Use expanded cluster names for legend (like the original code intends)
+    if expanded_types is not None:
+        dfp["cluster_name"] = dfp[cluster_col].map(expanded_types)
+        # If some clusters missing in mapping, fallback to original label
+        dfp["cluster_name"] = dfp["cluster_name"].astype(object)
+        miss = dfp["cluster_name"].isna()
+        if miss.any():
+            dfp.loc[miss, "cluster_name"] = dfp.loc[miss, cluster_col].astype(str)
+    else:
+        dfp["cluster_name"] = dfp[cluster_col].astype(str)
+
+    # Clean numeric x/y
+    dfp[x_col] = pd.to_numeric(dfp[x_col], errors="coerce")
+    dfp[y_col] = pd.to_numeric(dfp[y_col], errors="coerce")
+    dfp = dfp.dropna(subset=[x_col, y_col, "cluster_name"])
+
+    # Sort so lines connect in the right order
+    dfp = dfp.sort_values([ "cluster_name", x_col ])
+
+    fig = px.line(
+        dfp,
+        x=x_col,
+        y=y_col,
+        color="cluster_name",
+        markers=True,
+        title=title,
+        labels={
+            x_col: "Distance to plaque",
+            y_col: "% of cells in each bin",
+            "cluster_name": "Cluster",
+        },
+    )
+
+    fig.update_traces(opacity=0.7)
+
+    fig.update_layout(
+        autosize=True,
+        template="simple_white",
+        margin=dict(l=70, r=30, t=80, b=60),
+
+        # transparent background
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+
+        legend_title_text="Cluster",
+        legend=dict(
+            yanchor="top",
+            y=1.0,
+            xanchor="left",
+            x=1.02,   # to the right (like bbox_to_anchor)
+        ),
+    )
+
+    out_path = Path(out_dir) / filename
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    fig.write_html(
+        str(out_path),
+        include_plotlyjs="cdn",
+        full_html=True,
+        config={"responsive": True, "displayModeBar": False, "scrollZoom": True},
+        default_width="100%",
+        default_height="100%",
+    )
+
+    return fig

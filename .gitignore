@@ -192,3 +192,6 @@ src/data/Xenium_V1_FFPE_wildtype_5_7_months_outs/
 src/data/xenium_annotations/
 src/data/common_clustering.pkl
 src/data/clustering.pkl
+results_.ipynb
+results__.ipynb
+

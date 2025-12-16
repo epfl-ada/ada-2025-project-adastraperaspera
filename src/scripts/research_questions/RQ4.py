@@ -47,7 +47,6 @@ class GeneModelingOutput:
     spearman_corr: pd.DataFrame
     delta_expression: pd.Series
 
-
 def run_gene_distance_modeling(
     cells_with_distances: pd.DataFrame,
     gene_cols: Sequence[str],
@@ -63,6 +62,7 @@ def run_gene_distance_modeling(
     plot_model_performance: Callable[[pd.DataFrame], None] | None = None,
     plot_model_performance_interactive: (Callable[[pd.DataFrame], None] | None) = None,
     plot_top_gene_importances: Callable[[pd.DataFrame, int], None] | None = None,
+    plot_top_gene_importances_interactive: Callable[[pd.DataFrame, int], None] | None = None,
     plot_spatial_overlay: Callable[[pd.DataFrame, str], None] | None = None,
     plot_multi_gene_signature: (Callable[[pd.DataFrame, Sequence[str]], None] | None) = None,
     plot_pred_vs_true: Callable[[pd.Series, np.ndarray, str], None] | None = None,
@@ -76,11 +76,17 @@ def run_gene_distance_modeling(
     plot_bivariate_resid_dist_spatial: (
         Callable[[pd.DataFrame, pd.Series, np.ndarray, str], None] | None
     ) = None,
+    plot_bivariate_resid_distance_spatial_interactive: (
+        Callable[[pd.DataFrame, pd.Series, np.ndarray, str], None] | None ) = None,   
     plot_radius_color_spatial: (
         Callable[[pd.DataFrame, pd.Series, np.ndarray, str], None] | None
     ) = None,
     plot_true_pred_kde: Callable[[pd.Series, np.ndarray, str], None] | None = None,
+    plot_true_pred_kde_interactive: 
+        Callable[[pd.Series, np.ndarray, str], None] | None = None,
     plot_residual_vs_distance: Callable[[pd.Series, np.ndarray, str], None] | None = None,
+    plot_residual_vs_distance_interactive:
+        Callable[[pd.Series, np.ndarray, str], None] | None = None,
     plaques_poly: Any | None = None,
     logger: logging.Logger | None = None,
     dropna: bool = True,
@@ -219,8 +225,12 @@ def run_gene_distance_modeling(
     # Optional performance plots
     if plot_model_performance is not None:
         plot_model_performance(results_df)
+    if plot_model_performance_interactive is not None:
+        plot_model_performance_interactive(results_df)
     if plot_top_gene_importances is not None and not importance_df.empty:
         plot_top_gene_importances(importance_df, top_n_importances_for_plot)
+    if plot_top_gene_importances_interactive is not None and not importance_df.empty:
+        plot_top_gene_importances_interactive(importance_df, top_n=top_n_importances_for_plot)
 
     # Choose top genes from the designated "best" model
     top_genes: list[str] = []
@@ -327,13 +337,26 @@ def run_gene_distance_modeling(
 
         fig.suptitle(f"{best_model_name.upper()}: residual structure around plaques", fontsize=14)
 
+        if plot_bivariate_resid_distance_spatial_interactive is not None:
+            plot_bivariate_resid_distance_spatial_interactive(
+                cells_with_distances, y_true, y_pred, model_name=best_model_name)
+
         # 2) KDE of true vs predicted distance
         if plot_true_pred_kde is not None:
             plot_true_pred_kde(y_true, y_pred, model_name=best_model_name)
+        if plot_true_pred_kde_interactive is not None:
+            plot_true_pred_kde_interactive(
+                y_true, y_pred, model_name=best_model_name
+            )
 
         # 3) Residual vs true distance scatter with Pearson r in legend
         if plot_residual_vs_distance is not None:
             plot_residual_vs_distance(y_true, y_pred, model_name=best_model_name)
+        if plot_residual_vs_distance_interactive is not None:
+            plot_residual_vs_distance_interactive(
+                    y_true, y_pred, model_name=best_model_name
+                )
+        
 
 
 
@@ -389,3 +412,4 @@ def run_gene_distance_modeling(
         spearman_corr=spearman_df,
         delta_expression=delta_expression,
     )
+
