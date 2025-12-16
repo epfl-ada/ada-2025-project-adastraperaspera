@@ -39,7 +39,7 @@ In this project, we analyze the Xenium dataset from 10X Genomics which contains 
 Since each brain slice comes from a different mouse, the inter-mouse variation in brain morphology is very significant. Our best attempt to align a pair of most similar mice in terms of age and disease status(transgenic at 17.9 and 5.7 months) reveals significant divergences in the brain geometry, especially the dentate gyrus. Overall, the Root Mean Square Error (RMSE) for the 8 key point pairs reached 3,390 µm, which is over 50 times larger than the median cell to plaque distance.
 
 <p align="center">
-  <img src="src/data/figures/Tg_17_Tg_5_alignment.png" width="160">
+  <img src="src/data/figures/Tg_17_Tg_5_alignment.png" width="480">
   <br><em>Attempted alignment of Tg 5.7 months old mouse onto Tg 17.9 months old mouse</em>
 </p>
 
@@ -54,21 +54,21 @@ The induced mutation forces the murine cells to express the amyloid precursor pr
  To extract the coordinates of the stained plaques, we hand-labeled 11 plaque-free regions and 9 plaques of various sizes; we then trained a random forest classifier to mark the remaining plaques. Next, we transformed the plaque coordinates from the space of the IF image to that of the morphology image. For that, we used a RANSAC-transform trained on 26 visually aligned pairs of points around important anatomical landmarks. After the transformation, we achieved a Root Mean Square Error (RMSE) of 3.2 µm, which compares favorably to the median cell to plaque distance at 61 µm. Following this, we merged intersecting plaques, plaques outside of the brain boundary, and plaques with areas below the 5th percentile. This resulted in 1736 Aβ plaques visualized in the following figure:
 
 <p align="center">
-  <img src="figures/plaque_geometries.png" width="160">
+  <img src="figures/plaque_geometries.png" width="480">
   <br><em>1736 Aβ plaques visualized in the morphology image</em>
 </p>
 
 Next, for each cell, we computed the distance to the nearest plaque. Namely, we calculate the Euclidean distance between the cell centroid and the nearest plaque boundary. In the following figure, we highlight which brain regions are far away from Aβ-plaques and which are located nearby. We show this by overlaying the plaque polygons onto the morphology image. We will then color the brain tissue by distance to the nearest plaque.
 
 <p align="center">
-  <img src="figures/cell_to_plaque_distance.png" width="160">
+  <img src="figures/cell_to_plaque_distance.png" width="480">
   <br><em>Brain regions colored by plaque proximity (cool = near plaque)</em>
 </p>
 
 We can see that the maximum distance from any plaque is 457 µm; however, over 99% of all cells are located at most 200 µm from the nearest plaque, with the median being 61 µm. The standard deviation is very significant at 44.4 µm. This is supported by the previous figure showing the brain regions by distance to the nearest plaque - some regions are very close, and some are very far. Further, we can observe that the distribution of cell-to-plaque distances is right-skewed, with a long tail of infrequent cells which are very far from the nearest plaque.
 
 <p align="center">
-  <img src="figures/cell_distance_distribution.png" width="160">
+  <img src="figures/cell_distance_distribution.png" width="480">
   <br><em>Distribution of cell-to-plaque distance</em>
 </p>
 
@@ -111,14 +111,14 @@ We find that among the 5 most unusual PIGs, Cxcl10 and Cd74 clearly stand out. B
 We will now explore clustering of cells based on the 347-dimensional gene expression vector. We apply Leiden clustering with 15 nearest neighbors on PCA-reduced gene expression space. As a result, we obtained $K=19$ clusters. The clusters are then reduced to 2 dimensions using UMAP; the resulting plot is shown in the following figure.
 
 <p align="center">
-  <img src="figures/joint_clustering_umap.png" width="160">
+  <img src="figures/joint_clustering_umap.png" width="480">
   <br><em>Joint Leiden clustering UMAP plot</em>
 </p>
 
 Superimposing the color-coded clusters onto the brain tissue, we can see that the gene expression-based clustering strongly correlates with the brain morphology.
 
 <p align="center">
-  <img src="figures/joint_clustering_overlayed.png" width="160">
+  <img src="figures/joint_clustering_overlayed.png" width="480">
   <br><em>Joint Leiden clustering of 6 mice</em>
 </p>
 
@@ -154,7 +154,7 @@ We will use logistic regression to model the relationship between cluster member
 These coefficients are further visualized in the figure below.
 
 <p align="center">
-  <img src="figures/slopes_types.png" width="160">
+  <img src="figures/slopes_types.png" width="480">
   <br><em>Plaque distance by cell type</em>
 </p>
 
@@ -169,14 +169,14 @@ However, our table also reveals a surprising finding: some neurons (namely, intr
 Next, we can discuss the figure presenting the relationship between the cluster frequency and the binned distance to the nearest plaque. We can clearly see an upward trend in the frequency of the members of clusters 0 (Oligodendrocyte precursor cells / oligodendrocytes) as we move away from the plaque. For other clusters, the frequency only changes at extreme distances. For instance, cluster 15 (Hypothalamic GnRH1-expressing glutamatergic neurons) shows a steep increase in proportion only after 113 µm. Meanwhile, cluster 14 (Dentate gyrus immature glutamatergic neurons) shows a steep decline after 138 µm. As for the short distances, cluster 8 (immune cells) shows a sharp drop as we move past the first bin; however the decay quickly levels off.
 
 <p align="center">
-  <img src="figures/cluster_frequency_distance_to_plaque.png" width="160">
+  <img src="figures/cluster_frequency_distance_to_plaque.png" width="480">
   <br><em>Cluster frequency vs. distance to plaque</em>
 </p>
 
 Looking at the marker gene enrichment diagram, we can see that some clusters are characterized by a strong over- or under-expression of specific genes. For instance, cluster 8 (immune cells) is characterized by a strong over-expression of the gene Hexb. The z-score is around 4, indicating that the expression of Hexb in cluster with ID 8 is at impressive 4 standard deviations above the mean. Meanwhile, cluster 14 (Dentate gyrus immature glutamatergic neurons) is characterized by a strong under-expression of the gene Cst3, which happens to be at around 2 standard deviations below the mean. This pattern highlights the fact that the morphological structure of the brain is closely related to the gene expression patterns.
 
 <p align="center">
-  <img src="figures/expression_per_cluster.png" width="160">
+  <img src="figures/expression_per_cluster.png" width="480">
   <br><em>Expression per cluster</em>
 </p>
 
@@ -187,7 +187,7 @@ Next, we will analyze cell-type proportions and PIG expression across distance. 
 Having observed a strong relationship between the cell type proportions and the distance to the nearest plaque, we want to test whether PIG expression changes could be due to the changes in cell composition.To this end, we compute a Spearman rank correlation matrix between the cell type proportions and the average PIG expression, aligned on the same distance bins. We choose Spearman over Pearson because we suspect that the nature of the relationship is non-linear. For instance, some cells can be "mega-expressing" a given PIG only when grouped together; this could result in a step-like pattern, favoring a more flexible Spearman. Further, we perform a Spearman test with a multiple testing correction to obtain a p-value for each gene–cell-type pair.
 
 <p align="center">
-  <img src="figures/PIG_type_spearman.png" width="160">
+  <img src="figures/PIG_type_spearman.png" width="480">
   <br><em>PIG type correlation vs. cellular type proportion</em>
 </p>
 
@@ -236,7 +236,7 @@ The GABAergic effect is small and not statistically significant at the 0.05 leve
 In this section, we will inspect the mean PIG expression at different distance bins and cell types. We present a 95% confidence interval based on the standard error of the mean.
 
 <p align="center">
-  <img src="figures/PIG_expession_by_type.png" width="160">
+  <img src="figures/PIG_expession_by_type.png" width="480">
   <br><em>PIG expression by type</em>
 </p>
 
@@ -249,7 +249,7 @@ Looking at the interactive plot above, we can confirm that Glia and Astrocyte Ep
 In this section, we investigate how the expression of the 16 plaque-induced genes changes with distance to the nearest plaque. To this end, we group the cells into 5 equal-count distance bins and compute the mean log1p-normalized transcript count within each bin along with the 95% confidence interval. ANOVA analysis confirms that all the 16 PIGs show significant differences in mean expression across distance bins at Bonferroni-corrected FDR set to 0.01.
 
 <p align="center">
-  <img src="figures/PIG_expression_vs_distance.png" width="160">
+  <img src="figures/PIG_expression_vs_distance.png" width="480">
   <br><em>Expression of PIGs vs. distance to plaque</em>
 </p>
 
@@ -266,7 +266,7 @@ For each of the 16 PIGs, we regress the log1p-normalized transcript count agains
 All 16 PIGs exhibit a statistically significant negative slope at 0.01 FDR level. However, the slopes vary significantly among PIGs, with the smallest and largest absolute values of slopes corresponding to Cxcl10 and Gfap, respectively. Translating the slopes to the original integer transcript count scale, we get 128 µm distance to halve the expression for Gfap and 4,415 µm distance for Cxcl10. For context, the entire diameter of the mouse brain is about 6,000 µm, meaning that for Cxcl10, the expression is nearly constant. This result is in large due to the fact that Cxcl10 is extremely zero-inflated. In other words, its expression is very low across all distances with a low absolute value of the spatial variation. The distances to halve the expression for these and other PIGs are visualized in the figure below.
 
 <p align="center">
-  <img src="figures/distances_to_halve_expression.png" width="160">
+  <img src="figures/distances_to_halve_expression.png" width="480">
   <br><em>Distances to halve expression for the 16 PIGs</em>
 </p>
 
@@ -287,14 +287,14 @@ XGBoost shows the largest train–test gap (train $R^2=0.478$, test $R^2=0.258$)
 The distribution of residuals of the XGBoost model reveals clear heteroscedasticity. Instead of being uniformly dotted around the horizontal zero line, the residuals show a linear trend: most near to the plaque, the model tends to over-predict, and the further away, the more it under-predicts.
 
 <p align="center">
-  <img src="figures/residuals_diagnostics.png" width="160">
+  <img src="figures/residuals_diagnostics.png" width="480">
   <br><em>Residual diagnostics</em>
 </p>
 
 We can see that most of the distribution's mass is concentrated the [0, 100] µm range. In other words, the model doesn't utilize the full target range. Plotting the residuals against the brain tissue reveals non-uniform distribution that is clearly aligned with the plaque centroids shown as red stars.
 
 <p align="center">
-  <img src="figures/true_vs_predicted.png" width="160">
+  <img src="figures/true_vs_predicted.png" width="480">
   <br><em>True vs. predicted plaque distance</em>
 </p>
 
@@ -305,7 +305,7 @@ The residuals tend to fall into 3 broad categories:
 This heteroscedasticity implies that the model is missing important covariates.
 
 <p align="center">
-  <img src="figures/residuals_vs_distance.png" width="160">
+  <img src="figures/residuals_vs_distance.png" width="480">
   <br><em>Spatial diagnostics</em>
 </p>
 
@@ -364,13 +364,13 @@ Next, we will analyze the linear models as well as the more complex models by pe
 
 <p align="center">
   <!-- This was obtained with plot_ablation_heatmap; usage in results.ipynb -->
-  <img src="figures/modality_ablation.png" width="160">
+  <img src="figures/modality_ablation.png" width="480">
   <br><em>Spatial diagnostics</em>
 </p>
 
 <p align="center">
   <!-- This was obtained with plot_best_model_per_modality; usage in results.ipynb -->
-  <img src="figures/best_model_per_modality.png" width="160">
+  <img src="figures/best_model_per_modality.png" width="480">
   <br><em>Spatial diagnostics</em>
 </p>
 
@@ -384,7 +384,7 @@ Let us see why the spatial model performs so well. First, let us explore predict
 
 <p align="center">
   <!-- This was obtained with plot_spatial_compare; usage in results.ipynb -->
-  <img src="figures/predicted_plaque_distance.png" width="160">
+  <img src="figures/predicted_plaque_distance.png" width="480">
   <br><em>Spatial predictions comparison</em>
 </p>
 
@@ -394,7 +394,7 @@ Let us compare the predicted plaque-distance distributions across all Tg and WT 
 
 <p align="center">
   <!-- This was obtained with plot_hist_comparison; usage in results.ipynb -->
-  <img src="figures/distribution_across_mice.png" width="160">
+  <img src="figures/distribution_across_mice.png" width="480">
   <br><em>Distribution across mice</em>
 </p>
 
@@ -406,7 +406,7 @@ Together, these results confirm that differences between mice are statistically 
 
 <p align="center">
   <!-- This was obtained with plot_jsd_heatmap; usage in results.ipynb -->
-  <img src="figures/JS_Divergence.png" width="160">
+  <img src="figures/JS_Divergence.png" width="480">
   <br><em>Jensen-Shannon divergence</em>
 </p>
 
@@ -419,7 +419,7 @@ We therefore adopted an approach based on within-cluster and within-gene z-norma
 
 <p align="center">
   <!-- This was obtained with plot_pig_z_scores_per_cluster_per_mouse; usage in results.ipynb -->
-  <img src="figures/mean_PIG_per_mouse.png" width="160">
+  <img src="figures/mean_PIG_per_mouse.png" width="480">
   <br><em>Mean PIG per mouse</em>
 </p>
 
@@ -427,13 +427,13 @@ With this framework in place, we analyzed two independent biological dimensions:
 
 <p align="center">
   <!-- This was obtained with plot_volcano; usage in results.ipynb -->
-  <img src="figures/disease_effect_age_progression.png" width="160">
+  <img src="figures/disease_effect_age_progression.png" width="480">
   <br><em>Disease effect and age progression</em>
 </p>
 
 <p align="center">
   <!-- This was obtained with plot_age_progression; usage in results.ipynb -->
-  <img src="figures/age_progression.png" width="160">
+  <img src="figures/age_progression.png" width="480">
   <br><em>Age progression</em>
 </p>
 
@@ -441,7 +441,7 @@ Plotting the PCA-based projections of the 19 clusters, we can clearly see that t
 
 <p align="center">
   <!-- This was obtained with plot_cluster_pcas; usage in results.ipynb -->
-  <img src="figures/PCA_clusters.png" width="160">
+  <img src="figures/PCA_clusters.png" width="480">
   <br><em>PCA clusters</em>
 </p>
 
@@ -449,7 +449,7 @@ Our analysis reveals that cluster 8 (microglia) showed the strongest AD-specific
 
 <p align="center">
   <!-- This was obtained with plot_ad_specific_heatmap; usage in results.ipynb -->
-  <img src="figures/ad_specific_genes.png" width="160">
+  <img src="figures/ad_specific_genes.png" width="480">
   <br><em>AD-specific genes</em>
 </p>
 
@@ -459,7 +459,7 @@ To ensure that these disease-specific signals were not driven by differences in 
 
 <p align="center">
   <!-- This was obtained with plot_top_de_heatmap; usage in results.ipynb -->
-  <img src="figures/top_genes_per_glial.png" width="160">
+  <img src="figures/top_genes_per_glial.png" width="480">
   <br><em>Top genes per glial cluster</em>
 </p>
 
@@ -467,7 +467,7 @@ When examining age trajectories, Tg mice displayed monotonic increases from 2 to
 
 <p align="center">
   <!-- This was obtained with plot_age_curves_by_cluster; usage in results.ipynb -->
-  <img src="figures/age_progression_wt_tg.png" width="160">
+  <img src="figures/age_progression_wt_tg.png" width="480">
   <br><em>Age progression WT vs Tg</em>
 </p>
 
