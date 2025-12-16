@@ -8,6 +8,47 @@ const RQ3Section = () => {
     <section id="rq-3" className="py-24 bg-background">
       <div className="container mx-auto px-6 max-w-6xl">
         <div className="grid gap-10 lg:grid-cols-[320px_1fr] items-start">
+            {/* Sticky panel */}
+          <aside className="lg:sticky lg:top-24">
+            <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+                  <Brain className="w-5 h-5 text-primary" />
+                </div>
+                <div>
+                  <div className="text-sm font-semibold text-foreground">Research Question 3</div>
+                  <div className="text-xs text-muted-foreground">
+                    How does PIG expression change in plaque proximity??
+                  </div>
+                </div>
+              </div>
+
+              <nav className="mt-6 space-y-2 text-sm">
+                <a
+                  href="#rq3-mean"
+                  className="block rounded-xl px-3 py-2 text-muted-foreground hover:text-foreground hover:bg-muted/50 transition"
+                >
+                  Mean PIG expression vs distance
+                </a>
+                <a
+                  href="#rq3-regression"
+                  className="block rounded-xl px-3 py-2 text-muted-foreground hover:text-foreground hover:bg-muted/50 transition"
+                >
+                  Regression analysis
+                </a>
+                <a
+                  href="#rq3-halves"
+                  className="block rounded-xl px-3 py-2 text-muted-foreground hover:text-foreground hover:bg-muted/50 transition"
+                >
+                  Half-distance summary
+                </a>
+              </nav>
+
+              <div className="mt-6 text-xs text-muted-foreground">
+                Tip: scroll or use the navigation above.
+              </div>
+            </div>
+          </aside>
           {/*
           <aside className="lg:sticky lg:top-24">
             <div className="rounded-2xl border border-border bg-card p-6 shadow-md">
