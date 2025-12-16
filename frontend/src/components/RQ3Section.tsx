@@ -18,7 +18,7 @@ const RQ3Section = () => {
                 <div>
                   <div className="text-sm font-semibold text-foreground">Research Question 3</div>
                   <div className="text-xs text-muted-foreground">
-                    How does PIG expression change in plaque proximity??
+                    How does PIG expression change in plaque proximity?
                   </div>
                 </div>
               </div>
