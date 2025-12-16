@@ -1,348 +1,230 @@
 import PlotFrame from "@/components/PlotFrame";
 
-const base = import.meta.env.BASE_URL;
-
-const linearPerf = [
-  { model: "Linear", trainR2: 0.25, testR2: 0.24 },
-  { model: "PLS", trainR2: 0.19, testR2: 0.19 },
-];
-
-const Th = ({ children }: { children: React.ReactNode }) => (
-  <th className="px-4 py-3 text-left text-xs font-semibold text-foreground">
-    {children}
-  </th>
-);
-
-const Td = ({ children }: { children: React.ReactNode }) => (
-  <td className="px-4 py-3 text-sm text-muted-foreground align-top">
-    {children}
-  </td>
-);
+const base = "/"; // adjust if needed
 
 const RQ5Section = () => {
   return (
     <section id="rq-5" className="py-24 bg-background">
-      <div className="container mx-auto px-6 max-w-6xl">
-        <div className="grid gap-10 lg:grid-cols-[320px_1fr] items-start">
-          {/* Sticky left panel */}
-          <aside className="lg:sticky lg:top-24">
-            <div className="rounded-2xl border border-border bg-card p-6 shadow-md">
-              <div className="text-xs uppercase tracking-wide text-muted-foreground">
-                Research Question 5
-              </div>
-              <h2 className="mt-2 text-xl font-bold text-foreground leading-snug">
-                Which features matter most for predicting plaque distance?
-              </h2>
+      <div className="container mx-auto px-6 space-y-20">
 
-              <div className="mt-5 space-y-3 text-sm">
-                <a
-                  href="#rq5-linear"
-                  className="block rounded-xl border border-border bg-background/40 px-4 py-3 hover:bg-background/70 transition"
-                >
-                  <div className="font-medium text-foreground">Linear models</div>
-                  <div className="text-muted-foreground">Modalities + performance table</div>
-                </a>
+        {/* =========================
+           Header
+        ========================= */}
+        <div className="text-center space-y-4">
+          <h2 className="text-3xl md:text-4xl font-bold text-foreground">
+            RQ5 — Feature Importance in Plaque Distance Modeling
+          </h2>
+          <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
+            Which modalities truly carry predictive signal for plaque proximity, and which
+            reflect anatomical bias rather than disease biology?
+          </p>
+        </div>
 
-                <a
-                  href="#rq5-ablation"
-                  className="block rounded-xl border border-border bg-background/40 px-4 py-3 hover:bg-background/70 transition"
-                >
-                  <div className="font-medium text-foreground">Modality ablation</div>
-                  <div className="text-muted-foreground">Ablation heatmap + best model</div>
-                </a>
+        {/* =========================
+           Intro + Modalities
+        ========================= */}
+        <div id="rq5-modalities" className="space-y-4">
+          <h3 className="text-2xl font-bold text-foreground">RQ5 Analysis</h3>
 
-                <a
-                  href="#rq5-spatial-diagnostics"
-                  className="block rounded-xl border border-border bg-background/40 px-4 py-3 hover:bg-background/70 transition"
-                >
-                  <div className="font-medium text-foreground">Spatial-only diagnostics</div>
-                  <div className="text-muted-foreground">Cross-mouse comparisons</div>
-                </a>
+          <p className="text-lg text-muted-foreground leading-relaxed">
+            To improve linear performance and study feature importance, we augment the original
+            347-gene expression vector with morphology, spatial coordinates, and a cell-type
+            indicator derived from Leiden clustering.
+          </p>
 
-                <a
-                  href="#rq5-zscore-framework"
-                  className="block rounded-xl border border-border bg-background/40 px-4 py-3 hover:bg-background/70 transition"
-                >
-                  <div className="font-medium text-foreground">Z-normalized signatures</div>
-                  <div className="text-muted-foreground">Mean PIG per cluster per mouse</div>
-                </a>
-
-                <a
-                  href="#rq5-disease-age"
-                  className="block rounded-xl border border-border bg-background/40 px-4 py-3 hover:bg-background/70 transition"
-                >
-                  <div className="font-medium text-foreground">Disease + age progression</div>
-                  <div className="text-muted-foreground">Effect sizes, trajectories, PCA</div>
-                </a>
-
-                <a
-                  href="#rq5-ad-specific"
-                  className="block rounded-xl border border-border bg-background/40 px-4 py-3 hover:bg-background/70 transition"
-                >
-                  <div className="font-medium text-foreground">AD-specific genes</div>
-                  <div className="text-muted-foreground">Heatmaps + top DE + age curves</div>
-                </a>
-              </div>
-
-              <div className="mt-6 text-xs text-muted-foreground">
-                Figures below are expected in{" "}
-                <span className="font-mono">frontend/public/plots</span>.
-              </div>
-            </div>
-          </aside>
-
-          {/* Main content */}
-          <div className="space-y-12">
-            <div className="space-y-4">
-              <h3 className="text-2xl font-bold text-foreground">
-                RQ5: When modeling plaque distance, which features are most important?
-              </h3>
-            </div>
-
-            {/* =========================
-                Linear models: modalities + perf table
-               ========================= */}
-            <div id="rq5-linear" className="space-y-6">
-              <h4 className="text-xl font-semibold text-foreground">Linear models</h4>
-
-              <p className="text-lg text-muted-foreground leading-relaxed">
-                To improve linear performance and explore feature importance, we augmented the 347-gene
-                expression vector with additional features:
-              </p>
-
-              <ul className="list-disc pl-6 text-lg text-muted-foreground space-y-1">
-                <li>Coordinates of the cell centroid</li>
-                <li>Cell area</li>
-                <li>Nucleus area</li>
-                <li>Cell type (Leiden cluster ID)</li>
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="rounded-2xl border border-border bg-card p-5">
+              <div className="text-sm font-semibold text-foreground">Modalities</div>
+              <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
+                <li>• <span className="font-medium text-foreground">Genes</span>: 347 expression values</li>
+                <li>• <span className="font-medium text-foreground">Morphology</span>: cell area + nucleus area</li>
+                <li>• <span className="font-medium text-foreground">Spatial</span>: (x, y) centroid coordinates</li>
+                <li>• <span className="font-medium text-foreground">Cluster</span>: Leiden cluster (cell type)</li>
               </ul>
-
-              <p className="text-lg text-muted-foreground leading-relaxed">
-                This yields four feature modalities:
-              </p>
-
-              <ul className="list-disc pl-6 text-lg text-muted-foreground space-y-1">
-                <li><span className="font-medium text-foreground">Genes</span>: 347 expression values</li>
-                <li><span className="font-medium text-foreground">Morphology</span>: cell area + nucleus area</li>
-                <li><span className="font-medium text-foreground">Spatial</span>: x/y centroid coordinates</li>
-                <li><span className="font-medium text-foreground">Cluster</span>: Leiden cluster (cell type)</li>
-              </ul>
-
-              <p className="text-lg text-muted-foreground leading-relaxed">
-                We also evaluated partial least squares (PLS) regression in addition to an ordinary
-                linear model. Performance:
-              </p>
-
-              <div className="rounded-2xl border border-border bg-card overflow-hidden">
-                <div className="px-6 py-4 border-b border-border">
-                  <div className="text-sm font-semibold text-foreground">
-                    Linear-model performance (reported)
-                  </div>
-                </div>
-                <div className="overflow-x-auto">
-                  <table className="min-w-full">
-                    <thead className="bg-muted/40">
-                      <tr>
-                        <Th>Model</Th>
-                        <Th>Train R²</Th>
-                        <Th>Test R²</Th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {linearPerf.map((r) => (
-                        <tr key={r.model} className="border-t border-border">
-                          <Td>{r.model}</Td>
-                          <Td>{r.trainR2.toFixed(2)}</Td>
-                          <Td>{r.testR2.toFixed(2)}</Td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-
-              <p className="text-lg text-muted-foreground leading-relaxed">
-                The linear model with extra features closes part of the gap to boosted trees and
-                generalizes well (small train–test gap). PLS is slightly lower, consistent with
-                learning only a dominant global axis correlated with plaque distance.
-              </p>
             </div>
 
-            {/* =========================
-                Modality ablation
-               ========================= */}
-            <div id="rq5-ablation" className="space-y-6">
-              <h4 className="text-xl font-semibold text-foreground">Modality ablation</h4>
-
-              <p className="text-lg text-muted-foreground leading-relaxed">
-                We next evaluate which modalities drive performance across model classes using
-                ablation experiments.
-              </p>
-
-              <PlotFrame
-                src={`${base}plots/modality_ablation.html`}
-                title="Modality ablation"
-                size="lg"
-                caption="Interactive ablation heatmap (genes / morphology / spatial / cluster)."
-              />
-
-              <PlotFrame
-                src={`${base}plots/best_model_per_modality.html`}
-                title="Best model per modality"
-                size="lg"
-                caption="Interactive summary of best-performing model for each modality configuration."
-              />
-
-              <p className="text-lg text-muted-foreground leading-relaxed">
-                Ablation reveals that performance varies strongly by modality and model class. Linear
-                models reach modest accuracy when genes are included, and fall near chance when only
-                morphology or spatial coordinates are used. Nonlinear models extract richer structure.
-                Notably, spatial-only models can reach very high R² in the 17.9-month Tg mouse, which
-                motivates deeper diagnostics.
-              </p>
-            </div>
-
-            {/* =========================
-                Spatial-only diagnostics
-               ========================= */}
-            <div id="rq5-spatial-diagnostics" className="space-y-6">
-              <h4 className="text-xl font-semibold text-foreground">Diagnostics: why spatial-only looks strong</h4>
-
-              <p className="text-lg text-muted-foreground leading-relaxed">
-                Spatial-only performance can be inflated by anatomical bias: plaques are not uniformly
-                distributed across the brain, so coordinates can proxy regional vulnerability rather
-                than geometric proximity. We test this by comparing spatial predictions across mice.
-              </p>
-
-              <PlotFrame
-                src={`${base}plots/predicted_plaque_distance.html`}
-                title="Spatial predictions comparison"
-                size="lg"
-                caption="Interactive comparison of predicted distance distributions across mice."
-              />
-
-              <PlotFrame
-                src={`${base}plots/distribution_across_mice.html`}
-                title="Distribution across mice"
-                size="lg"
-                caption="Interactive overlay of predicted-score distributions (Tg vs WT, different ages)."
-              />
-
-              <PlotFrame
-                src={`${base}plots/JS_Divergence.html`}
-                title="Jensen–Shannon divergence"
-                size="lg"
-                caption="Interactive divergence matrix comparing predicted-score distributions across mice."
-              />
-
-              <p className="text-lg text-muted-foreground leading-relaxed">
-                These results show predicted-score distributions are extremely similar across mice,
-                implying spatial-only models learn conserved anatomy rather than pathology-sensitive
-                plaque proximity.
-              </p>
-            </div>
-
-            {/* =========================
-                Switch to z-normalized signatures
-               ========================= */}
-            <div id="rq5-zscore-framework" className="space-y-6">
-              <h4 className="text-xl font-semibold text-foreground">
-                Shift to within-cluster, within-gene z-normalized signatures
-              </h4>
-
-              <p className="text-lg text-muted-foreground leading-relaxed">
-                Because cross-mouse transcript normalization is unreliable (batch-like distortions and
-                sparse panel constraints), we adopt within-cluster and within-gene z-normalized
-                signatures. We average z-scores across the 16 PIGs to obtain a plaque-induced gene
-                activation score per cluster.
-              </p>
-
-              <PlotFrame
-                src={`${base}plots/mean_PIG_per_mouse.html`}
-                title="Mean PIG per mouse"
-                size="lg"
-                caption='Interactive: cluster-level "plaque-induced gene activation score" across mice.'
-              />
-            </div>
-
-            {/* =========================
-                Disease status + age progression
-               ========================= */}
-            <div id="rq5-disease-age" className="space-y-6">
-              <h4 className="text-xl font-semibold text-foreground">
-                Disease specificity and age progression
-              </h4>
-
-              <p className="text-lg text-muted-foreground leading-relaxed">
-                With the z-score framework in place, we analyze disease status (TG vs WT) and age
-                progression (2 → 5 → 17 months). We compute disease-specific activation scores per
-                cluster and rank clusters by mean disease specificity.
-              </p>
-
-              <PlotFrame
-                src={`${base}plots/disease_effect_age_progression.html`}
-                title="Disease effect and age progression"
-                size="lg"
-                caption="Interactive summary of TG vs WT effects and progression patterns."
-              />
-
-              <PlotFrame
-                src={`${base}plots/age_progression.html`}
-                title="Age progression"
-                size="lg"
-                caption="Interactive age progression view across clusters."
-              />
-
-              <PlotFrame
-                src={`${base}plots/PCA_clusters.html`}
-                title="PCA clusters"
-                size="lg"
-                caption="Interactive PCA-based projections: WT vs TG separation within clusters."
-              />
-            </div>
-
-            {/* =========================
-                AD-specific genes + supporting heatmaps
-               ========================= */}
-            <div id="rq5-ad-specific" className="space-y-6">
-              <h4 className="text-xl font-semibold text-foreground">AD-specific activation in glial clusters</h4>
-
-              <p className="text-lg text-muted-foreground leading-relaxed">
-                Cluster 8 (microglia) shows the strongest AD-specific activation, followed by cluster
-                18 (astrocytes). Disease-specific genes (e.g., Syngr1, Gfap, Sparcl1) exhibit strong
-                induction in Tg while remaining mostly silent in WT, consistent with glial reactivity
-                and inflammatory remodeling.
-              </p>
-
-              <PlotFrame
-                src={`${base}plots/ad_specific_genes.html`}
-                title="AD-specific genes"
-                size="lg"
-                caption="Interactive heatmap of AD-specific genes by cluster."
-              />
-
-              <PlotFrame
-                src={`${base}plots/top_genes_per_glial.html`}
-                title="Top genes per glial cluster"
-                size="lg"
-                caption="Interactive heatmap of top differential genes in glial clusters."
-              />
-
-              <PlotFrame
-                src={`${base}plots/age_progression_wt_tg.html`}
-                title="Age progression WT vs Tg"
-                size="lg"
-                caption="Interactive trajectories: Tg increases with age in key glial clusters; WT remains stable."
-              />
-
-              <p className="text-lg text-muted-foreground leading-relaxed">
-                Taken together, these analyses show robust and progressive transcriptional activation
-                in biologically relevant glial populations driven by amyloid pathology, while
-                spatial-only modeling primarily captures conserved anatomy.
+            <div className="rounded-2xl border border-border bg-card p-5">
+              <div className="text-sm font-semibold text-foreground">Goal</div>
+              <p className="mt-3 text-sm text-muted-foreground leading-relaxed">
+                Compare how much predictive signal comes from each modality and determine whether
+                high spatial-only performance reflects true plaque proximity or anatomical bias.
               </p>
             </div>
           </div>
         </div>
+
+        {/* =========================
+           Linear Models Table
+        ========================= */}
+        <div className="space-y-4">
+          <h3 className="text-2xl font-bold text-foreground">Linear Models</h3>
+
+          <p className="text-muted-foreground leading-relaxed max-w-4xl">
+            We benchmark ordinary least squares (OLS) and partial least squares (PLS) regression
+            using all four modalities. PLS constrains the model to a small number of latent
+            components aligned with plaque distance.
+          </p>
+
+          <div className="overflow-x-auto">
+            <table className="w-full border border-border rounded-xl text-sm">
+              <thead className="bg-muted">
+                <tr>
+                  <th className="p-3 text-left">Model</th>
+                  <th className="p-3 text-right">Train R²</th>
+                  <th className="p-3 text-right">Test R²</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr className="border-t border-border">
+                  <td className="p-3">Linear (OLS)</td>
+                  <td className="p-3 text-right">0.25</td>
+                  <td className="p-3 text-right">0.24</td>
+                </tr>
+                <tr className="border-t border-border">
+                  <td className="p-3">PLS</td>
+                  <td className="p-3 text-right">0.19</td>
+                  <td className="p-3 text-right">0.19</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p className="text-muted-foreground leading-relaxed max-w-4xl">
+            The OLS model achieves a test R² of ~0.24, showing that a purely linear combination
+            of genes, morphology, spatial coordinates, and cluster identity explains roughly
+            one quarter of the variance. The small train–test gap indicates good generalization.
+            PLS captures only the dominant plaque-related axis and therefore achieves lower but
+            highly stable performance.
+          </p>
+        </div>
+
+        {/* =========================
+           Modality Ablation
+        ========================= */}
+        <div className="space-y-10">
+          <h3 className="text-2xl font-bold text-foreground">Modality Ablation</h3>
+
+          <PlotFrame
+            src={`${base}plots/modality_ablation.html`}
+            title="Modality ablation heatmap"
+            caption="Predictive performance across models and feature subsets."
+          />
+
+          <PlotFrame
+            src={`${base}plots/best_model_per_modality.html`}
+            title="Best model per modality"
+            caption="Nonlinear models outperform linear ones, especially for spatial inputs."
+          />
+
+          <p className="text-muted-foreground leading-relaxed max-w-5xl">
+            Ablation analysis reveals strong modality dependence. Linear models perform near
+            chance without gene expression, while nonlinear models extract richer structure.
+            Surprisingly, spatial-only models achieve the highest R² (~0.64), exceeding even
+            the full multimodal model—suggesting strong anatomical bias rather than true distance
+            prediction.
+          </p>
+        </div>
+
+        {/* =========================
+           Diagnostics: Spatial Bias
+        ========================= */}
+        <div className="space-y-10">
+          <h3 className="text-2xl font-bold text-foreground">Diagnostics: Spatial Bias</h3>
+
+          <PlotFrame
+            src={`${base}plots/predicted_plaque_distance.html`}
+            title="Spatial predictions across mice"
+            caption="Predicted plaque distance distributions are nearly identical across mice."
+          />
+
+          <PlotFrame
+            src={`${base}plots/distribution_across_mice.html`}
+            title="Distribution across mice"
+            caption="Spatial-only model outputs show minimal variation by genotype or age."
+          />
+
+          <PlotFrame
+            src={`${base}plots/JS_Divergence.html`}
+            title="Jensen–Shannon divergence"
+            caption="Predicted distributions are highly similar across all mice."
+          />
+
+          <p className="text-muted-foreground leading-relaxed max-w-5xl">
+            These diagnostics confirm that the spatial-only model exploits conserved tissue
+            geometry rather than plaque-related pathology. Although statistically detectable,
+            differences between mice are biologically negligible and do not track disease
+            progression.
+          </p>
+        </div>
+
+        {/* =========================
+           Shift to Gene-Based Strategy
+        ========================= */}
+        <div className="space-y-10">
+          <h3 className="text-2xl font-bold text-foreground">Gene-Based, Age-Aware Strategy</h3>
+
+          <p className="text-muted-foreground leading-relaxed max-w-5xl">
+            To avoid anatomical confounding and unsafe cross-mouse normalization, we adopt a
+            within-gene and within-cluster z-normalization strategy. Averaging z-scores across
+            the 16 PIGs yields a unified plaque-induced activation score per cluster.
+          </p>
+
+          <PlotFrame
+            src={`${base}plots/mean_PIG_per_mouse.html`}
+            title="Mean PIG activation per mouse"
+            caption="Cluster-level plaque-induced activation without cross-mouse normalization."
+          />
+
+          <PlotFrame
+            src={`${base}plots/disease_effect_age_progression.html`}
+            title="Disease effect vs age"
+            caption="AD-specific activation separates Tg from WT mice within clusters."
+          />
+
+          <PlotFrame
+            src={`${base}plots/age_progression.html`}
+            title="Age progression"
+            caption="Plaque-induced activation increases monotonically with age in Tg mice."
+          />
+
+          <PlotFrame
+            src={`${base}plots/PCA_clusters.html`}
+            title="Cluster-level PCA"
+            caption="WT and Tg mice separate within each cell type."
+          />
+
+          <PlotFrame
+            src={`${base}plots/ad_specific_genes.html`}
+            title="AD-specific genes"
+            caption="Microglia and astrocytes show the strongest disease-specific activation."
+          />
+
+          <PlotFrame
+            src={`${base}plots/top_genes_per_glial.html`}
+            title="Top glial genes"
+            caption="Differential expression confirms disease-driven activation."
+          />
+
+          <PlotFrame
+            src={`${base}plots/age_progression_wt_tg.html`}
+            title="Age progression WT vs Tg"
+            caption="Progressive activation occurs only in Tg mice."
+          />
+        </div>
+
+        {/* =========================
+           Conclusion
+        ========================= */}
+        <div className="rounded-2xl border border-border bg-card p-6">
+          <p className="text-muted-foreground leading-relaxed max-w-5xl">
+            In summary, spatial-only modeling yields deceptively high accuracy due to anatomical
+            bias, not disease signal. In contrast, gene-level and age-resolved analyses uncover
+            robust, AD-specific, and progressive glial activation localized to biologically
+            relevant cell types. This strategy provides a stable and interpretable framework for
+            understanding plaque-associated transcriptional remodeling.
+          </p>
+        </div>
+
       </div>
     </section>
   );
