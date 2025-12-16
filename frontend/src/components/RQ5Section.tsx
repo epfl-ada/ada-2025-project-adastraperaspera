@@ -98,35 +98,44 @@ const RQ5Section = () => {
                 RQ5: When modeling plaque distance, which features are most important?
               </h3>
             </div>
+             {/* =========================
+                Intro + Modalities
+                ========================= */}
+            <div id="rq5-modalities" className="space-y-4">
+                <h3 className="text-2xl font-bold text-foreground">RQ5 Analysis</h3>
+
+                <p className="text-lg text-muted-foreground leading-relaxed">
+                    To improve linear performance and study feature importance, we augment the original
+                    347-gene expression vector with morphology, spatial coordinates, and a cell-type
+                    indicator derived from Leiden clustering.
+                </p>
+
+                <div className="grid gap-4 md:grid-cols-2">
+                    <div className="rounded-2xl border border-border bg-card p-5">
+                    <div className="text-sm font-semibold text-foreground">Modalities</div>
+                    <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
+                        <li>• <span className="font-medium text-foreground">Genes</span>: 347 expression values</li>
+                        <li>• <span className="font-medium text-foreground">Morphology</span>: cell area + nucleus area</li>
+                        <li>• <span className="font-medium text-foreground">Spatial</span>: (x, y) centroid coordinates</li>
+                        <li>• <span className="font-medium text-foreground">Cluster</span>: Leiden cluster (cell type)</li>
+                    </ul>
+                    </div>
+
+                    <div className="rounded-2xl border border-border bg-card p-5">
+                    <div className="text-sm font-semibold text-foreground">Goal</div>
+                    <p className="mt-3 text-sm text-muted-foreground leading-relaxed">
+                        Compare how much predictive signal comes from each modality and determine whether
+                        high spatial-only performance reflects true plaque proximity or anatomical bias.
+                    </p>
+                    </div>
+                </div>
+            </div>
+
 
             {/* =========================
                 Linear models: modalities + perf table
                ========================= */}
             <div id="rq5-linear" className="space-y-6">
-              <h4 className="text-xl font-semibold text-foreground">Linear models</h4>
-
-              <p className="text-lg text-muted-foreground leading-relaxed">
-                To improve linear performance and explore feature importance, we augmented the 347-gene
-                expression vector with additional features:
-              </p>
-
-              <ul className="list-disc pl-6 text-lg text-muted-foreground space-y-1">
-                <li>Coordinates of the cell centroid</li>
-                <li>Cell area</li>
-                <li>Nucleus area</li>
-                <li>Cell type (Leiden cluster ID)</li>
-              </ul>
-
-              <p className="text-lg text-muted-foreground leading-relaxed">
-                This yields four feature modalities:
-              </p>
-
-              <ul className="list-disc pl-6 text-lg text-muted-foreground space-y-1">
-                <li><span className="font-medium text-foreground">Genes</span>: 347 expression values</li>
-                <li><span className="font-medium text-foreground">Morphology</span>: cell area + nucleus area</li>
-                <li><span className="font-medium text-foreground">Spatial</span>: x/y centroid coordinates</li>
-                <li><span className="font-medium text-foreground">Cluster</span>: Leiden cluster (cell type)</li>
-              </ul>
 
               <p className="text-lg text-muted-foreground leading-relaxed">
                 We also evaluated partial least squares (PLS) regression in addition to an ordinary
