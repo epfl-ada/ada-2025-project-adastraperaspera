@@ -272,7 +272,7 @@ All 16 PIGs exhibit a statistically significant negative slope at 0.01 FDR level
 
 ### Extended regression
 
-In order to improve the performance of regression models and gauge the importance of various geometric characteristics of each plaque, we compute the area, perimeter, length of the major axis, orientation of the nearest plaque for each cell. We can get a sense of these features by reviewing the box plots below:
+In order to raise explanatory power ($R^2$), reduce heteroscedasticity of regression models and gauge the importance of various geometric characteristics of each plaque, we compute the area, perimeter, length of the major axis, orientation of the nearest plaque for each cell. We can get a sense of these features by reviewing the box plots below:
 
 <p align="center">
   <!-- This was obtained with plot_boxgrid; usage in results.ipynb -->
@@ -301,12 +301,34 @@ Looking at the figure below, we can see that the distribution of **Count** shows
   <br><em>Multi-plaque proximity</em>
 </p>
 
-Correlation with other PIG expression in 100 closest cells:
+To capture **cell-cell context** and spatial signaling patterns, we compute neighborhood mean expression of "other" Plaque-Induced Genes (PIGs). For each cell and PIG, we summarize the expression of the 15 other PIG genes in its 100 nearest neighbors, providing a quantitative measure of the local transcriptional environment that can be used as features in predictive models. 
+
+The choice of k=100 nearest neighbors is motivated by the following considerations:
+- It balances local context (not too large) with sufficient generalization capacity (not too small)
+- It captures neighborhood effects at a scale relevant to cell-cell communication (~1,000 to 2,000 µm radius, depending on cell density, and assuming a diameter of 10 µm per cell).
+
+After computing neighborhood mean expression features for PIG genes, we can now identify which neighbor "other PIG" features are most informative for predicting each target PIG expression level. To that end, we compute Pearson correlations between each target PIG expression and the neighborhood means of all other PIG genes, and then rank them by absolute correlation strength. The figure below visualizes the result of this computation.
+
 <p align="center">
   <!-- This was obtained with plot_corr_matrix; usage in results.ipynb -->
-  <img src="figures/neighbor_mean_pig.png" width="480">
+  <img src="figures/neighbor_pig.png" width="480">
   <br><em>Neighbor mean PIG</em>
 </p>
+
+Note that the matrix above is not symmetric since the target/neighbor relationship is not commutative. From the figure above, we can see that the following top 10 strongest relationships:
+
+| Target PIG | Neighbor PIG | Pearson correlation |
+|---|---|---:|
+| Gfap | C4b | 0.47 |
+| Gfap | Tyrobp | 0.45 |
+| Gfap | Lyz2 | 0.44 |
+| Cst3 | Hexb | 0.35 |
+| Cst3 | Apoe | 0.35 |
+| C4b | Gfap | 0.33 |
+| Gfap | Serpina3n | 0.32 |
+| Cst3 | B2m | 0.31 |
+| Apoe | Cd63 | 0.31 |
+| Cst3 | Cd63 | 0.30 |
 
 ## RQ4: Inferring plaque distance from gene expression
 

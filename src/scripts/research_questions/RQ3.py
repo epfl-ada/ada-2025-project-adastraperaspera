@@ -136,13 +136,13 @@ def plot_corr_matrix(
     title: str = "PIG target vs neighbor-mean correlation",
     mask_upper_triangle: bool = True,
     # Color choices
-    cmap: str = "RdBu_r",                 # diverging, good for +/- around 0
-    mask_color: str = "black",            # blackout color for masked cells
+    cmap: str = "RdBu_r",
+    mask_color: str = "black",
     # Scaling choices
-    color_scale: str = "zscore",          # "zscore" or "raw"
-    z_clip: float | None = 2.5,           # clip z for contrast; set None to disable
-    raw_vmin: float | None = None,        # if provided, overrides auto symmetric scaling
-    raw_vmax: float | None = None,        # if provided, overrides auto symmetric scaling
+    color_scale: str = "zscore",
+    z_clip: float | None = 2.5,
+    raw_vmin: float | None = None,
+    raw_vmax: float | None = None,
     # Annotation
     annotate: bool = True,
     fmt: str = ".2f",
@@ -153,22 +153,28 @@ def plot_corr_matrix(
     Matplotlib correlation matrix plot with:
       - per-cell annotations
       - optional upper-triangle masking (blacked out)
+      - optional diagonal masking (blacked out), independent of upper-triangle masking
       - diverging colormap centered at 0
       - optional z-score scaling for colors (annotations remain raw correlations)
     """
     data = corr_df.to_numpy(dtype=float)
     nrows, ncols = data.shape
 
-    # Mask upper triangle (strictly above diagonal) if requested
-    if mask_upper_triangle:
-        k = 0 if mask_diagonal else 1
-        upper_mask = np.triu(np.ones_like(data, dtype=bool), k=k)  
-    else:
-        upper_mask = np.zeros_like(data, dtype=bool)
+    # --- Mask construction (FIXED) ---
+    structural_mask = np.zeros_like(data, dtype=bool)
 
-    # Also mask invalid values (NaN/inf), so they get the "bad" color too
+    # Mask strictly above diagonal if requested
+    if mask_upper_triangle:
+        structural_mask |= np.triu(np.ones_like(data, dtype=bool), k=1)
+
+    # Mask diagonal independently of upper-triangle masking
+    if mask_diagonal:
+        structural_mask |= np.eye(nrows, ncols, dtype=bool)
+
+    # Also mask invalid values (NaN/inf)
     invalid_mask = ~np.isfinite(data)
-    full_mask = upper_mask | invalid_mask
+    full_mask = structural_mask | invalid_mask
+    # --- end mask construction ---
 
     # Choose what to color by
     if color_scale.lower() == "zscore":
@@ -205,7 +211,7 @@ def plot_corr_matrix(
 
         cbar_label = "Correlation"
 
-    # Colormap + "bad" color for masked cells (upper triangle blackout)
+    # Colormap + "bad" color for masked cells
     cmap_obj = plt.get_cmap(cmap)
     try:
         cmap_obj = cmap_obj.copy()
@@ -224,7 +230,6 @@ def plot_corr_matrix(
     ax.set_xticklabels(corr_df.columns, rotation=45, ha="right")
     ax.set_yticklabels(corr_df.index)
 
-    # Optional gridlines to make cells clearer
     ax.set_xticks(np.arange(-0.5, ncols, 1), minor=True)
     ax.set_yticks(np.arange(-0.5, nrows, 1), minor=True)
     ax.grid(which="minor", linestyle="-", linewidth=0.5)
@@ -233,9 +238,8 @@ def plot_corr_matrix(
     cbar = fig.colorbar(im, ax=ax)
     cbar.set_label(cbar_label)
 
-    # Annotate with *raw correlation values* (skip masked cells)
+    # Annotate with raw correlation values (skip masked cells)
     if annotate:
-        # Use normalized magnitude to switch text color for readability
         for i in range(nrows):
             for j in range(ncols):
                 if full_mask[i, j]:
@@ -244,7 +248,6 @@ def plot_corr_matrix(
                 if not np.isfinite(val):
                     continue
 
-                # Decide text color based on background intensity at this cell
                 bg = plot_arr[i, j]
                 bg_norm = 0.5 if (bg is np.ma.masked or not np.isfinite(float(bg))) else float(norm(float(bg)))
                 text_color = "white" if (bg_norm < 0.25 or bg_norm > 0.75) else "black"
