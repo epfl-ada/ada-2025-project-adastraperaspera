@@ -91,7 +91,7 @@ const DIR_ROWS = [
 
 function CorrTable() {
   return (
-    <div id="rq-2" className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+    <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
       <h4 className="text-base font-semibold text-foreground mb-4">
         Cell types vs PIG expression (significant Spearman correlations)
       </h4>
@@ -168,7 +168,7 @@ const RQ2Section = () => {
                 <div>
                   <div className="text-sm font-semibold text-foreground">Research Question 2</div>
                   <div className="text-xs text-muted-foreground">
-                    Relationship between cell type composition, PIG expression, and plaque distance
+                    How are changes in cell type composition related to PIG expression across plaque distance?
                   </div>
                 </div>
               </div>

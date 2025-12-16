@@ -1,4 +1,5 @@
 import PlotFrame from "@/components/PlotFrame";
+import { Brain } from 'lucide-react'
 
 const base = import.meta.env.BASE_URL;
 
@@ -7,7 +8,7 @@ const RQ3Section = () => {
     <section id="rq-3" className="py-24 bg-background">
       <div className="container mx-auto px-6 max-w-6xl">
         <div className="grid gap-10 lg:grid-cols-[320px_1fr] items-start">
-          {/* Sticky left panel */}
+          {/*
           <aside className="lg:sticky lg:top-24">
             <div className="rounded-2xl border border-border bg-card p-6 shadow-md">
               <div className="text-xs uppercase tracking-wide text-muted-foreground">
@@ -59,7 +60,7 @@ const RQ3Section = () => {
                 Tip: use these links, or scroll the analysis on the right.
               </div>
             </div>
-          </aside>
+          </aside> Sticky left panel */}
 
           {/* Main analysis */}
           <div className="space-y-12">
