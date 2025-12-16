@@ -6,7 +6,7 @@ const researchQuestions = [
   {
     id: "rq-1",
     title: "Predicting Cell Composition",
-    description: "How well can we infer cell-type composition from spatial transcriptomics features?",
+    description: "How does cell type composition change in plaque proximity?",
     dotClass: "bg-chart-1",
   },
   {
