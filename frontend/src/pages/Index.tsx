@@ -18,8 +18,8 @@ const Index = () => {
       {/*<MetricsSection /> */}
       <MiscroscopySection/>
       <GeneExpressionChart />
-      <RQSection />
       <CellClusteringSection />
+      <RQSection />
       <SpatialMapSection />
       <MethodologySection />
       <ConclusionSection />

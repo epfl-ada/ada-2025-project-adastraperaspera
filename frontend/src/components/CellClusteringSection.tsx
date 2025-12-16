@@ -13,13 +13,11 @@ const CellClusteringSection = () => {
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
             Explore clustering of cells based on the 347-dimensional gene expression vector.
           </p>
-        </div>
-
-        <p className="text-lg text-muted-foreground max-w-3xl mx-auto mb-12 text-center">
+          <p className="text-lg text-muted-foreground max-w-3xl mx-auto mb-12 text-center">
           Superimposing the color-coded clusters onto the brain tissue, we can see that the
           gene expression-based clustering strongly correlates with the brain morphology.
         </p>
-
+        </div>
         <div className="grid lg:grid-cols-2 gap-12 items-start">
           <div className="bg-card rounded-2xl border border-border p-8 shadow-md">
             <h3 className="text-lg font-semibold text-foreground mb-4">

@@ -19,7 +19,8 @@ const CellClusteringSection = () => {
             Cell Type Composition
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            We will now explore clustering of cells based on the 347-dimensional gene expression vector. We apply Leiden clustering with 15 nearest neighbors on PCA-reduced gene expression space. As a result, we obtained $K=19$ clusters. The clusters are then reduced to 2 dimensions using UMAP; the resulting plot is shown in the following figure.
+            Unsupervised clustering analysis reveals distinct cell populations 
+            within the tissue microenvironment
           </p>
         </div>
 
