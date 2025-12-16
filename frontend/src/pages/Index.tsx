@@ -2,6 +2,7 @@ import HeroSection from "@/components/HeroSection";
 import IntroductionSection from "@/components/IntroductionSection";
 import MetricsSection from "@/components/MetricsSection";
 import GeneExpressionChart from "@/components/GeneExpressionChart";
+import GeneExpressionSection2 from "@/components/GeneExpressionChart2";
 import CellClusteringSection from "@/components/CellClusteringSection";
 import SpatialMapSection from "@/components/SpatialMapSection";
 import MethodologySection from "@/components/MethodologySection";
@@ -24,7 +25,8 @@ const Index = () => {
       {/*<MetricsSection /> */}
       {/*<MiscroscopySection/>*/}
       <MicroscopySection2/>
-      <GeneExpressionChart />
+      {/*<GeneExpressionChart />*/}
+      <GeneExpressionSection2 />
       <CellClusteringSection />
       <RQSection />
       <RQ1Section />
