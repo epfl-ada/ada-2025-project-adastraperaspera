@@ -12,6 +12,8 @@ import RQSection from "@/components/RQSection";
 import RQ1Section from "@/components/RQ1Section";
 import RQ2Section from "@/components/RQ2Section";
 import RQ3Section from "@/components/RQ3Section";
+import RQ4Section from "@/components/RQ4Section";
+import RQ5Section from "@/components/RQ5Section";
 
 const Index = () => {
   return (

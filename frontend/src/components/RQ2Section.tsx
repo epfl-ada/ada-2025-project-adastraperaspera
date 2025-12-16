@@ -163,7 +163,7 @@ const RQ2Section = () => {
             <div className="rounded-2xl border border-border bg-card p-6 shadow-md">
               <div className="text-xs uppercase tracking-wide text-muted-foreground">Research Question 2</div>
               <h2 className="mt-2 text-xl font-bold text-foreground leading-snug">
-                Relationship between cell type composition, PIG expression, and plaque distance
+                How are changes in cell type composition related to PIG expression across plaque distance?
               </h2>
 
               <div className="mt-5 space-y-3 text-sm">
