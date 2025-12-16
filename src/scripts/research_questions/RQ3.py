@@ -8,6 +8,173 @@ from typing import Any
 import numpy as np
 import pandas as pd
 import statsmodels.formula.api as smf
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import matplotlib.colors as mcolors
+import copy
+
+def compute_pig_neighbor_corr_matrix(
+    cells_df: pd.DataFrame,
+    pig_genes: list[str],
+    use_spearman: bool = False,
+    neighbor_prefix: str = "neigh_mean_",
+) -> pd.DataFrame:
+    """
+    Returns a (len(pig_genes) x len(pig_genes)) correlation matrix where:
+      rows = target gene expression columns (e.g., 'GeneA')
+      cols = neighbor mean feature columns (e.g., 'neigh_mean_GeneB')
+    """
+    method = "spearman" if use_spearman else "pearson"
+
+    missing_targets = [g for g in pig_genes if g not in cells_df.columns]
+    missing_neighbors = [
+        f"{neighbor_prefix}{g}" for g in pig_genes
+        if f"{neighbor_prefix}{g}" not in cells_df.columns
+    ]
+
+    if missing_targets or missing_neighbors:
+        msg = []
+        if missing_targets:
+            msg.append(f"Missing target gene columns: {missing_targets}")
+        if missing_neighbors:
+            msg.append(f"Missing neighbor feature columns: {missing_neighbors}")
+        raise KeyError("\n".join(msg))
+
+    corr = pd.DataFrame(index=pig_genes, columns=pig_genes, dtype=float)
+
+    for tg in pig_genes:
+        x = cells_df[tg]
+        for ng in pig_genes:
+            y = cells_df[f"{neighbor_prefix}{ng}"]
+            corr.loc[tg, ng] = x.corr(y, method=method)
+
+    return corr
+
+
+def plot_corr_matrix(
+    corr_df: pd.DataFrame,
+    title: str = "PIG target vs neighbor-mean correlation",
+    mask_upper_triangle: bool = True,
+    # Color choices
+    cmap: str = "RdBu_r",                 # diverging, good for +/- around 0
+    mask_color: str = "black",            # blackout color for masked cells
+    # Scaling choices
+    color_scale: str = "zscore",          # "zscore" or "raw"
+    z_clip: float | None = 2.5,           # clip z for contrast; set None to disable
+    raw_vmin: float | None = None,        # if provided, overrides auto symmetric scaling
+    raw_vmax: float | None = None,        # if provided, overrides auto symmetric scaling
+    # Annotation
+    annotate: bool = True,
+    fmt: str = ".2f",
+    fontsize: int = 9,
+    mask_diagonal: bool = True,
+):
+    """
+    Matplotlib correlation matrix plot with:
+      - per-cell annotations
+      - optional upper-triangle masking (blacked out)
+      - diverging colormap centered at 0
+      - optional z-score scaling for colors (annotations remain raw correlations)
+    """
+    data = corr_df.to_numpy(dtype=float)
+    nrows, ncols = data.shape
+
+    # Mask upper triangle (strictly above diagonal) if requested
+    if mask_upper_triangle:
+        k = 0 if mask_diagonal else 1
+        upper_mask = np.triu(np.ones_like(data, dtype=bool), k=k)  
+    else:
+        upper_mask = np.zeros_like(data, dtype=bool)
+
+    # Also mask invalid values (NaN/inf), so they get the "bad" color too
+    invalid_mask = ~np.isfinite(data)
+    full_mask = upper_mask | invalid_mask
+
+    # Choose what to color by
+    if color_scale.lower() == "zscore":
+        vals = data[~full_mask]
+        if vals.size == 0:
+            z = np.zeros_like(data)
+            sigma = 1.0
+        else:
+            mu = vals.mean()
+            sigma = vals.std(ddof=0)
+            z = np.zeros_like(data) if sigma == 0 else (data - mu) / sigma
+
+        plot_arr = np.ma.array(z, mask=full_mask)
+
+        if z_clip is not None:
+            plot_arr = np.ma.clip(plot_arr, -z_clip, z_clip)
+            norm = mcolors.TwoSlopeNorm(vcenter=0.0, vmin=-z_clip, vmax=z_clip)
+            cbar_label = f"Correlation (z-score, clipped to ±{z_clip})"
+        else:
+            maxabs = float(np.nanmax(np.abs(z[~full_mask]))) if np.any(~full_mask) else 1.0
+            maxabs = max(maxabs, 1e-12)
+            norm = mcolors.TwoSlopeNorm(vcenter=0.0, vmin=-maxabs, vmax=maxabs)
+            cbar_label = "Correlation (z-score)"
+    else:
+        plot_arr = np.ma.array(data, mask=full_mask)
+
+        if raw_vmin is not None and raw_vmax is not None:
+            norm = mcolors.TwoSlopeNorm(vcenter=0.0, vmin=raw_vmin, vmax=raw_vmax)
+        else:
+            vals = data[~full_mask]
+            maxabs = float(np.nanmax(np.abs(vals))) if vals.size else 1.0
+            maxabs = max(maxabs, 1e-12)
+            norm = mcolors.TwoSlopeNorm(vcenter=0.0, vmin=-maxabs, vmax=maxabs)
+
+        cbar_label = "Correlation"
+
+    # Colormap + "bad" color for masked cells (upper triangle blackout)
+    cmap_obj = plt.get_cmap(cmap)
+    try:
+        cmap_obj = cmap_obj.copy()
+    except AttributeError:
+        cmap_obj = copy.copy(cmap_obj)
+    cmap_obj.set_bad(color=mask_color)
+
+    # Plot
+    figsize = (max(8, 0.55 * ncols + 4), max(6, 0.55 * nrows + 3))
+    fig, ax = plt.subplots(figsize=figsize)
+    im = ax.imshow(plot_arr, cmap=cmap_obj, norm=norm)
+
+    ax.set_title(title)
+    ax.set_xticks(np.arange(ncols))
+    ax.set_yticks(np.arange(nrows))
+    ax.set_xticklabels(corr_df.columns, rotation=45, ha="right")
+    ax.set_yticklabels(corr_df.index)
+
+    # Optional gridlines to make cells clearer
+    ax.set_xticks(np.arange(-0.5, ncols, 1), minor=True)
+    ax.set_yticks(np.arange(-0.5, nrows, 1), minor=True)
+    ax.grid(which="minor", linestyle="-", linewidth=0.5)
+    ax.tick_params(which="minor", bottom=False, left=False)
+
+    cbar = fig.colorbar(im, ax=ax)
+    cbar.set_label(cbar_label)
+
+    # Annotate with *raw correlation values* (skip masked cells)
+    if annotate:
+        # Use normalized magnitude to switch text color for readability
+        for i in range(nrows):
+            for j in range(ncols):
+                if full_mask[i, j]:
+                    continue
+                val = data[i, j]
+                if not np.isfinite(val):
+                    continue
+
+                # Decide text color based on background intensity at this cell
+                bg = plot_arr[i, j]
+                bg_norm = 0.5 if (bg is np.ma.masked or not np.isfinite(float(bg))) else float(norm(float(bg)))
+                text_color = "white" if (bg_norm < 0.25 or bg_norm > 0.75) else "black"
+
+                ax.text(j, i, format(val, fmt), ha="center", va="center",
+                        fontsize=fontsize, color=text_color)
+
+    fig.tight_layout()
+    plt.show()
 
 
 def analyze_plaque_distance_effects(
