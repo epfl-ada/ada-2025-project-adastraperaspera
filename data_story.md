@@ -353,6 +353,33 @@ Further, we explored a partial least squares (PLS) regression model in addition 
 | Linear       |     0.25 |    0.24 |
 | PLS          |     0.19 |    0.19 |
 
+To investigate whether the plaque-trained Partial Least Squares (PLS) signature captures biologically meaningful spatial decay, we compared Tg17 and WT13 profiles within matched plaque-centered regions after geometric alignment. 
+
+<p align="center">
+  <!-- This was obtained with plot_overlay; usage in results.ipynb -->
+  <img src="figures/tg17_wt13_alignment.png" width="480">
+  <br><em>Tg17 vs WT13 alignment</em>
+</p>
+
+Across plaques, Tg17 consistently showed more negative correlations (mean ρ ≈ −0.19) and steeper negative slopes (mean slope ≈ −0.0055) between signature values and distance, while WT13 displayed near-flat or weak trends (mean ρ ≈ −0.02, mean slope ≈ −0.0018). 
+
+FDR-corrected results indicate that 3 plaques exhibit significant decay in Tg but not in WT, suggesting a genuine plaque-linked gradient in those locations. Several plaques show decay in both Tg and WT, which likely reflects imperfect cross-animal alignment or shared anatomical gradients rather than true pathology. 
+
+Importantly, the inner-region (0–50 µm) signature is, on average, higher in Tg than WT, supporting the idea of localized transcriptional activation around plaques. Overall, despite noise and structural mismatch between animals, the method recovers a subset of plaques where Tg shows uniquely strong spatial decay, suggesting that the PLS signature retains some biological specificity but interpretation must be cautious due to the lack of WT plaque ground-truth and residual alignment errors.
+
+
+<div style="display:flex; justify-content:center; gap:24px; align-items:flex-start; flex-wrap:wrap;">
+  <div style="text-align:center;">
+    <img src="figures/signature_decay_plaque_1794.png" width="240" />
+    <br /><em>Signature decay plaque 1794</em>
+  </div>
+
+  <div style="text-align:center;">
+    <img src="figures/binned_signature_decay_plaque_1794.png" width="240" />
+    <br /><em>Binned signature decay plaque 1794</em>
+  </div>
+</div>
+
 ### Tree models
 ### Performance
 
@@ -412,6 +439,8 @@ Together, these results confirm that differences between mice are statistically 
 
 
 These findings demonstrate that the model did not detect plaque-related pathology and instead exploited conserved tissue geometry such as cortical curvature and laminar structure. The high predictive accuracy was therefore driven by anatomical bias rather than biological signal.
+
+## RQ6: How does gene expression change with age in each cell type and mouse?
 
 Because of this, we shifted from pure spatial prediction toward gene expression based and age-aware analyses. This change was necessary for several reasons. First, plaque-induced transcriptional responses are cell-state specific. Microglia, astrocytes, and some oligodendrocyte populations exhibit strong gene expression changes near plaques that cannot be inferred from spatial position alone. Second, direct normalization of transcriptomic values across different mice is unreliable. Differences in tissue orientation, capture area, imaging depth, and detection efficiency create batch-like distortions that classical approaches such as global scaling or quantile matching cannot safely correct. These adjustments often distort biological gradients or suppress real disease variance. Third, commonly used multi-sample harmonization methods such as Harmony, mutual nearest neighbors, or scVI are not ideal for Xenium data. The gene panel is sparse, the number of cells is very large, and plaque-associated variance is not a batch effect that should be removed. For these reasons, cross-mouse alignment would obscure rather than clarify AD-dependent patterns.
 
