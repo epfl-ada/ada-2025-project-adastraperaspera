@@ -28,6 +28,8 @@ const Index = () => {
       <RQ1Section />
       <RQ2Section />
       <RQ3Section />
+      <RQ4Section />
+      <RQ5Section />
       <SpatialMapSection />
       <MethodologySection />
       <ConclusionSection />
