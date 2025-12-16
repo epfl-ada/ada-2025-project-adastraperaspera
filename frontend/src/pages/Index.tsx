@@ -10,6 +10,7 @@ import MiscroscopySection from "@/components/MicroscopySection";
 import Footer from "@/components/Footer";
 import RQSection from "@/components/RQSection";  
 import RQ1Section from "@/components/RQ1Section";
+import RQ2Section from "@/components/RQ2Section";
 
 const Index = () => {
   return (
@@ -22,6 +23,7 @@ const Index = () => {
       <CellClusteringSection />
       <RQSection />
       <RQ1Section />
+      <RQ2Section />
       <SpatialMapSection />
       <MethodologySection />
       <ConclusionSection />

@@ -11,7 +11,7 @@ const CellClusteringSection = () => {
             Cell Type Analysis
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Explore clustering of cells based on the 347-dimensional gene expression vector.
+            We will now explore clustering of cells based on the 347-dimensional gene expression vector. We apply Leiden clustering with 15 nearest neighbors on PCA-reduced gene expression space. As a result, we obtained $K=19$ clusters. The clusters are then reduced to 2 dimensions using UMAP; the resulting plot is shown in the following figure.
           </p>
           <p className="text-lg text-muted-foreground max-w-3xl mx-auto mb-12 text-center">
           Superimposing the color-coded clusters onto the brain tissue, we can see that the
@@ -43,6 +43,9 @@ const CellClusteringSection = () => {
             />
           </div>
         </div>
+        <p className="text-lg text-muted-foreground max-w-3xl mx-auto mb-12 text-center">
+          Cluster 6 (i.e., vascular cells) is almost exclusively localized to the outer rim of the brain, corresponding to epidural space. Hippocampal formation shows a distinct cluster 14 which follows the elongated shape of the dentate gyrus. Looking at the inferred cell type, we can confirm that cluster 14 corresponds to Dentate gyrus immature neurons (glutamatergic). Meanwhile, the region hosting amygdala and hypothalamus is dominated by cluster 10. Cluster 10 corresponds to Hypothalamic medial mammillary glutamatergic neurons, matching its observed localization. The ventricle cavities are lined with distinct cluster of cells (ID 15). This cluster corresponds to Hypothalamic GnRH1-expressing glutamatergic neurons. This finding is expected since hypothalamus forms the floor and part of the lateral walls of the third ventricle.
+        </p>
       </div>
     </section>
   );
