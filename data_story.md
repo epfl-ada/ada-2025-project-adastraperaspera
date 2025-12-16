@@ -272,7 +272,29 @@ All 16 PIGs exhibit a statistically significant negative slope at 0.01 FDR level
 
 ### Extended regression
 
-Multi-plaque proximity engineering:
+In order to improve the performance of regression models and gauge the importance of various geometric characteristics of each plaque, we compute the area, perimeter, length of the major axis, orientation of the nearest plaque for each cell. We can get a sense of these features by reviewing the box plots below:
+
+<p align="center">
+  <!-- This was obtained with plot_boxgrid; usage in results.ipynb -->
+  <img src="figures/geometric_characteristics_of_plaque.png" width="480">
+  <br><em>Geometric characteristics of plaque</em>
+</p>
+
+Additionally, we will add two multi-plaque proximity features, which capture how "crowded with plaques" the local spatial environment around each cell is. While the nearest-plaque distance measures proximity to a single plaque, multi-plaque proximity quantifies the density of plaques within a local neighborhood, providing complementary spatial context that may better explain gene expression patterns and cellular responses. Namely, we will compute:
+
+- **Count**: the number of plaques within radius $R$
+- **Mean Distance**: the average distance from the plaques within radius $R$
+
+In this project, we set $R$ to be the median distance to nearest plaque. This ensures $R$ is calibrated to the spatial scale of the dataset. To determine if the chosen radius $R$ is informative, we will examine the distribution of **Count** across all cells as well as the **Cumulative Distribution Function (CDF)** which shows the proportion of cells with $\leq k$ plaques within radius $R$.
+
+When assessing the threshold, we will use the following guidelines:
+
+- **Good threshold**: Distribution shows variation (e.g., 30–70% of cells see 0 plaques, remainder see 1–5+)
+- **Too small**: >90% of cells have 0 plaques → increase $R$
+- **Too large**: <10% of cells have 0 plaques → decrease $R$
+
+Looking at the figure below, we can see that the distribution of **Count** shows variation (e.g., 55.2% of cells have 0 plaques within 61 µm, remainder have up to 21 plaques within this radius). This means that the radius $R$ is informative.
+
 <p align="center">
   <!-- This was obtained with plot_multi_plaque_proximity; usage in results.ipynb -->
   <img src="figures/multi_plaque_proximity.png" width="480">

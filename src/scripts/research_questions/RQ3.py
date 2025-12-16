@@ -13,6 +13,85 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
 import copy
+import matplotlib.pyplot as plt
+from typing import Iterable, Optional, Tuple
+
+def plot_boxgrid(
+    df,
+    cols: Iterable[str],
+    *,
+    figsize_per_plot: Tuple[float, float] = (4.5, 4.0),
+    showfliers: bool = True,
+    log_scale_cols: Optional[Iterable[str]] = None,
+    title: Optional[str] = None,
+    annotate_median: bool = True,
+    median_fmt: str = "{:.2f}",
+    median_fontsize: int = 9,
+):
+    """
+    Plot a 1xN grid of box plots for selected dataframe columns, optionally annotating medians.
+    """
+    cols = list(cols)
+    if not cols:
+        raise ValueError("`cols` must contain at least one column name.")
+
+    missing = [c for c in cols if c not in df.columns]
+    if missing:
+        raise KeyError(f"Missing columns in df: {missing}")
+
+    log_set = set(log_scale_cols) if log_scale_cols is not None else set()
+
+    w, h = figsize_per_plot
+    fig, axes = plt.subplots(1, len(cols), figsize=(w * len(cols), h), squeeze=False)
+    axes = axes[0]
+
+    for ax, col in zip(axes, cols):
+        s = df[col].dropna()
+        if s.empty:
+            ax.set_title(col, fontsize=10)
+            ax.text(0.5, 0.5, "No data", ha="center", va="center", transform=ax.transAxes)
+            ax.set_xticks([])
+            ax.grid(axis="y", alpha=0.3)
+            continue
+
+        data = s.to_numpy()
+        bp = ax.boxplot(data, vert=True, showfliers=showfliers)
+
+        if col in log_set:
+            ax.set_yscale("log")
+
+        ax.set_title(col, fontsize=10)
+        ax.set_xticks([])
+        ax.grid(axis="y", alpha=0.3)
+
+        if annotate_median:
+            median_val = float(s.median())
+            x = 1  # single box per axis
+
+            # Offset so text doesn't sit exactly on the line
+            if ax.get_yscale() == "log":
+                y = median_val * 1.08
+            else:
+                y_min, y_max = ax.get_ylim()
+                y = median_val + 0.02 * (y_max - y_min)
+
+            ax.text(
+                x, y,
+                median_fmt.format(median_val),
+                ha="center",
+                va="bottom",
+                fontsize=median_fontsize
+            )
+
+    if title:
+        fig.suptitle(title)
+        fig.tight_layout(rect=[0, 0, 1, 0.95])
+    else:
+        fig.tight_layout()
+
+    plt.show()
+    return fig, axes
+
 
 def compute_pig_neighbor_corr_matrix(
     cells_df: pd.DataFrame,
