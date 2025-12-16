@@ -76,8 +76,62 @@ const RQ1Section = () => {
       <div className="container mx-auto px-6 max-w-6xl">
         {/* Layout: sticky left panel + scrollable content right */}
         <div className="grid gap-10 lg:grid-cols-[320px_1fr] items-start">
+            <aside className="lg:sticky lg:top-24">
+                <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+                    {/* Header (same pattern as GeneExpression / Microscopy) */}
+                    <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+                        <Brain className="w-5 h-5 text-primary" />
+                    </div>
+                    <div>
+                        <div className="text-sm font-semibold text-foreground">
+                        Research Question 1
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                        How does cell type composition change in plaque proximity?
+                        </div>
+                    </div>
+                    </div>
 
-          {/* Sticky RQ panel */}
+                    {/* Navigation (identical hover / spacing / typography) */}
+                    <nav className="mt-6 space-y-2 text-sm">
+                    <a
+                        href="#rq1-method"
+                        className="block rounded-xl px-3 py-2 text-muted-foreground hover:text-foreground hover:bg-muted/50 transition"
+                    >
+                        Method
+                    </a>
+
+                    <a
+                        href="#rq1-slopes"
+                        className="block rounded-xl px-3 py-2 text-muted-foreground hover:text-foreground hover:bg-muted/50 transition"
+                    >
+                        Key coefficients
+                    </a>
+
+                    <a
+                        href="#rq1-frequency"
+                        className="block rounded-xl px-3 py-2 text-muted-foreground hover:text-foreground hover:bg-muted/50 transition"
+                    >
+                        Frequency vs distance
+                    </a>
+
+                    <a
+                        href="#rq1-markers"
+                        className="block rounded-xl px-3 py-2 text-muted-foreground hover:text-foreground hover:bg-muted/50 transition"
+                    >
+                        Marker enrichment
+                    </a>
+                    </nav>
+
+                    {/* Footer hint */}
+                    <div className="mt-6 text-xs text-muted-foreground">
+                    Tip: scroll or use the navigation above.
+                    </div>
+                </div>
+            </aside>
+
+          {/* 
           <aside className="lg:sticky lg:top-24">
             <div className="rounded-2xl border border-border bg-card p-6 shadow-md">
               <div className="text-xs uppercase tracking-wide text-muted-foreground">Research Question 1</div>
@@ -123,7 +177,7 @@ const RQ1Section = () => {
                 Tip: use the links above, or just scroll the analysis on the right.
               </div>
             </div>
-          </aside>
+          </aside>Sticky RQ panel */}
 
           {/* Analysis content */}
           <div className="space-y-12">
