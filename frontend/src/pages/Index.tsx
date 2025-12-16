@@ -9,6 +9,7 @@ import ConclusionSection from "@/components/ConclusionSection";
 import MiscroscopySection from "@/components/MicroscopySection";
 import Footer from "@/components/Footer";
 import RQSection from "@/components/RQSection";  
+import RQ1Section from "@/components/RQ1Section";
 
 const Index = () => {
   return (
@@ -20,6 +21,7 @@ const Index = () => {
       <GeneExpressionChart />
       <CellClusteringSection />
       <RQSection />
+      <RQ1Section />
       <SpatialMapSection />
       <MethodologySection />
       <ConclusionSection />
