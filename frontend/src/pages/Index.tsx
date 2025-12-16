@@ -7,6 +7,7 @@ import SpatialMapSection from "@/components/SpatialMapSection";
 import MethodologySection from "@/components/MethodologySection";
 import ConclusionSection from "@/components/ConclusionSection";
 import MiscroscopySection from "@/components/MicroscopySection";
+import MicroscopySection2 from "@/components/MicroscopySection2";
 import Footer from "@/components/Footer";
 import RQSection from "@/components/RQSection";  
 import RQ1Section from "@/components/RQ1Section";
@@ -21,7 +22,8 @@ const Index = () => {
       <HeroSection />
       <IntroductionSection />
       {/*<MetricsSection /> */}
-      <MiscroscopySection/>
+      {/*<MiscroscopySection/>*/}
+      <MicroscopySection2/>
       <GeneExpressionChart />
       <CellClusteringSection />
       <RQSection />
