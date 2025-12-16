@@ -1,4 +1,5 @@
 import PlotFrame from "@/components/PlotFrame";
+import { Brain } from 'lucide-react'
 
 const base = import.meta.env.BASE_URL;
 
@@ -75,6 +76,7 @@ const RQ1Section = () => {
       <div className="container mx-auto px-6 max-w-6xl">
         {/* Layout: sticky left panel + scrollable content right */}
         <div className="grid gap-10 lg:grid-cols-[320px_1fr] items-start">
+
           {/* Sticky RQ panel */}
           <aside className="lg:sticky lg:top-24">
             <div className="rounded-2xl border border-border bg-card p-6 shadow-md">
