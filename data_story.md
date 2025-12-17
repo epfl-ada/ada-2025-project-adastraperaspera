@@ -272,6 +272,8 @@ All 16 PIGs exhibit a statistically significant negative slope at 0.01 FDR level
 
 ### Extended regression
 
+#### Feature engineering
+
 In order to raise explanatory power ($R^2$), reduce heteroscedasticity of regression models and gauge the importance of various geometric characteristics of each plaque, we compute the area, perimeter, length of the major axis, orientation of the nearest plaque for each cell. We can get a sense of these features by reviewing the box plots below:
 
 <p align="center">
@@ -311,7 +313,7 @@ After computing neighborhood mean expression features for PIG genes, we can now 
 
 <p align="center">
   <!-- This was obtained with plot_corr_matrix; usage in results.ipynb -->
-  <img src="figures/neighbor_pig.png" width="480">
+  <img src="figures/pigs_coexpression.png" width="480">
   <br><em>Neighbor mean PIG</em>
 </p>
 
@@ -320,21 +322,46 @@ Note that the matrix above is not symmetric since the target/neighbor relationsh
 | Target PIG | Neighbor PIG | Pearson correlation |
 |---|---|---:|
 | Gfap | C4b | 0.47 |
-| Gfap | Tyrobp | 0.45 |
-| Gfap | Lyz2 | 0.44 |
+| Gfap | S100a6 | 0.47 |
+| Gfap | Vim | 0.45 |
 
 Let us explore each of these relationships in more detail.
 
 - Gfap/C4b
     - Gfap marks reactive astrogliosis around plaques, and C4b is part of the complement cascade that is repeatedly implicated in the plaque-associated glial response. C4a/C4b is expressed in astrocytes, making co-variation with Gfap expected
-- Gfap/Tyrobp
-    - Tyrobp is a core microglial immune adaptor that is known to be involved in Alzheimer's disease (AD) microglial activation and plaque responses.
-    - In the plaque niche, microglial activation and astrogliosis rise together.
-    - Existing research on plaque proximity similarly emphasizes coordinated microglial activation near plaques.
-- Gfap/Lyz2
-    - Lyz2 is a canonical myeloid activation marker and appears in microglial genes used for spatial plaque analyses.
-    - It is also known to be involved in plaque-related gene expression.
-    - Thus, Gfap/Lyz2 is due to the fact that reactive astrocyte domains are associated with plaque-associated microglia.
+- Gfap/S100a6
+    - S100a6, also known as calcyclin, is an S100-family calcium-binding protein that has been reported to be upregulated in astrocytes in Alzheimer’s disease (AD).
+    - In AD tissue and AD mouse models, S100a6 signal is concentrated in astrocytes surrounding Aβ plaques, and these astrocytes are also known to express Gfap.
+    - Plaque niches show coordinated gliosis which includes both reactive astrocytes and activated microglia. This explains the Gfap/S100a6 co-occurrence.
+- Gfap/Vim
+    - Vim, also known as vimentin, and Gfap are astrocyte intermediate filament proteins that are commonly upregulated during reactive astrogliosis.
+    - In AD, reactive astrocytes are surrounding amylAβoid plaques and show increased cytoskeletal markers. This includes Gfap and Vim.
+
+
+#### Nested regression analysis
+
+In this section, we will perform nested regression modeling to systematically assess how different spatial feature groups contribute to predicting Plaque-Induced Gene (PIG) expression. For each PIG, we fit a series of nested linear models that incrementally add features, allowing us to quantify the contribution of each using statistical tests. Namely, we fit 4 models:
+
+- Regress:
+  - PIG expression against 
+  - Distance to plaque
+- Regress:
+  - PIG expression against 
+  - Distance to plaque and
+  - Plaque geometry features (area, perimeter, major axis, orientation)
+- Regress:
+  - PIG expression against 
+  - Distance to plaque and
+  - Plaque geometry features
+  - Multi-plaque proximity features (number of plaques within radius, mean distance to plaques within radius)
+- Regress:
+  - PIG expression against 
+  - Distance to plaque and
+  - Plaque geometry features
+  - Multi-plaque proximity features
+  - Neighborhood PIGs features (mean expression of top 1/2/4/8/15 other PIGs in 100 nearest neighbors)
+
+When comparing each successive model, we use nested F-tests to assess whether adding features significantly improves the proportion of variance explained. Further, we perform result separation. Namely, we automatically separate results into model summaries and nested comparisons for clean interpretation.
 
 ## RQ4: Inferring plaque distance from gene expression
 

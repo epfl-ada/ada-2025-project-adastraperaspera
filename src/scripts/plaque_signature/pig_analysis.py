@@ -37,8 +37,22 @@ def zscore_all_mice(mice, gene_cols):
 import numpy as np
 
 PIG_GENES = [
-    "Gfap", "Apoe", "Cst3", "Hexb", "B2m", "C4b", "Ifit3", "Cxcl10",
-    "Cd63", "Tyrobp", "Lyz2", "Serpina3n",
+    "Hexb",
+    "Cst3",
+    "Cd63",
+    "C4b",
+    "Ctsd",
+    "B2m",
+    "H2-K1",
+    "Apoe",
+    "Gfap",
+    "Nrep",
+    "Serpina3n",
+    "Cd74",
+    "Cxcl10",
+    "Vim",
+    "S100a6",
+    "Ifit3",
 ]
 
 def compute_pig_scores(mice_z, pig_genes=PIG_GENES):
