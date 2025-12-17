@@ -3623,7 +3623,7 @@ def make_cell_to_plaque_distance_map_plotly(
                 "Cell<br>"
                 f"Distance: %{{marker.color:.1f}} µm<extra></extra>"
             ),
-            #name="Cells",
+            showlegend=False,
         )
     )
 
@@ -3659,14 +3659,16 @@ def make_cell_to_plaque_distance_map_plotly(
                         ),
                         hoverinfo="skip",
                         showlegend=False,
+                        
                     )
                 )
 
     # ------------------ layout ------------------
     fig.update_layout(
         title=title,
-        width=figsize_px[0],
-        height=figsize_px[1],
+        #width=figsize_px[0],
+        #height=figsize_px[1],
+        autosize=True,
         template="simple_white",
         margin=dict(l=60, r=40, t=60, b=50),
         paper_bgcolor="rgba(0,0,0,0)",
