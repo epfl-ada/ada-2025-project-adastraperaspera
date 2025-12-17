@@ -369,9 +369,11 @@ When comparing each successive model, we use nested F-tests to assess whether ad
   <br><em>PIG nested regression: mean adjusted R² (min/max across genes)</em>
 </p>
 
-From the figure above, we can see that the largest improvements in adjusted $R^2$ are achieved by adding the expression level of the single most correlated PIG. This is expected due to the aforementioned associations: the amyloid beta plaque acts as a common confounder which impacts the expression of groups of PIGs in a similar way; thus, expression level of other PIGs can act as a proxy for the expression level of the target PIG. 
+From the figure, we can see that the largest improvements in adjusted $R^2$ are achieved by adding the expression level of the single most correlated PIG (the average improvement is 0.074). This is expected due to the aforementioned associations among PIGs. The amyloid beta plaque acts as a common confounder which impacts the expression of a group of PIGs in a similar way; thus, expression level of a related PIG can act as a proxy for the expression level of the target PIG. 
 
-Interestingly, in 15 out of 16 PIGs, adding plaque geometry 
+The figure shows that Gfap exhibits the largest adjusted $R^2$ in 7 out of 8 linear models, which reflects out previous findings showing that Gfap is strongly associated with plaque distance. Meanwhile, Cxcl10 exhibits the lowest adjusted $R^2$ in 5 out of 8 linear models, which is likely due to the extreme zero-inflation shown previously.
+
+Interestingly, however, in 15 out of 16 PIGs, adding plaque geometry (model 1) and multi-plaque proximity (model 2) features significantly improved the adjusted $R^2$ (albeit moderately in terms of absolute value: 0.0021 and 0.0063, respectively). This means that these features are still biologically salient and explain some of the effect of the amyloid beta plaques on the surrounding tissue.
 
 ## RQ4: Inferring plaque distance from gene expression
 
