@@ -1075,6 +1075,8 @@ def create_feature_block_importance_table(
         # Compute statistics
         mean_delta_r2 = comp_data_valid["delta_r_squared"].mean()
         median_delta_r2 = comp_data_valid["delta_r_squared"].median()
+        mean_delta_adj_r2 = comp_data_valid["delta_adj_r_squared"].mean()
+        median_delta_adj_r2 = comp_data_valid["delta_adj_r_squared"].median()
         n_tested = len(comp_data_valid)
         n_significant = (comp_data_valid[pval_col] < alpha).sum()
         pct_significant = 100 * n_significant / n_tested if n_tested > 0 else 0.0
@@ -1087,6 +1089,8 @@ def create_feature_block_importance_table(
                 "n_significant": n_significant,
                 "n_tested": n_tested,
                 "pct_significant": pct_significant,
+                "mean_delta_adj_r_squared": mean_delta_adj_r2,
+                "median_delta_adj_r_squared": median_delta_adj_r2,
             }
         )
 
@@ -1104,130 +1108,136 @@ def create_best_neighbor_pigs_table(
     neighbor_rankings: dict[str, list[tuple[str, float]]],
     alpha: float = 0.05,
     use_fdr_corrected: bool = True,
+    score_col: str = "delta_adj_r_squared",  # e.g. "adj_r_squared_to"
 ) -> pd.DataFrame:
-    """
-    Create table showing best neighbor PIG features for each target gene.
-
-    For each target PIG gene, looks at all M2→M3_k comparisons and identifies:
-    - The model where ΔR² is largest AND significant
-    - The value of k (number of neighbor features)
-    - Which neighbor PIG genes were included in the top-k
-    - The amount of ΔR² they explained
-
-    Args:
-        nested_comparisons: DataFrame from separate_nested_regression_results()
-            or apply_fdr_correction_to_comparisons()
-        neighbor_rankings: Dictionary from rank_neighbor_pigs_by_correlation()
-            Maps gene -> list of (neighbor_col_name, |corr|) sorted descending
-        alpha: Significance threshold (default: 0.05)
-        use_fdr_corrected: If True, use f_test_pval_adj; otherwise use f_test_pval
-
-    Returns:
-        DataFrame with columns:
-            - gene: Target PIG gene name
-            - best_k: Optimal k value (number of neighbor features)
-            - best_model: Model identifier (e.g., "3_4")
-            - delta_r_squared: ΔR² explained by neighbor features
-            - delta_adj_r_squared: Δadj R² explained
-            - f_test_pval: P-value (corrected if available)
-            - is_significant: Whether improvement is significant
-            - top_k_neighbor_genes: List of neighbor gene names in top-k
-            - top_k_neighbor_cols: List of neighbor column names in top-k
-    """
     if nested_comparisons.empty:
         logger.warning("Empty comparisons DataFrame provided.")
         return pd.DataFrame()
 
-    # Determine which p-value column to use
+    df = nested_comparisons.copy()
+
+    # Choose p-value column
     pval_col = (
         "f_test_pval_adj"
-        if (use_fdr_corrected and "f_test_pval_adj" in nested_comparisons.columns)
+        if (use_fdr_corrected and "f_test_pval_adj" in df.columns)
         else "f_test_pval"
     )
+    if pval_col not in df.columns:
+        raise ValueError(f"Missing p-value column '{pval_col}' in nested_comparisons.")
+    if score_col not in df.columns:
+        raise ValueError(f"Missing score column '{score_col}' in nested_comparisons.")
 
-    if use_fdr_corrected and pval_col not in nested_comparisons.columns:
-        logger.warning(
-            "f_test_pval_adj not found. Using uncorrected p-values. "
-            "Run apply_fdr_correction_to_comparisons() first."
-        )
-        pval_col = "f_test_pval"
+    df["model_from"] = df["model_from"].astype(str)
+    df["model_to"] = df["model_to"].astype(str)
 
-    # Filter to M2→M3_k comparisons only
-    m2_to_m3_comparisons = nested_comparisons[
-        nested_comparisons["comparison"].str.startswith("M2→M3_")
-    ].copy()
-
-    if m2_to_m3_comparisons.empty:
-        logger.warning("No M2→M3_k comparisons found.")
-        return pd.DataFrame()
-
-    # Extract k value from comparison
-    def extract_k(comparison: str) -> int:
-        """Extract k value from comparison string like 'M2→M3_4'."""
-        if "→M3_" in comparison:
-            k_str = comparison.split("→M3_")[1]
+    def parse_k(m: str) -> int:
+        m = str(m)
+        if m.startswith("3_"):
             try:
-                return int(k_str)
-            except ValueError:
+                return int(m.split("_", 1)[1])
+            except Exception:
                 return 0
         return 0
 
-    m2_to_m3_comparisons["k"] = m2_to_m3_comparisons["comparison"].apply(extract_k)
+    # Keep full chain: (2 or 3_k) -> 3_k
+    df = df[df["model_to"].str.startswith("3_") & (df["model_from"].eq("2") | df["model_from"].str.startswith("3_"))].copy()
+    if df.empty:
+        logger.warning("No (2 or 3_k) → 3_k comparisons found.")
+        return pd.DataFrame()
 
-    # For each gene, find best model (largest significant ΔR²)
+    df["k_from"] = df["model_from"].apply(lambda m: 0 if m == "2" else parse_k(m))
+    df["k_to"] = df["model_to"].apply(parse_k)
+    df = df[df["k_to"] > df["k_from"]].copy()
+    if df.empty:
+        logger.warning("No increasing-k transitions found.")
+        return pd.DataFrame()
+
+    # Ensure numeric deltas for cumulative computation (if present)
+    df["delta_r_squared"] = pd.to_numeric(df.get("delta_r_squared"), errors="coerce")
+    df["delta_adj_r_squared"] = pd.to_numeric(df.get("delta_adj_r_squared"), errors="coerce")
+
     best_rows = []
 
-    for gene in m2_to_m3_comparisons["gene"].unique():
-        gene_comparisons = m2_to_m3_comparisons[m2_to_m3_comparisons["gene"] == gene].copy()
+    for gene, g in df.groupby("gene", sort=False):
+        g = g.copy()
 
-        # Filter to significant improvements
-        significant = gene_comparisons[gene_comparisons[pval_col] < alpha].copy()
+        # Choose best row among significant if any, else best overall, based on score_col
+        g_score = pd.to_numeric(g[score_col], errors="coerce")
+        g = g.assign(_score=g_score).dropna(subset=["_score"])
+        if g.empty:
+            continue
 
-        if significant.empty:
-            # No significant improvements, use largest ΔR² regardless of significance
-            best_row = gene_comparisons.loc[gene_comparisons["delta_r_squared"].idxmax()]
-            is_sig = False
-        else:
-            # Use largest significant ΔR²
-            best_row = significant.loc[significant["delta_r_squared"].idxmax()]
+        sig = g[g[pval_col] < alpha]
+        if not sig.empty:
+            best = sig.loc[sig["_score"].idxmax()]
             is_sig = True
+        else:
+            best = g.loc[g["_score"].idxmax()]
+            is_sig = False
 
-        k = int(best_row["k"])
-        model_to = best_row["model_to"]
+        best_k = int(best["k_to"])
+        best_model = str(best["model_to"])
+        best_step = f"M{best['model_from']}→M{best['model_to']}"
 
-        # Get top-k neighbor genes from rankings
-        top_k_neighbor_cols = []
-        top_k_neighbor_genes = []
+        # Cumulative Δ from Model 2 to each k via DP: cum[k_to] = cum[k_from] + step_delta
+        # (works with jumps like 2->4 as long as the corresponding comparison exists)
+        cum_r2 = {0: 0.0}
+        cum_adj = {0: 0.0}
 
-        if neighbor_rankings.get(gene):
-            # Get top-k neighbor columns
-            top_k_neighbor_cols = [col for col, _ in neighbor_rankings[gene][:k]]
+        # build transitions sorted by k_to to make DP deterministic
+        g_sorted = g.sort_values(["k_to", "k_from"]).to_dict("records")
+        for row in g_sorted:
+            kf, kt = int(row["k_from"]), int(row["k_to"])
+            if kf not in cum_r2:
+                continue
+            dr2 = row.get("delta_r_squared")
+            da2 = row.get("delta_adj_r_squared")
+            if pd.notna(dr2):
+                cum_r2[kt] = float(cum_r2[kf] + float(dr2))
+            if pd.notna(da2):
+                cum_adj[kt] = float(cum_adj[kf] + float(da2))
 
-            # Extract gene names from column names (neigh_mean_GeneName -> GeneName)
-            top_k_neighbor_genes = [col.replace("neigh_mean_", "") for col in top_k_neighbor_cols]
+        total_delta_r2 = cum_r2.get(best_k, np.nan)
+        total_delta_adj = cum_adj.get(best_k, np.nan)
+
+        # Which neighbors were added in the selected step (k_from+1 .. k_to)?
+        added_cols, added_genes = [], []
+        topk_cols, topk_genes = [], []
+        if gene in neighbor_rankings and best_k > 0:
+            ranked_cols = [c for c, _ in neighbor_rankings[gene]]
+            k_from = int(best["k_from"])
+            added_cols = ranked_cols[k_from:best_k]
+            added_genes = [c.replace("neigh_mean_", "") for c in added_cols]
+            topk_cols = ranked_cols[:best_k]
+            topk_genes = [c.replace("neigh_mean_", "") for c in topk_cols]
 
         best_rows.append(
             {
                 "gene": gene,
-                "best_k": k,
-                "best_model": model_to,
-                "delta_r_squared": best_row["delta_r_squared"],
-                "delta_adj_r_squared": best_row["delta_adj_r_squared"],
-                "f_test_pval": best_row[pval_col],
-                "is_significant": is_sig,
-                "top_k_neighbor_genes": ", ".join(top_k_neighbor_genes),
-                "top_k_neighbor_cols": ", ".join(top_k_neighbor_cols),
+                "best_k": best_k,
+                "best_model": best_model,
+                "best_step": best_step,
+                "score": float(best["_score"]),
+                "score_metric": score_col,
+                # cumulative deltas from Model 2:
+                "delta_r_squared": total_delta_r2,
+                "delta_adj_r_squared": total_delta_adj,
+                # step deltas for the chosen transition:
+                "step_delta_r_squared": float(best.get("delta_r_squared", np.nan)),
+                "step_delta_adj_r_squared": float(best.get("delta_adj_r_squared", np.nan)),
+                "f_test_pval": float(best[pval_col]),
+                "is_significant": bool(is_sig),
+                "added_neighbor_genes": ", ".join(added_genes),
+                "added_neighbor_cols": ", ".join(added_cols),
+                "top_k_neighbor_genes": ", ".join(topk_genes),
+                "top_k_neighbor_cols": ", ".join(topk_cols),
             }
         )
 
-    best_neighbors_df = pd.DataFrame(best_rows)
+    out = pd.DataFrame(best_rows)
+    if out.empty:
+        return out
 
-    # Sort by delta_r_squared (descending)
-    best_neighbors_df = best_neighbors_df.sort_values("delta_r_squared", ascending=False)
+    out = out.sort_values("score", ascending=False, kind="stable").reset_index(drop=True)
+    return out
 
-    logger.info(
-        f"✅ Created best neighbor PIGs table for {len(best_neighbors_df)} genes. "
-        f"{best_neighbors_df['is_significant'].sum()} genes have significant improvements."
-    )
-
-    return best_neighbors_df

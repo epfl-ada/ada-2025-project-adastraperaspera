@@ -36,14 +36,6 @@ In total, Xenium dataset contains:
 
 In this project, we analyze the Xenium dataset from 10X Genomics which contains trascriptomic data accompanied by morphology images. The data comes from sagittal brain slices of 6 mice stained with 4′,6-diamidino-2-phenylindole (DAPI) fluorescent DNA-binding nucleus dye. Three mice constitute healthy controls (wild type, no induced mutations) at 2.5, 5.7, and 13.4 months of age. The remaining mice are mutated (i.e., transgenic) at 2.5, 5.7, and 17.9 months of age.
 
-Since each brain slice comes from a different mouse, the inter-mouse variation in brain morphology is very significant. Our best attempt to align a pair of most similar mice in terms of age and disease status(transgenic at 17.9 and 5.7 months) reveals significant divergences in the brain geometry, especially the dentate gyrus. Overall, the Root Mean Square Error (RMSE) for the 8 key point pairs reached 3,390 µm, which is over 50 times larger than the median cell to plaque distance.
-
-<p align="center">
-  <img src="src/data/figures/Tg_17_Tg_5_alignment.png" width="480">
-  <br><em>Attempted alignment of Tg 5.7 months old mouse onto Tg 17.9 months old mouse</em>
-</p>
-
-
 The induced mutation forces the murine cells to express the amyloid precursor protein (App) carrying known Alzheimer's disease familial mutations. As a result of mutations, the transgenic mice express up to 5 times more of the endogenous App. This leads to early and aggressive cerebral amyloid beta (Aβ) plaque deposition as soon as 3 months of age. The Aβ plaques are revealed with immunofluorescence (IF) staining, but only in transgenic mice at 17.9 months of age; in the figure below, the plaques appear in red.
 
 <p align="center">
@@ -342,26 +334,28 @@ Let us explore each of these relationships in more detail.
 
 In this section, we will perform nested regression modeling to systematically assess how different spatial feature groups contribute to predicting Plaque-Induced Gene (PIG) expression. For each PIG, we fit a series of nested linear models that incrementally add features, allowing us to quantify the contribution of each using statistical tests. Namely, we fit 4 models:
 
-- Regress:
-  - PIG expression against 
+- Model 0:
+  - Regress PIG expression against 
   - Distance to plaque
-- Regress:
-  - PIG expression against 
+- Model 1:
+  - Regress PIG expression against 
   - Distance to plaque and
   - Plaque geometry features (area, perimeter, major axis, orientation)
-- Regress:
-  - PIG expression against 
+- Model 2:
+  - Regress PIG expression against 
   - Distance to plaque and
   - Plaque geometry features
   - Multi-plaque proximity features (number of plaques within radius, mean distance to plaques within radius)
-- Regress:
-  - PIG expression against 
+- Models 3_1, 3_2, 3_4, 3_8, 3_15:
+  - Regress PIG expression against 
   - Distance to plaque and
   - Plaque geometry features
   - Multi-plaque proximity features
   - Neighborhood PIGs features (mean expression of top 1/2/4/8/15 other PIGs in 100 nearest neighbors)
 
-When comparing each successive model, we use nested F-tests to assess whether adding features significantly improves the proportion of variance explained. We use the significance level of 0.01. Further, we perform result separation. Namely, we automatically separate results into model summaries and nested comparisons for clean interpretation. The results are summarized in the figure below.
+When comparing each successive model, we use nested F-tests to assess whether adding features significantly improves the proportion of variance explained. We use the significance level of 0.01. Further, we account for multiple testing by applying  Benjamini-Hochberg FDR correction. This is because for each nested model comparison, we perform 16 independent tests, one for each PIG.
+
+Additionally, we perform result separation. Namely, we automatically separate results into model summaries and nested comparisons for clean interpretation. The results are summarized in the figure below.
 
 <p align="center">
   <!-- This was obtained with plot_nested_regression_adj_r2; usage in results.ipynb -->
@@ -369,11 +363,11 @@ When comparing each successive model, we use nested F-tests to assess whether ad
   <br><em>PIG nested regression: mean adjusted R² (min/max across genes)</em>
 </p>
 
-From the figure, we can see that the largest improvements in adjusted $R^2$ are achieved by adding the expression level of the single most correlated PIG (the average improvement is 0.074). This is expected due to the aforementioned associations among PIGs. The amyloid beta plaque acts as a common confounder which impacts the expression of a group of PIGs in a similar way; thus, expression level of a related PIG can act as a proxy for the expression level of the target PIG. 
+From the figure, we can see that the largest improvements in adjusted $R^2$ are achieved by adding the expression level of the single most correlated PIG (the average improvement is 0.074). This is expected due to the aforementioned associations among PIGs. The amyloid beta plaque acts as a common confounder which impacts the expression of a group of PIGs in a similar way; thus, expression level of a related PIG can act as a proxy for the expression level of the target PIG. Further, once we know the first most similar proxy, any additional proxies improve the adjusted $R^2$ less drastically (0.036, about 2x less than the first proxy). Nevertheless, this improvement remains statistically significant, even after multiple testing correction. Thus, from the nested analysis point of view, the optimal number of proxy PIGs is 15 even though most of the improvement is achieved with the first proxy.
 
 The figure shows that Gfap exhibits the largest adjusted $R^2$ in 7 out of 8 linear models, which reflects out previous findings showing that Gfap is strongly associated with plaque distance. Meanwhile, Cxcl10 exhibits the lowest adjusted $R^2$ in 5 out of 8 linear models, which is likely due to the extreme zero-inflation shown previously.
 
-Interestingly, however, in 15 out of 16 PIGs, adding plaque geometry (model 1) and multi-plaque proximity (model 2) features significantly improved the adjusted $R^2$ (albeit moderately in terms of absolute value: 0.0021 and 0.0063, respectively). This means that these features are still biologically salient and explain some of the effect of the amyloid beta plaques on the surrounding tissue.
+Interestingly, however, in 15 out of 16 PIGs, adding plaque geometry (model 1) and multi-plaque proximity (model 2) features significantly improved the adjusted $R^2$ (albeit moderately in terms of absolute value: 0.0021 and 0.0063, respectively). This means that these features are still biologically salient and explain some of the effect of the amyloid beta plaques on the surrounding tissue. However, their impact does not generalize to all PIGs, unlike the neighborhood gene expression features (models 3_1 through 3_15).
 
 ## RQ4: Inferring plaque distance from gene expression
 
