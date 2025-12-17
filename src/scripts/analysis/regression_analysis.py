@@ -18,259 +18,324 @@ import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
 
 
-def plot_nested_regression_trajectories(
+def _bh_adjust(pvals: np.ndarray) -> np.ndarray:
+    """Benjamini–Hochberg FDR adjustment; returns adjusted p-values in original order."""
+    pvals = np.asarray(pvals, dtype=float)
+    out = np.full_like(pvals, np.nan, dtype=float)
+
+    mask = np.isfinite(pvals)
+    pv = pvals[mask]
+    m = pv.size
+    if m == 0:
+        return out
+
+    order = np.argsort(pv)
+    ranked = pv[order]
+    q = ranked * m / (np.arange(1, m + 1))
+
+    q = np.minimum.accumulate(q[::-1])[::-1]
+    q = np.clip(q, 0.0, 1.0)
+
+    inv_order = np.empty_like(order)
+    inv_order[order] = np.arange(m)
+    out[mask] = q[inv_order]
+    return out
+
+
+def plot_nested_regression_adj_r2(
     nested_regression_results: pd.DataFrame,
-    *,
     gene_col: str = "gene",
     model_col: str = "model",
     y_col: str = "adj_r_squared",
     p_col: str = "f_test_pval",
     alpha: float = 0.01,
-    p_adjust: str = "bh",  # "bh" or "none"
-
-    figsize=(14, 6),
-    title: str | None = "Nested regression trajectories (Adjusted R²)",
-
-    # --- axis labeling strategy ---
-    model_label_mode: str = "legend_key",  # "axis_multiline", "axis_short", "legend_key"
-    x_tick_rotation: float | str = 0,
-    x_tick_fontsize: int = 10,
-
-    # --- restore y-scale option ---
-    yscale: str = "linear",                # "linear" or "symlog"
-    symlog_linthresh: float = 0.01,
-    symlog_linscale: float = 1.0,
-
-    # --- markers & legends ---
-    show_sig_legend: bool = True,
-    sig_marker: str = "*",
-    sig_color: str = "red",
-    nonsig_marker: str = "s",
-    nonsig_color: str = "saddlebrown",     # brown squares
-
-    # --- legend panel layout (prevents overlap) ---
-    legend_panel: bool = True,
-    legend_panel_frac: float = 0.34,       # fraction of figure width reserved for legends
-    legend_heights=(0.52, 0.16, 0.32),     # Genes, Significance, Model terms
-    gene_legend_ncol: int = 1,
-    gene_legend_fontsize: int = 12,
-    model_terms_fontsize: int = 12,
-    sig_legend_fontsize: int = 12,
-
-    ax=None,
+    adjust_pvals: bool = True,
+    model_order: list[str] | None = None,
+    mode: str = "genes",                  # "genes" or "average"
+    print_summary: bool = True,           # used when mode="average"
+    annotate_minmax_genes: bool = True,   # used when mode="average"
+    annotate_fontsize: int = 8,
+    add_model3_legend: bool = True,       # adds right-side legend explaining Model 3(k)
+    model3_legend_title: str = "Model 3(k) variants",
+    model3_legend_text: str | None = None,  # kept for backwards compat; ignored if we can infer k
+    title: str | None = None,
+    figsize: tuple[float, float] = (12, 6),
+    savepath: str | None = None,
     show: bool = True,
 ):
+    """
+    Visualize adjusted R² across nested regression models.
+
+    mode="genes":
+      - one line per gene
+      - markers per point for models > 0:
+          black square if (adjusted) p >= alpha
+          red star if (adjusted) p < alpha
+      - gene legend on the right
+
+    mode="average":
+      - one line showing mean adjusted R² across genes per model
+      - error bars span min..max (across genes) per model
+      - optional min/max gene labels at the error bar endpoints
+      - optional Model 3(k) explanatory legend on the right
+
+    Returns
+    -------
+    (fig, ax, summary_df)
+      summary_df is only populated in mode="average"; otherwise None.
+    """
+    df = nested_regression_results.copy()
+
     required = {gene_col, model_col, y_col}
-    missing = required - set(nested_regression_results.columns)
+    missing = required - set(df.columns)
     if missing:
         raise ValueError(f"Missing required columns: {sorted(missing)}")
 
-    df = nested_regression_results.copy()
+    if p_col not in df.columns:
+        raise ValueError(f"Missing p-value column '{p_col}'. Either add it or change p_col.")
 
-    # --- model ordering helpers ---
-    def _model_sort_key(m: str):
-        s = str(m)
-        if s.isdigit():
-            return (int(s), 0)
-        if s.startswith("3_"):
+    # Infer model order if not provided
+    if model_order is None:
+        models = df[model_col].astype(str).unique().tolist()
+        base = [m for m in ["0", "1", "2"] if m in models]
+
+        def parse_k(m: str):
+            if isinstance(m, str) and m.startswith("3_"):
+                try:
+                    return int(m.split("_", 1)[1])
+                except Exception:
+                    return None
+            return None
+
+        m3 = [m for m in models if isinstance(m, str) and m.startswith("3_")]
+        m3_sorted = sorted(m3, key=lambda m: (parse_k(m) is None, parse_k(m) or 10**9, m))
+
+        known = set(base) | set(m3_sorted)
+        other = sorted([m for m in models if m not in known])
+        model_order = base + m3_sorted + other
+
+    def model_label(m: str) -> str:
+        m = str(m)
+        if m in {"0", "1", "2"}:
+            return f"Model {m}"
+        if m.startswith("3_"):
             try:
-                k = int(s.split("_", 1)[1])
-                return (3, k)
+                k = int(m.split("_", 1)[1])
+                return f"Model 3({k})"
             except Exception:
-                return (3, 10**9)
-        return (10**9, s)
+                return f"Model {m}"
+        return f"Model {m}"
 
-    def _model_compact_label(m: str):
-        s = str(m)
-        if s.startswith("3_"):
-            return f"3({s.split('_', 1)[1]})"
-        return s
+    # Parse Model 3(k) variants in plotted order
+    m3_ks = []
+    for m in model_order:
+        sm = str(m)
+        if sm.startswith("3_"):
+            try:
+                m3_ks.append(int(sm.split("_", 1)[1]))
+            except Exception:
+                pass
+    has_model3_variants = len(m3_ks) > 0
 
-    def _model_explicit_label(m: str, multiline: bool) -> str:
-        s = str(m)
-        if s == "0":
-            return "distance_to_plaque"
-        if s == "1":
-            return "distance + \nplaque_geometry" if multiline else "distance + plaque_geometry"
-        if s == "2":
-            return "distance + \ngeometry + \nmulti_plaque" if multiline else "distance + geometry + multi_plaque"
-        if s.startswith("3_"):
-            k = s.split("_", 1)[1]
-            if multiline:
-                return f"distance + \ngeometry + \nmulti_plaque + \ntop_{k}_neighbor_PIGs"
-            return f"distance + geometry + multi_plaque + top_{k}_neighbor_PIGs"
-        return s
+    # Optional BH adjustment within each model (excluding baseline "0")
+    df["_p_for_sig_"] = pd.to_numeric(df[p_col], errors="coerce").astype(float)
 
-    models_sorted = sorted(df[model_col].unique(), key=_model_sort_key)
-    x = np.arange(len(models_sorted))
-
-    # --- BH/FDR adjustment within each model step across genes ---
-    df["_p_adj"] = np.nan
-
-    def _bh_adjust(pvals: np.ndarray) -> np.ndarray:
-        pvals = np.asarray(pvals, dtype=float)
-        n = pvals.size
-        order = np.argsort(pvals)
-        ranked = pvals[order]
-        q = ranked * n / (np.arange(n) + 1)
-        q = np.minimum.accumulate(q[::-1])[::-1]
-        q = np.clip(q, 0.0, 1.0)
-        out = np.empty_like(q)
-        out[order] = q
-        return out
-
-    if p_adjust.lower() == "bh":
-        if p_col not in df.columns:
-            raise ValueError(f"p_col='{p_col}' not found in dataframe columns.")
-        for m in models_sorted:
+    if adjust_pvals:
+        df["_p_adj_"] = np.nan
+        for m, g in df.groupby(model_col, sort=False):
             if str(m) == "0":
                 continue
-            mask = df[model_col].astype(str) == str(m)
-            pvals = df.loc[mask, p_col].astype(float).to_numpy()
-            ok = ~np.isnan(pvals)
-            if ok.sum() == 0:
-                continue
-            df.loc[df.index[mask][ok], "_p_adj"] = _bh_adjust(pvals[ok])
-    elif p_adjust.lower() == "none":
-        if p_col in df.columns:
-            df["_p_adj"] = df[p_col].astype(float)
+            df.loc[g.index, "_p_adj_"] = _bh_adjust(g["_p_for_sig_"].to_numpy())
+        p_used = "_p_adj_"
+        p_label = "BH-adjusted p"
     else:
-        raise ValueError("p_adjust must be 'bh' or 'none'.")
+        p_used = "_p_for_sig_"
+        p_label = "p"
 
-    # --- axes creation: main plot + dedicated legend panel (prevents overlap) ---
-    if ax is None and legend_panel:
-        fig = plt.figure(figsize=figsize)
-        ratio = legend_panel_frac / max(1e-9, (1.0 - legend_panel_frac))
-        gs = fig.add_gridspec(1, 2, width_ratios=[1.0, ratio], wspace=0.02)
+    x_labels = [model_label(m) for m in model_order]
+    x = np.arange(len(model_order))
 
-        ax = fig.add_subplot(gs[0, 0])
+    fig, ax = plt.subplots(figsize=figsize)
+    summary_df = None
 
-        gs_leg = gs[0, 1].subgridspec(3, 1, height_ratios=legend_heights, hspace=0.05)
-        ax_leg_genes = fig.add_subplot(gs_leg[0, 0]); ax_leg_genes.axis("off")
-        ax_leg_sig   = fig.add_subplot(gs_leg[1, 0]); ax_leg_sig.axis("off")
-        ax_leg_model = fig.add_subplot(gs_leg[2, 0]); ax_leg_model.axis("off")
+    mode = mode.lower().strip()
+    if mode not in {"genes", "average"}:
+        raise ValueError("mode must be either 'genes' or 'average'")
+
+    # Reserve right margin depending on legends we might draw
+    if mode == "genes":
+        if add_model3_legend and has_model3_variants:
+            fig.subplots_adjust(right=0.58)
+        else:
+            fig.subplots_adjust(right=0.78)
     else:
-        # fallback: keep single axis; still supports symlog and plotting
-        fig = ax.figure if ax is not None else plt.figure(figsize=figsize)
-        ax_leg_genes = ax_leg_sig = ax_leg_model = None
+        if add_model3_legend and has_model3_variants:
+            fig.subplots_adjust(right=0.72)
 
-    # --- restore y-scale option (symlog avoids log(0) issues) ---
-    if yscale == "symlog":
-        ax.set_yscale("symlog", linthresh=symlog_linthresh, linscale=symlog_linscale)
+    if mode == "average":
+        d2 = df.copy()
+        d2[model_col] = d2[model_col].astype(str)
+        d2[gene_col] = d2[gene_col].astype(str)
+        d2[y_col] = pd.to_numeric(d2[y_col], errors="coerce")
 
-    # --- plot one line per gene ---
-    genes = list(pd.unique(df[gene_col]))
-    gene_handles, gene_labels = [], []
+        rows = []
+        for m in model_order:
+            sub = d2[d2[model_col] == str(m)][[gene_col, y_col]].copy()
+            sub = sub[np.isfinite(sub[y_col])]
 
-    for g in genes:
-        gdf = df[df[gene_col] == g].set_index(model_col)
-        ys = [gdf.loc[m, y_col] if m in gdf.index else np.nan for m in models_sorted]
-
-        (line,) = ax.plot(x, ys, linewidth=1.0, label=str(g))
-        gene_handles.append(line)
-        gene_labels.append(str(g))
-
-        # significance markers (skip model 0)
-        for i, m in enumerate(models_sorted):
-            if str(m) == "0" or m not in gdf.index:
-                continue
-            yv = float(gdf.loc[m, y_col])
-            pv = gdf.loc[m, "_p_adj"]
-            if pd.isna(pv) or pd.isna(yv):
+            if sub.empty:
+                rows.append((str(m), np.nan, np.nan, np.nan, 0, None, None))
                 continue
 
-            if float(pv) < alpha:
-                ax.scatter(x[i], yv, marker=sig_marker, c=sig_color, s=70, zorder=3, label="_nolegend_")
-            else:
-                ax.scatter(x[i], yv, marker=nonsig_marker, c=nonsig_color, s=30, zorder=3, label="_nolegend_")
+            sub_sorted = sub.sort_values([y_col, gene_col], ascending=[True, True])
+            min_gene = sub_sorted.iloc[0][gene_col]
 
-    # --- x tick labels ---
-    mode = model_label_mode.lower()
-    if mode == "axis_multiline":
-        xticklabels = [_model_explicit_label(m, multiline=True) for m in models_sorted]
-    elif mode in {"axis_short", "legend_key"}:
-        xticklabels = [_model_compact_label(m) for m in models_sorted]
-    else:
-        raise ValueError("model_label_mode must be one of: 'axis_multiline', 'axis_short', 'legend_key'.")
+            sub_sorted_desc = sub.sort_values([y_col, gene_col], ascending=[False, True])
+            max_gene = sub_sorted_desc.iloc[0][gene_col]
 
-    ax.set_xticks(x)
-    ax.set_xticklabels(xticklabels, rotation=x_tick_rotation, fontsize=x_tick_fontsize)
-    ax.set_xlabel("Model")
-    ax.set_ylabel("Adjusted R²")
-    if title:
-        ax.set_title(title)
-    ax.grid(True, which="major", axis="y", linewidth=0.6)
+            rows.append((
+                str(m),
+                float(sub[y_col].mean()),
+                float(sub[y_col].min()),
+                float(sub[y_col].max()),
+                int(len(sub)),
+                min_gene,
+                max_gene
+            ))
 
-    # --- significance legend handles (proxy artists are standard Matplotlib pattern) ---
-    sig_handles = [
-        Line2D([0], [0], marker=sig_marker, color="none",
-               markerfacecolor=sig_color, markeredgecolor=sig_color,
-               markersize=10, linestyle="None",
-               label=f"Improvement significant (adj p < {alpha})"),
-        Line2D([0], [0], marker=nonsig_marker, color="none",
-               markerfacecolor=nonsig_color, markeredgecolor=nonsig_color,
-               markersize=8, linestyle="None",
-               label=f"Not significant (adj p ≥ {alpha})"),
-    ]
-
-    # --- model terms handles (as a key) ---
-    model_key_handles = [
-        Line2D([0], [0], color="none", linestyle="None",
-               label=f"{_model_compact_label(m)}: {_model_explicit_label(m, multiline=False)}")
-        for m in models_sorted
-    ]
-
-    # --- place legends: either in separate legend axes (preferred) or as fallbacks ---
-    if legend_panel and ax_leg_genes is not None:
-        ax_leg_genes.legend(
-            handles=gene_handles,
-            labels=gene_labels,
-            loc="upper left",
-            frameon=False,
-            title="Genes",
-            ncol=gene_legend_ncol,
-            fontsize=gene_legend_fontsize,
+        summary_df = pd.DataFrame(
+            rows,
+            columns=[model_col, "mean_adj_r2", "min_adj_r2", "max_adj_r2", "n_genes", "min_gene", "max_gene"]
         )
 
-        if show_sig_legend:
-            ax_leg_sig.legend(
-                handles=sig_handles,
-                loc="upper left",
-                frameon=False,
-                title="Significance",
-                fontsize=sig_legend_fontsize,
-            )
+        means = summary_df["mean_adj_r2"].to_numpy(dtype=float)
+        mins = summary_df["min_adj_r2"].to_numpy(dtype=float)
+        maxs = summary_df["max_adj_r2"].to_numpy(dtype=float)
 
-        if mode == "legend_key":
-            ax_leg_model.legend(
-                handles=model_key_handles,
-                loc="upper left",
-                frameon=False,
-                title="Model terms",
-                fontsize=model_terms_fontsize,
-                handlelength=0,
-                handletextpad=0,
-            )
+        yerr = np.vstack([means - mins, maxs - means])
+        ax.errorbar(x, means, yerr=yerr, fmt="-o", linewidth=2, capsize=4)
+
+        if annotate_minmax_genes:
+            for i in range(len(summary_df)):
+                if not (np.isfinite(mins[i]) and np.isfinite(maxs[i])):
+                    continue
+                min_gene = summary_df.loc[i, "min_gene"]
+                max_gene = summary_df.loc[i, "max_gene"]
+
+                if isinstance(max_gene, str):
+                    ax.annotate(
+                        max_gene, xy=(x[i], maxs[i]),
+                        xytext=(0, 4), textcoords="offset points",
+                        ha="center", va="bottom", fontsize=annotate_fontsize,
+                    )
+                if isinstance(min_gene, str):
+                    ax.annotate(
+                        min_gene, xy=(x[i], mins[i]),
+                        xytext=(0, -4), textcoords="offset points",
+                        ha="center", va="top", fontsize=annotate_fontsize,
+                    )
+
+        ax.set_xticks(x)
+        ax.set_xticklabels(x_labels)
+        ax.set_ylabel("Adjusted R²")
+        ax.set_xlabel("")
+        ax.grid(True, which="major", axis="both", linestyle="--", linewidth=0.5, alpha=0.6)
+
+        if title is None:
+            title = "Mean adjusted R² across genes (error bars: min to max)"
+        ax.set_title(title)
+
+        if print_summary:
+            to_print = summary_df.copy()
+            to_print[model_col] = to_print[model_col].map(model_label)
+            print(to_print.to_string(index=False))
+
     else:
-        # fallback: multiple legends on same axes (works, but can overlap if gene list is tall) :contentReference[oaicite:2]{index=2}
-        leg_genes = ax.legend(handles=gene_handles, labels=gene_labels, loc="upper left",
-                              bbox_to_anchor=(1.02, 1), frameon=False, title="Genes")
-        ax.add_artist(leg_genes)
+        genes = sorted(df[gene_col].astype(str).unique().tolist())
 
-        if show_sig_legend:
-            leg_sig = ax.legend(handles=sig_handles, loc="upper left",
-                                bbox_to_anchor=(1.02, 0.50), frameon=False, title="Significance")
-            ax.add_artist(leg_sig)
+        for gene in genes:
+            gdf = df[df[gene_col].astype(str) == gene].copy()
+            gdf[model_col] = gdf[model_col].astype(str)
+            gdf = gdf.set_index(model_col)
 
-        if mode == "legend_key":
-            ax.legend(handles=model_key_handles, loc="lower left",
-                      bbox_to_anchor=(1.02, 0.0), frameon=False, title="Model terms",
-                      handlelength=0, handletextpad=0)
+            y = [gdf[y_col].get(str(m), np.nan) for m in model_order]
+            ax.plot(x, y, linewidth=1.5, label=gene, zorder=1)
 
+            xs_sig, ys_sig, xs_nsig, ys_nsig = [], [], [], []
+            for i, m in enumerate(model_order):
+                if str(m) == "0":
+                    continue
+                yy = gdf[y_col].get(str(m), np.nan)
+                pp = gdf[p_used].get(str(m), np.nan)
+                if not np.isfinite(yy) or not np.isfinite(pp):
+                    continue
+                if pp < alpha:
+                    xs_sig.append(i); ys_sig.append(yy)
+                else:
+                    xs_nsig.append(i); ys_nsig.append(yy)
+
+            if xs_nsig:
+                ax.scatter(xs_nsig, ys_nsig, marker="s", s=40, c="black", zorder=3)
+            if xs_sig:
+                ax.scatter(xs_sig, ys_sig, marker="*", s=120, c="red", zorder=4)
+
+        ax.set_xticks(x)
+        ax.set_xticklabels(x_labels)
+        ax.set_ylabel("Adjusted R²")
+        ax.set_xlabel("Nested model")
+        ax.grid(True, which="major", axis="both", linestyle="--", linewidth=0.5, alpha=0.6)
+
+        if title is None:
+            title = f"Adjusted R² across nested models (markers by {p_label} < {alpha})"
+        ax.set_title(title)
+
+        # Gene legend (right side)
+        gene_leg = ax.legend(
+            loc="upper left",
+            bbox_to_anchor=(1.02, 1.0),
+            frameon=False,
+            title="Gene",
+        )
+        ax.add_artist(gene_leg)
+
+    # Right-side explanatory legend for Model 3(k) variants (model-specific text)
+    if add_model3_legend and has_model3_variants:
+        handles = [Line2D([0], [0], linestyle="none", marker=None) for _ in m3_ks]
+
+        labels = []
+        for k in m3_ks:
+            # model-specific phrasing
+            if k == 1:
+                current_label = "Adds top-1 neighbor PIG mean-expression feature"
+            else:
+                current_label = f"Adds top-{k} neighbor PIG mean-expression features"
+            labels.append(current_label)
+
+        if mode == "genes":
+            anchor = (1.02, 0.35)  # below gene legend
+        else:
+            anchor = (1.02, 1.0)
+
+        m3_leg = ax.legend(
+            handles,
+            labels,
+            loc="upper left",
+            bbox_to_anchor=anchor,
+            frameon=False,
+            title=model3_legend_title,
+            handlelength=0,
+            handletextpad=0.0,
+            borderaxespad=0.0,
+            fontsize=9,
+        )
+        ax.add_artist(m3_leg)
+
+    if savepath is not None:
+        fig.savefig(savepath, dpi=200, bbox_inches="tight")
     if show:
         plt.show()
 
-    return fig, ax, df
+    return fig, ax, summary_df
 
 
 def compute_gene_spatial_stats(

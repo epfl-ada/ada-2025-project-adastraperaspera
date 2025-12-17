@@ -364,10 +364,14 @@ In this section, we will perform nested regression modeling to systematically as
 When comparing each successive model, we use nested F-tests to assess whether adding features significantly improves the proportion of variance explained. We use the significance level of 0.01. Further, we perform result separation. Namely, we automatically separate results into model summaries and nested comparisons for clean interpretation. The results are summarized in the figure below.
 
 <p align="center">
-  <!-- This was obtained with plot_nested_regression_trajectories; usage in results.ipynb -->
-  <img src="figures/nested_model_trajectories.png" width="480">
-  <br><em>Nested model trajectories</em>
+  <!-- This was obtained with plot_nested_regression_adj_r2; usage in results.ipynb -->
+  <img src="figures/pig_trajectories.png" width="480">
+  <br><em>PIG nested regression: mean adjusted R² (min/max across genes)</em>
 </p>
+
+From the figure above, we can see that the largest improvements in adjusted $R^2$ are achieved by adding the expression level of the single most correlated PIG. This is expected due to the aforementioned associations: the amyloid beta plaque acts as a common confounder which impacts the expression of groups of PIGs in a similar way; thus, expression level of other PIGs can act as a proxy for the expression level of the target PIG. 
+
+Interestingly, in 15 out of 16 PIGs, adding plaque geometry 
 
 ## RQ4: Inferring plaque distance from gene expression
 
