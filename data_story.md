@@ -361,7 +361,13 @@ In this section, we will perform nested regression modeling to systematically as
   - Multi-plaque proximity features
   - Neighborhood PIGs features (mean expression of top 1/2/4/8/15 other PIGs in 100 nearest neighbors)
 
-When comparing each successive model, we use nested F-tests to assess whether adding features significantly improves the proportion of variance explained. Further, we perform result separation. Namely, we automatically separate results into model summaries and nested comparisons for clean interpretation.
+When comparing each successive model, we use nested F-tests to assess whether adding features significantly improves the proportion of variance explained. We use the significance level of 0.01. Further, we perform result separation. Namely, we automatically separate results into model summaries and nested comparisons for clean interpretation. The results are summarized in the figure below.
+
+<p align="center">
+  <!-- This was obtained with plot_nested_regression_trajectories; usage in results.ipynb -->
+  <img src="figures/nested_model_trajectories.png" width="480">
+  <br><em>Nested model trajectories</em>
+</p>
 
 ## RQ4: Inferring plaque distance from gene expression
 
