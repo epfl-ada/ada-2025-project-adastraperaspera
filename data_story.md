@@ -165,14 +165,15 @@ Next, we can discuss the figure presenting the relationship between the cluster 
   <br><em>Cluster frequency vs. distance to plaque</em>
 </p>
 
-Looking at the marker gene enrichment diagram, we can see that some clusters are characterized by a strong over- or under-expression of specific genes. For instance, cluster 8 (immune cells) is characterized by a strong over-expression of the gene Hexb. The z-score is around 4, indicating that the expression of Hexb in cluster with ID 8 is at impressive 4 standard deviations above the mean. Meanwhile, cluster 14 (Dentate gyrus immature glutamatergic neurons) is characterized by a strong under-expression of the gene Cst3, which happens to be at around 2 standard deviations below the mean. This pattern highlights the fact that the morphological structure of the brain is closely related to the gene expression patterns.
+## RQ2: Relationship between cell type composition, PIG expression, and plaque distance
+
+Looking at the marker gene enrichment diagram, we can see that some clusters are characterized by a strong over- or under-expression of specific genes. For instance, cluster 8 (immune cells) is characterized by a strong over-expression of the gene Hexb. The z-score is around 4, indicating that the expression of Hexb in cluster with ID 8 is at impressive 4 standard deviations above the mean. Meanwhile, cluster 14 (Dentate gyrus immature glutamatergic neurons) is characterized by a strong under-expression of the gene Cst3, which happens to be at around 2 standard deviations below the mean. This pattern highlights the fact that the morphological structure of the brain is closely related to the gene expression patterns. This relationship further motivates us to explore the relationship between cell type composition and PIG expression with varying plaque proximity.
 
 <p align="center">
   <img src="figures/expression_per_cluster.png" width="480">
   <br><em>Expression per cluster</em>
 </p>
 
-## RQ2: Relationship between cell type composition, PIG expression, and plaque distance
 
 Next, we will analyze cell-type proportions and PIG expression across distance. Our goal is to see if cell type composition can explain the changes in PIG expression. This could reveal a potential mechanism of how the amyloid beta plaques exert their influence on the gene expression in the surrounding area.In other words, we want to see if plaques change gene expression patterns by selectively killing some cells while sparing or even recruiting others.
 
