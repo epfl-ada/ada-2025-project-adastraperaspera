@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import base64
-from collections.abc import Sequence
+from collections.abc import Sequence,Mapping
 import logging
 import os
 from pathlib import Path
@@ -17,6 +17,15 @@ from shapely.affinity import rotate as shp_rotate
 from shapely.geometry import MultiPolygon, Polygon
 from scipy.stats import spearmanr
 from statsmodels.stats.multitest import multipletests
+
+# For exact tab20 colors
+import matplotlib.cm as cm
+import matplotlib.colors as mcolors
+
+
+def _tab20_hex(n: int) -> list[str]:
+    cmap = cm.get_cmap("tab20", max(n, 1))
+    return [mcolors.to_hex(cmap(i)) for i in range(max(n, 1))]
 
 
 # Get current directory
@@ -1859,7 +1868,7 @@ def get_leiden_color_map(adata_by_mouse, order, key="leiden"):
         if key not in ad.obs:
             continue
 
-        # ✅ ensure categorical so categories exist and match Scanpy ordering
+        #  ensure categorical so categories exist and match Scanpy ordering
         if not pd.api.types.is_categorical_dtype(ad.obs[key]):
             ad.obs[key] = ad.obs[key].astype("category")
 
@@ -2024,6 +2033,8 @@ def make_joint_clustering_umap_grid_plotly(
 
     return fig
 
+
+
 def make_leiden_spatial_grid_plotly(
     df_by_mouse: Mapping[str, pd.DataFrame],
     order: Sequence[str],
@@ -2031,150 +2042,146 @@ def make_leiden_spatial_grid_plotly(
     n_cols: int = 3,
     sample_for_scatter: int | None = 20_000,
     random_state: int = 0,
-    title: str | None = "Spatial map of Leiden clusters across mice",
-    filename: str = "joint_clustering_overlayed.html",
+    suptitle: str = "Spatial map of Leiden clusters across mice",
+    legend_title: str = "Leiden cluster",
+    palette_name: str = "tab20",   # currently supports tab20 exactly
+    point_size: float = 4,
+    point_alpha: float = 0.7,
+    invert_y: bool = True,
+    figsize_px: tuple[int, int] = (1100, 750),
+    filename: str | None = None,
     out_dir: str = "frontend/public/plots",
-    marker_size: float = 2.5,
-    marker_opacity: float = 0.7,
-    reverse_y: bool = True,  # matches ax.invert_yaxis()
 ) -> go.Figure:
-    """
-    Interactive Plotly spatial scatter grid colored by Leiden clusters (no legend).
-    Expects columns: x_centroid, y_centroid, cluster_leiden
-    """
-
-    n = len(order)
-    n_cols = max(1, int(n_cols))
-    n_rows = (n + n_cols - 1) // n_cols
-
     required = {"x_centroid", "y_centroid", "cluster_leiden"}
 
-    # global cluster levels -> consistent colors across panels
-    all_clusters = []
-    for mouse in order:
-        df = df_by_mouse.get(mouse)
+    # collect clusters across mice for consistent mapping
+    clusters = []
+    for m in order:
+        df = df_by_mouse.get(m)
         if df is None or not required.issubset(df.columns):
             continue
-        all_clusters.append(df["cluster_leiden"].astype(str).to_numpy())
-    if not all_clusters:
-        raise ValueError("No valid mice with required columns found.")
-    cluster_levels = list(pd.Categorical(np.concatenate(all_clusters)).categories)
+        clusters.extend(pd.unique(df["cluster_leiden"]))
+    unique_clusters = pd.unique(pd.Series(clusters))
+
+    def _safe_sort_key(x):
+        try:
+            return (0, float(x))
+        except Exception:
+            return (1, str(x))
+
+    hue_order = sorted(unique_clusters, key=_safe_sort_key)
+
+    if palette_name != "tab20":
+        raise ValueError("This implementation currently matches Matplotlib 'tab20' exactly. Use palette_name='tab20'.")
+
+    colors = _tab20_hex(len(hue_order))
+    cluster_to_color = {cl: col for cl, col in zip(hue_order, colors)}
+
+    plot_cols = max(1, n_cols)
+    n = len(order)
+    n_rows = (n + plot_cols - 1) // plot_cols
 
     fig = make_subplots(
         rows=n_rows,
-        cols=n_cols,
-        subplot_titles=[str(m) for m in order],
-        horizontal_spacing=0.04,
-        vertical_spacing=0.08,
+        cols=plot_cols,
+        subplot_titles=[str(m) for m in order] + [""] * (n_rows * plot_cols - n),
+        horizontal_spacing=0.12,  # ← more horizontal air
+        vertical_spacing=0.16,    # ← more vertical air
     )
 
-    rng = np.random.default_rng(random_state)
 
+    # build panel scatters
     for i, mouse in enumerate(order):
-        r, c = divmod(i, n_cols)
+        r, c = divmod(i, plot_cols)
         row, col = r + 1, c + 1
 
         df = df_by_mouse.get(mouse)
-        if df is None:
+        if df is None or not required.issubset(df.columns) or len(df) == 0:
+            # show an empty placeholder
             fig.add_annotation(
+                x=0.5, y=0.5, xref=f"x{i+1} domain", yref=f"y{i+1} domain",
                 text=f"{mouse}<br>(no data)",
-                x=0.5, y=0.5,
-                xref=f"x{'' if i == 0 else i+1} domain",
-                yref=f"y{'' if i == 0 else i+1} domain",
                 showarrow=False,
-                font=dict(size=12),
             )
-            fig.update_xaxes(visible=False, row=row, col=col)
-            fig.update_yaxes(visible=False, row=row, col=col)
-            continue
-
-        missing = sorted(required - set(df.columns))
-        if missing:
-            fig.add_annotation(
-                text=f"{mouse}<br>(missing {missing})",
-                x=0.5, y=0.5,
-                xref=f"x{'' if i == 0 else i+1} domain",
-                yref=f"y{'' if i == 0 else i+1} domain",
-                showarrow=False,
-                font=dict(size=12),
-            )
-            fig.update_xaxes(visible=False, row=row, col=col)
-            fig.update_yaxes(visible=False, row=row, col=col)
             continue
 
         plot_df = df
         if sample_for_scatter is not None and sample_for_scatter < len(df):
-            idx = rng.choice(len(df), size=int(sample_for_scatter), replace=False)
-            plot_df = df.iloc[idx]
+            plot_df = df.sample(sample_for_scatter, random_state=random_state)
 
-        x = plot_df["x_centroid"].astype(float).to_numpy()
-        y = plot_df["y_centroid"].astype(float).to_numpy()
-        cl = plot_df["cluster_leiden"].astype(str).to_numpy()
-
-        # add one trace per cluster for consistent coloring (legend disabled)
-        for k in cluster_levels:
-            msk = (cl == k)
-            if not np.any(msk):
+        # one trace per cluster (needed for a clean legend with fixed colors)
+        for j, cl in enumerate(hue_order):
+            sub = plot_df[plot_df["cluster_leiden"] == cl]
+            if sub.empty:
                 continue
+
             fig.add_trace(
                 go.Scattergl(
-                    x=x[msk],
-                    y=y[msk],
+                    x=sub["x_centroid"],
+                    y=sub["y_centroid"],
                     mode="markers",
-                    marker=dict(size=marker_size, opacity=marker_opacity),
-                    showlegend=False,
+                    name=str(cl),
+                    legendgroup=str(cl),
+                    showlegend=(i == 0),  # show each cluster once in legend (first panel only)
+                    marker=dict(size=point_size, color=cluster_to_color[cl], opacity=point_alpha),
                     hovertemplate=(
                         f"Mouse: {mouse}<br>"
-                        f"Leiden: {k}<br>"
-                        "x=%{x:.1f} µm<br>"
-                        "y=%{y:.1f} µm<extra></extra>"
+                        f"Cluster: {cl}<br>"
+                        "x: %{x:.1f}<br>y: %{y:.1f}<extra></extra>"
                     ),
                 ),
                 row=row, col=col,
             )
 
-        # axes style (like your seaborn version)
-        fig.update_xaxes(
-            title_text="X (µm)" if row == n_rows else "",
-            showgrid=False,
-            zeroline=False,
-            visible=False,              # hide ticks like your other plots
-            row=row, col=col,
-        )
+        # axis formatting per panel
+        fig.update_xaxes(title_text="X coordinate (µm)", row=row, col=col, showgrid=False, zeroline=False)
         fig.update_yaxes(
-            title_text="Y (µm)" if col == 1 else "",
-            showgrid=False,
-            zeroline=False,
-            visible=False,
-            autorange="reversed" if reverse_y else True,
-            scaleanchor=f"x{'' if (row == 1 and col == 1) else (i+1)}",
-            scaleratio=1,
+            title_text="Y coordinate (µm)",
             row=row, col=col,
+            showgrid=False, zeroline=False,
+            autorange="reversed" if invert_y else True,
+            scaleanchor=f"x{(i+1) if (i>0) else ''}",  # keep 1:1 aspect
+            scaleratio=1,
         )
 
+    # layout + legend as a right-side column
     fig.update_layout(
-        title=title,
-        autosize=True,
-        margin=dict(l=20, r=20, t=70 if title else 30, b=20),
-        template="simple_white",
-        paper_bgcolor="rgba(0,0,0,0)",
-        plot_bgcolor="rgba(0,0,0,0)",
-        dragmode="pan",
-        showlegend=False,
-    )
+            title=suptitle,
+            width=figsize_px[0],
+            height=figsize_px[1],
+            template="simple_white",
 
-    out_path = Path(out_dir) / filename
-    out_path.parent.mkdir(parents=True, exist_ok=True)
-    fig.write_html(
-        str(out_path),
-        include_plotlyjs="cdn",
-        full_html=True,
-        config={"responsive": True, "displayModeBar": False, "scrollZoom": True},
-        default_width="100%",
-        default_height="100%",
-    )
+            # transparent everywhere
+            paper_bgcolor="rgba(0,0,0,0)",
+            plot_bgcolor="rgba(0,0,0,0)",
+
+            margin=dict(l=60, r=240, t=90, b=70),  # keep legend column space
+            legend=dict(
+                title=legend_title,
+                orientation="v",
+                x=1.02,
+                y=1.0,
+                xanchor="left",
+                yanchor="top",
+                bgcolor="rgba(0,0,0,0)",  # transparent legend box
+                borderwidth=0,
+            ),
+        )
+
+
+    # optional save
+    if filename:
+        out_path = Path(out_dir) / filename
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        fig.write_html(
+            str(out_path),
+            include_plotlyjs="cdn",
+            full_html=True,
+            config={"responsive": True, "displayModeBar": False,"scrollZoom": True},
+        )
 
     return fig
+
 
 def make_cluster_frequency_vs_distance_plotly(
     freq_df: pd.DataFrame,
