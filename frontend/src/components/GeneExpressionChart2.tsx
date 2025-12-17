@@ -81,27 +81,7 @@ const GeneExpressionSection2 = () => {
               id="gene-expression-intro"
               className="scroll-mt-24 bg-card rounded-2xl border border-border p-8"
             >
-              <div className="max-w-none">
-                <figure
-                  className="
-                    hidden lg:block
-                    float-right
-                    ml-6
-                    mb-4
-                    w-[520px]
-                    max-w-[60%]
-                  "
-                >
-                  <img
-                    src={`${base}figures/microscopy_.png`}
-                    alt="Microscopy cells unified"
-                    className="w-full h-auto rounded-xl border border-border"
-                  />
-                  <figcaption className="mt-1 text-xs text-muted-foreground">
-                    Microscopy cells unified
-                  </figcaption>
-                </figure>
-
+              <div className="max-w-none space-y-6">
                 <p className="text-lg text-muted-foreground leading-relaxed">
                   We are dealing with a spatial transcriptomics dataset which contains single cell gene
                   expression measurements of 347 genes. The gene expression matrix tends to be sparse.
@@ -112,7 +92,16 @@ const GeneExpressionSection2 = () => {
                   literature.
                 </p>
 
-                <div className="clear-both" />
+                <figure className="mx-auto w-full max-w-[520px]">
+                  <img
+                    src={`${base}figures/microscopy_.png`}
+                    alt="Microscopy cells unified"
+                    className="w-full h-auto rounded-xl border border-border"
+                  />
+                  <figcaption className="mt-2 text-xs text-muted-foreground text-center">
+                    Microscopy cells unified
+                  </figcaption>
+                </figure>
               </div>
             </section>
 

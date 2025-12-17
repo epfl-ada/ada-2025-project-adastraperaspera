@@ -1557,6 +1557,8 @@ def make_cell_to_plaque_distance_distribution_plotly(
         template="simple_white",
         margin=dict(l=60, r=20, t=70, b=55),
         autosize=True,
+        height=None,   # pick what fits your layout
+        width=980,
         # transparent backgrounds for embedding
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0)",
@@ -1569,7 +1571,7 @@ def make_cell_to_plaque_distance_distribution_plotly(
         str(out_path),
         include_plotlyjs="cdn",
         full_html=True,
-        config={"responsive": True, "displayModeBar": False},
+        config={"displayModeBar": False},
         default_width="100%",
         default_height="100%",
     )
@@ -1843,6 +1845,47 @@ def make_expression_distribution_selector_plotly(
 
     return fig
 
+def get_leiden_color_map(adata_by_mouse, order, key="leiden"):
+    """
+    Return {cluster_label: hex_color} using Scanpy's stored palette:
+      adata.uns[f"{key}_colors"].
+    Works even if adata.obs[key] is not categorical yet.
+    """
+    for mouse in order:
+        ad = adata_by_mouse.get(mouse)
+        if ad is None:
+            continue
+
+        if key not in ad.obs:
+            continue
+
+        # ✅ ensure categorical so categories exist and match Scanpy ordering
+        if not pd.api.types.is_categorical_dtype(ad.obs[key]):
+            ad.obs[key] = ad.obs[key].astype("category")
+
+        color_key = f"{key}_colors"
+        if color_key not in ad.uns:
+            raise ValueError(
+                f"{mouse}: missing adata.uns['{color_key}'].\n"
+                f"Run once: sc.pl.umap(adata, color='{key}', show=False) "
+                f"or set adata.uns['{color_key}'] manually."
+            )
+
+        levels = list(ad.obs[key].cat.categories.astype(str))
+        colors = list(ad.uns[color_key])
+
+        if len(levels) != len(colors):
+            raise ValueError(
+                f"{mouse}: mismatch between {key} categories ({len(levels)}) "
+                f"and {color_key} ({len(colors)})."
+            )
+
+        return dict(zip(levels, colors))
+
+    raise ValueError("Could not extract colors from any mouse in `order`.")
+
+
+
 def make_joint_clustering_umap_grid_plotly(
     adata_by_mouse: Mapping[str, "AnnData"],
     order: Sequence[str],
@@ -1882,6 +1925,7 @@ def make_joint_clustering_umap_grid_plotly(
         raise ValueError("No valid mice found.")
 
     leiden_levels = list(pd.Categorical(np.concatenate(all_leiden)).categories)
+    leiden_color_map = get_leiden_color_map(adata_by_mouse, order)
 
     fig = make_subplots(
         rows=n_rows,
@@ -1929,7 +1973,11 @@ def make_joint_clustering_umap_grid_plotly(
                     x=x[mask],
                     y=y[mask],
                     mode="markers",
-                    marker=dict(size=marker_size, opacity=marker_opacity),
+                    marker=dict(
+                        size=marker_size,
+                        opacity=marker_opacity,
+                        color=leiden_color_map[k],  # EXACT Scanpy color
+                    ),
                     showlegend=False,   # NO LEGEND
                     hovertemplate=(
                         f"Mouse: {mouse}<br>"
@@ -1955,6 +2003,7 @@ def make_joint_clustering_umap_grid_plotly(
     fig.update_layout(
         title=title,
         autosize=True,
+        height=300 * n_rows,
         margin=dict(l=20, r=20, t=70 if title else 30, b=20),
         template="simple_white",
         paper_bgcolor="rgba(0,0,0,0)",
@@ -3623,7 +3672,7 @@ def make_cell_to_plaque_distance_map_plotly(
                 "Cell<br>"
                 f"Distance: %{{marker.color:.1f}} µm<extra></extra>"
             ),
-            #name="Cells",
+            showlegend=False,
         )
     )
 
@@ -3659,14 +3708,16 @@ def make_cell_to_plaque_distance_map_plotly(
                         ),
                         hoverinfo="skip",
                         showlegend=False,
+                        
                     )
                 )
 
     # ------------------ layout ------------------
     fig.update_layout(
         title=title,
-        width=figsize_px[0],
-        height=figsize_px[1],
+        #width=figsize_px[0],
+        #height=figsize_px[1],
+        autosize=True,
         template="simple_white",
         margin=dict(l=60, r=40, t=60, b=50),
         paper_bgcolor="rgba(0,0,0,0)",
