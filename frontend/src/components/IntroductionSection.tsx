@@ -1,4 +1,4 @@
-import { Brain, Target, HelpCircle, CheckCircle2 } from "lucide-react";
+import { Brain, Target,  Activity , CheckCircle2 } from "lucide-react";
 
 const RQ_LINK_CLASS =
   "block rounded-xl px-3 py-2 text-muted-foreground hover:text-foreground hover:bg-muted/50 transition";
@@ -20,7 +20,7 @@ const IntroductionSection = () => {
           <div className="flex-1 p-8 rounded-2xl bg-card border border-border">
             <div className="flex items-start gap-4">
               <div className="w-12 h-12 rounded-xl bg-chart-3/10 flex items-center justify-center flex-shrink-0">
-                <Brain className="w-6 h-6 text-chart-3" />
+                <Activity  className="w-6 h-6 text-chart-3" />
               </div>
 
               <div>
@@ -84,7 +84,7 @@ const IntroductionSection = () => {
           <div className="flex-1 p-8 rounded-2xl bg-card border border-border">
             <div className="flex items-start gap-4">
               <div className="w-12 h-12 rounded-xl bg-accent/10 flex items-center justify-center flex-shrink-0">
-                <HelpCircle className="w-6 h-6 text-accent" />
+                <Brain className="w-6 h-6 text-accent" />
               </div>
 
               <div className="w-full">

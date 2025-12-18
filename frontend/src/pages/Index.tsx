@@ -9,6 +9,7 @@ import MethodologySection from "@/components/MethodologySection";
 import ConclusionSection from "@/components/ConclusionSection";
 import MiscroscopySection from "@/components/MicroscopySection";
 import MicroscopySection2 from "@/components/MicroscopySection2";
+import PreprocessingSection from "@/components/PreprocessingSection";
 import Footer from "@/components/Footer";
 import RQSection from "@/components/RQSection";  
 import RQ1Section from "@/components/RQ1Section";
@@ -22,11 +23,11 @@ const Index = () => {
     <main className="min-h-screen bg-background">
       <HeroSection />
       <IntroductionSection />
-      {/*<MetricsSection /> */}
-      {/*<MiscroscopySection/>*/}
-      <MicroscopySection2/>
-      {/*<GeneExpressionChart />*/}
-      <GeneExpressionSection2 />
+      <PreprocessingSection />
+      {/*<MetricsSection /> 
+      <MicroscopySection/>*/}
+      {/*<GeneExpressionChart />
+      <GeneExpressionSection2 />*/}
       <CellClusteringSection />
       <RQSection />
       <RQ1Section />
@@ -34,10 +35,10 @@ const Index = () => {
       <RQ3Section />
       <RQ4Section />
       <RQ5Section />
-      <SpatialMapSection />
+      {/*<SpatialMapSection />
       <MethodologySection />
       <ConclusionSection />
-      <Footer />
+      <Footer />*/}
     </main>
   );
 };
