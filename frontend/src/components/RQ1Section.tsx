@@ -81,7 +81,7 @@ const RQ1Section = () => {
           <div className="space-y-12">
             {/* Intro / method */}
             <div id="rq1-cluster-dist" className="space-y-4">
-              <h3 className="text-2xl font-bold text-foreground">RQ1 Analysis</h3>
+              <h3 className="text-2xl font-bold text-foreground">RQ1 : How does cell type composition change in plaque proximity?</h3>
 
               <p className="text-lg text-muted-foreground leading-relaxed">
                 We model the relationship between <span className="font-medium text-foreground">cluster membership</span> and <span className="font-medium text-foreground">distance to the nearest plaque</span> using logistic regression. After fitting, we find statistically significant coefficients for <span className="font-medium text-foreground">14 of 19 clusters</span>, using a <span className="font-medium text-foreground">Bonferroni-adjusted p-value threshold of 0.01</span>.
@@ -90,6 +90,8 @@ const RQ1Section = () => {
 
             <div className="rounded-2xl border border-border bg-card p-5">
               <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
+                <p className="text-lg text-muted-foreground leading-relaxed">
+                To make coefficients interpretable, we translate them into:
                 <li>
                   • <span className="font-medium text-foreground">p(0):</span>{" "}
                   baseline probability of observing a cluster at the plaque surface
@@ -280,7 +282,7 @@ const RQ1Section = () => {
                         href="#rq1-cluster-dist"
                         className="block rounded-xl px-3 py-2 text-muted-foreground hover:text-foreground hover:bg-muted/50 transition"
                     >
-                        Cluster vs distance
+                        Depletion & enrichment
                     </a>
 
                     <a
