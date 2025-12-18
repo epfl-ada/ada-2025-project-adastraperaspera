@@ -1,7 +1,7 @@
 import { Brain, Target, HelpCircle, CheckCircle2 } from "lucide-react";
+
 const RQ_LINK_CLASS =
   "block rounded-xl px-3 py-2 text-muted-foreground hover:text-foreground hover:bg-muted/50 transition";
-
 
 const IntroductionSection = () => {
   return (
@@ -65,28 +65,22 @@ const IntroductionSection = () => {
                 <ul className="space-y-3 text-muted-foreground">
                   <li className="flex items-start gap-2">
                     <CheckCircle2 className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
-                    <span>
-                      Study temporal and spatial trends in gene expression
-                    </span>
+                    <span>Study temporal and spatial trends in gene expression</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <CheckCircle2 className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
-                    <span>
-                      Quantify time- and distance-dependent changes in cell composition
-                    </span>
+                    <span>Quantify time- and distance-dependent changes in cell composition</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <CheckCircle2 className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
-                    <span>
-                      Benchmark predictive models to infer plaque distance from multiple modalities
-                    </span>
+                    <span>Benchmark predictive models to infer plaque distance from multiple modalities</span>
                   </li>
                 </ul>
               </div>
             </div>
           </div>
 
-         {/* Card 3 — Research questions */}
+          {/* Card 3 — Research questions */}
           <div className="flex-1 p-8 rounded-2xl bg-card border border-border">
             <div className="flex items-start gap-4">
               <div className="w-12 h-12 rounded-xl bg-accent/10 flex items-center justify-center flex-shrink-0">
@@ -102,7 +96,6 @@ const IntroductionSection = () => {
                   In the upcoming sections, we address the following RQs:
                 </p>
 
-                {/* Clickable list with same hover style as your RQ nav */}
                 <nav className="space-y-2 text-sm">
                   <a href="#rq-1" className={RQ_LINK_CLASS}>
                     <span className="font-semibold text-foreground">RQ1:</span>{" "}
@@ -136,11 +129,12 @@ const IntroductionSection = () => {
               </div>
             </div>
           </div>
+        </div>
 
-        {/* Optional: ifor horizontal scrolling on small screens instead of overflow */}
-        {/* Replace the flex container above with:
+        {/* Optional: for horizontal scrolling on small screens instead of overflow
+            Replace the flex container above with:
             <div className="flex flex-nowrap gap-8 overflow-x-auto pb-2">
-           and add min widths to cards:
+            and add min widths to cards:
             className="min-w-[340px] flex-1 ..."
         */}
       </div>
