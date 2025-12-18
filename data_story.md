@@ -300,7 +300,7 @@ To capture **cell-cell context** and spatial signaling patterns, we compute neig
 
 The choice of k=100 nearest neighbors is motivated by the following considerations:
 - It balances local context (not too large) with sufficient generalization capacity (not too small)
-- It captures neighborhood effects at a scale relevant to cell-cell communication (~1,000 to 2,000 µm radius, depending on cell density, and assuming a diameter of 10 µm per cell).
+- It captures neighborhood effects at a scale relevant to cell-cell communication (~100 µm radius depending on density, assuming ~10 µm cell diameter and relatively dense cell packing).
 
 After computing neighborhood mean expression features for PIG genes, we can now identify which neighbor "other PIG" features are most informative for predicting each target PIG expression level. To that end, we compute Pearson correlations between each target PIG expression and the neighborhood means of all other PIG genes, and then rank them by absolute correlation strength. The figure below visualizes the result of this computation.
 

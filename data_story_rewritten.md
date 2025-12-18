@@ -448,7 +448,7 @@ To capture local cell–cell context and spatial signaling, we compute neighborh
 
 Motivation for k = 100:
 - balances locality with stability (not too small, not too large)  
-- approximates neighborhood effects at a scale relevant to cell–cell communication (~1,000–2,000 µm radius depending on density, assuming ~10 µm cell diameter)
+- approximates neighborhood effects at a scale relevant to cell–cell communication (~100 µm radius depending on density, assuming ~10 µm cell diameter and relatively dense cell packing)
 
 We then compute Pearson correlations between each target PIG and the neighborhood means of the other PIGs, ranking by absolute strength.
 
