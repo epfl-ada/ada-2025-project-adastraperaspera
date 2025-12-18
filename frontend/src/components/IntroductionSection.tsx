@@ -57,7 +57,11 @@ const IntroductionSection = () => {
               </div>
             </div>
           </div>
-
+          
+          {/* =========================
+            ROW 2 — Full-width card
+           ========================= */}
+        <div className="p-8 rounded-2xl bg-card border border-border">
           <div className="flex items-start gap-4 mb-6">
             <div className="w-12 h-12 rounded-xl bg-chart-3/10 flex items-center justify-center flex-shrink-0">
               <Brain className="w-6 h-6 text-chart-3" />
@@ -95,8 +99,16 @@ const IntroductionSection = () => {
               </ul>
             </div>
           </div>
+        </div>
+
+
+
+
+
 
         </div>
+
+        
 
       </div>
     </section>
