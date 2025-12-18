@@ -768,8 +768,8 @@ Taken together, RQ6 supports a coherent synthesis: specific glial clusters—par
 2. **PIG gradients are strongly linked to composition shifts**, especially immune enrichment and neuronal depletion, but remain distance-associated even after accounting for cell type (RQ2).  
 3. **All 16 PIGs show significant plaque-proximal elevation**, with Gfap exhibiting the strongest spatial gradient and Cxcl10 appearing nearly flat due to extreme zero inflation (RQ3).  
 4. **Gene expression contains limited but real distance information** (best gene-only test R² ≈ 0.26 with XGBoost), and error structure is spatially patterned and heteroscedastic (RQ4).  
-5. **Spatial-only models can be misleadingly strong**: cross-mouse diagnostics show they largely learn conserved anatomy rather than plaque pathology (RQ5).  
-6. **Age- and genotype-aware z-normalized signatures reveal AD-specific, age-progressive glial activation**, concentrated in microglia and astrocytes (RQ6).
+5. **Spatial-only models can be misleadingly strong**: cross-mouse diagnostics show they largely learn conserved anatomy rather than plaque pathology (RQ4).  
+6. **Age- and genotype-aware z-normalized signatures reveal AD-specific, age-progressive glial activation**, concentrated in microglia and astrocytes (RQ5).
 
 ### 6.b Confounding, alignment error, sparsity/zero inflation, and interpretation risks
 - **Alignment error:** IF-to-morphology RMSE is small (3.2 µm) but nonzero; fine-scale (single-digit µm) conclusions remain sensitive.  
