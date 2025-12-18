@@ -75,7 +75,7 @@ const RQ1Section = () => {
     <section id="rq-1" className="py-24 bg-background">
       <div className="container mx-auto px-6 max-w-6xl">
         {/* Layout: sticky left panel + scrollable content right */}
-        <div className="grid gap-10 lg:grid-cols-[320px_1fr] items-start">
+        <div className="grid gap-10 lg:grid-cols-[1fr_320px] items-start">
           
           {/* Analysis content */}
           <div className="space-y-12">
