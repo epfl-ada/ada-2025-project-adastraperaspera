@@ -3,7 +3,7 @@ import { Target, Brain, FlaskConical, TrendingUp } from "lucide-react";
 const IntroductionSection = () => {
   return (
     <section id="introduction" className="py-24 bg-background">
-      <div className="container mx-auto px-6 max-w-6xl">
+      <div className="container mx-auto px-6 max-w-7xl">
 
         {/* Section title */}
         <div className="text-center mb-16">
@@ -13,13 +13,13 @@ const IntroductionSection = () => {
         </div>
 
         {/* =========================
-            ROW 1 — Side-by-side cards
+            ROW — 3 cards in one line
            ========================= */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
+        <div className="flex flex-nowrap gap-8 mb-12">
 
           {/* Card 1 — Research Objective */}
-          <div className="p-8 rounded-2xl bg-card border border-border">
-            <div className="flex items-start gap-4 mb-6">
+          <div className="flex-1 p-8 rounded-2xl bg-card border border-border">
+            <div className="flex items-start gap-4">
               <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
                 <Target className="w-6 h-6 text-primary" />
               </div>
@@ -40,8 +40,8 @@ const IntroductionSection = () => {
           </div>
 
           {/* Card 2 — Drug Development */}
-          <div className="p-8 rounded-2xl bg-card border border-border">
-            <div className="flex items-start gap-4 mb-6">
+          <div className="flex-1 p-8 rounded-2xl bg-card border border-border">
+            <div className="flex items-start gap-4">
               <div className="w-12 h-12 rounded-xl bg-accent/10 flex items-center justify-center flex-shrink-0">
                 <FlaskConical className="w-6 h-6 text-accent" />
               </div>
@@ -57,59 +57,49 @@ const IntroductionSection = () => {
               </div>
             </div>
           </div>
-          
-          {/* =========================
-            ROW 2 — Full-width card
-           ========================= */}
-        <div className="p-8 rounded-2xl bg-card border border-border">
-          <div className="flex items-start gap-4 mb-6">
-            <div className="w-12 h-12 rounded-xl bg-chart-3/10 flex items-center justify-center flex-shrink-0">
-              <Brain className="w-6 h-6 text-chart-3" />
-            </div>
-            <div>
-              <h3 className="text-xl font-semibold text-foreground mb-3">
-                Analysis Approach
-              </h3>
-              <p className="text-muted-foreground leading-relaxed mb-4">
-                Our analysis explores how plaque proximity reshapes the cellular,
-                molecular, and tissue environments. We quantify cell-to-plaque
-                distances and apply rigorous statistical methods to characterize
-                spatial trends in gene expression and cell composition.
-              </p>
 
-              <ul className="space-y-3 text-muted-foreground">
-                <li className="flex items-start gap-2">
-                  <TrendingUp className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
-                  <span>
-                    Analyze the interplay between gene expression and cell composition
-                  </span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <TrendingUp className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
-                  <span>
-                    Determine which phenomena drive observed spatial patterns
-                  </span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <TrendingUp className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
-                  <span>
-                    Benchmark predictive models to infer plaque distance from multigene expression
-                  </span>
-                </li>
-              </ul>
+          {/* Card 3 — Analysis Approach */}
+          <div className="flex-1 p-8 rounded-2xl bg-card border border-border">
+            <div className="flex items-start gap-4">
+              <div className="w-12 h-12 rounded-xl bg-chart-3/10 flex items-center justify-center flex-shrink-0">
+                <Brain className="w-6 h-6 text-chart-3" />
+              </div>
+              <div>
+                <h3 className="text-xl font-semibold text-foreground mb-3">
+                  Analysis Approach
+                </h3>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  Our analysis explores how plaque proximity reshapes the cellular,
+                  molecular, and tissue environments. We quantify cell-to-plaque
+                  distances and apply rigorous statistical methods to characterize
+                  spatial trends in gene expression and cell composition.
+                </p>
+
+                <ul className="space-y-3 text-muted-foreground">
+                  <li className="flex items-start gap-2">
+                    <TrendingUp className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
+                    <span>
+                      Analyze the interplay between gene expression and cell composition
+                    </span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <TrendingUp className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
+                    <span>
+                      Determine which phenomena drive observed spatial patterns
+                    </span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <TrendingUp className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
+                    <span>
+                      Benchmark predictive models to infer plaque distance from multigene expression
+                    </span>
+                  </li>
+                </ul>
+              </div>
             </div>
           </div>
-        </div>
-
-
-
-
-
 
         </div>
-
-        
-
       </div>
     </section>
   );
