@@ -5,6 +5,9 @@ import numpy as np
 import umap
 from scipy.spatial.distance import jensenshannon
 from scipy.stats import gaussian_kde
+import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib.colors as mcolors
 
 def plot_pig_z_scores_per_cluster_per_mouse(
     pig_z_df,
@@ -226,10 +229,6 @@ def mirror_coords(df, mode="horizontal", x_col="x_centroid", y_col="y_centroid")
 
     return df_m
 
-
-import numpy as np
-import matplotlib.pyplot as plt
-import matplotlib.colors as mcolors
 
 def plot_spatial_compare(all_preds, names, rotations=None, mirrors=None, cmap="viridis"):
     """

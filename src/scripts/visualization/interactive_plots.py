@@ -18,9 +18,11 @@ from shapely.geometry import MultiPolygon, Polygon
 from scipy.stats import spearmanr
 from statsmodels.stats.multitest import multipletests
 
+
 # For exact tab20 colors
 import matplotlib.cm as cm
 import matplotlib.colors as mcolors
+from matplotlib.colors import to_hex
 
 
 def _tab20_hex(n: int) -> list[str]:
@@ -1894,7 +1896,6 @@ def get_leiden_color_map(adata_by_mouse, order, key="leiden"):
     raise ValueError("Could not extract colors from any mouse in `order`.")
 
 
-
 def make_joint_clustering_umap_grid_plotly(
     adata_by_mouse: Mapping[str, "AnnData"],
     order: Sequence[str],
@@ -2031,7 +2032,7 @@ def make_joint_clustering_umap_grid_plotly(
         default_height="100%",
     )
 
-    return fig
+    return fig,leiden_color_map
 
 
 
@@ -2880,8 +2881,8 @@ def plot_true_pred_kde_interactive(
     filename: str = "true_vs_predicted.html",
 ):
     """
-    Interactive KDE(true vs predicted) + optional two-sample Q-Q plot.
-    Background is transparent.
+    Interactive KDE(true vs predicted) + optional Q-Q plot.
+    Always stacked vertically (responsive-safe).
     """
 
     # -----------------------------
@@ -2894,19 +2895,24 @@ def plot_true_pred_kde_interactive(
     y_pred_arr = y_pred_arr[np.isfinite(y_pred_arr)]
 
     if y_true_arr.size == 0 or y_pred_arr.size == 0:
-        raise ValueError("y_true and y_pred must each contain finite numeric values.")
+        raise ValueError("y_true and y_pred must contain finite values.")
 
     # -----------------------------
-    # Figure layout
+    # Layout
     # -----------------------------
-    cols = 2 if show_qq else 1
+    rows = 2 if show_qq else 1
     fig = make_subplots(
-        cols=cols,
-        rows=1
+        rows=rows,
+        cols=1,
+        vertical_spacing=0.12,
+        subplot_titles=(
+            ["KDE: true vs predicted", "Q–Q plot"]
+            if show_qq else ["KDE: true vs predicted"]
+        ),
     )
 
     # -----------------------------
-    # KDE panel
+    # KDE panel (row 1)
     # -----------------------------
     common_min = float(min(y_true_arr.min(), y_pred_arr.min()))
     common_max = float(max(y_true_arr.max(), y_pred_arr.max()))
@@ -2943,14 +2949,14 @@ def plot_true_pred_kde_interactive(
     fig.update_yaxes(title_text="Density", row=1, col=1)
 
     # -----------------------------
-    # Q-Q panel
+    # Q-Q panel (row 2)
     # -----------------------------
     if show_qq:
         n = min(y_true_arr.size, y_pred_arr.size)
         if qq_points is not None:
             n = min(n, int(qq_points))
         if n < 2:
-            raise ValueError("Need at least 2 points to draw Q-Q plot.")
+            raise ValueError("Need ≥ 2 points for Q-Q plot.")
 
         ps = (np.arange(1, n + 1) - 0.5) / n
         q_true = np.quantile(y_true_arr, ps)
@@ -2964,8 +2970,8 @@ def plot_true_pred_kde_interactive(
                 marker=dict(size=6, opacity=0.7),
                 name="Quantiles",
             ),
-            row=1,
-            col=2,
+            row=2,
+            col=1,
         )
 
         if qq_ref_line:
@@ -2977,36 +2983,31 @@ def plot_true_pred_kde_interactive(
                     y=[lo, hi],
                     mode="lines",
                     line=dict(dash="dash", width=1),
-                    name="y = x",
                     showlegend=False,
                 ),
-                row=1,
-                col=2,
+                row=2,
+                col=1,
             )
 
-        fig.update_xaxes(title_text="True quantiles", row=1, col=2)
-        fig.update_yaxes(title_text="Predicted quantiles", row=1, col=2)
+        fig.update_xaxes(title_text="True quantiles", row=2, col=1)
+        fig.update_yaxes(title_text="Predicted quantiles", row=2, col=1)
 
         if qq_log:
             if (q_true <= 0).any() or (q_pred <= 0).any():
-                raise ValueError("qq_log=True requires strictly positive values.")
-            fig.update_xaxes(type="log", row=1, col=2)
-            fig.update_yaxes(type="log", row=1, col=2)
+                raise ValueError("qq_log=True requires positive values.")
+            fig.update_xaxes(type="log", row=2, col=1)
+            fig.update_yaxes(type="log", row=2, col=1)
 
     # -----------------------------
     # Layout & export
     # -----------------------------
     fig.update_layout(
-        height=420,
-        width=1000 if show_qq else 600,
+        height=700 if show_qq else 420,
         title_text=f"{model_name}: True vs Predicted Distance",
         template="simple_white",
         margin=dict(t=80, l=60, r=40, b=60),
-
-        # transparent background
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0)",
-
         legend=dict(
             orientation="h",
             yanchor="bottom",
@@ -3026,9 +3027,46 @@ def plot_true_pred_kde_interactive(
         default_width="100%",
         default_height="100%",
     )
-
     fig.show()
+
     return fig
+
+
+def _bivariate_palette_rowwise(
+    *,
+    n_resid: int,
+    n_dist: int,
+    dist_lo: float,
+    dist_hi: float,
+) -> np.ndarray:
+    """
+    Returns array shape (n_resid, n_dist, 3) in [0,1].
+
+    Residual controls base hue row-wise (low/mid/high residual),
+    distance controls brightness col-wise (near->far).
+    """
+    # Base colors for residual bins (low/mid/high) – choose the exact same base as your matplotlib version.
+    base = np.array(
+        [
+            [0.25, 0.55, 0.85],  # bluish   (low residual)
+            [0.55, 0.75, 0.55],  # greenish (mid residual)
+            [0.90, 0.45, 0.45],  # reddish  (high residual)
+        ],
+        dtype=float,
+    )[:n_resid]
+
+    # brightness factors for distance bins (near->far)
+    factors = np.array([dist_hi]) if n_dist == 1 else np.linspace(dist_lo, dist_hi, n_dist)
+
+    out = np.zeros((n_resid, n_dist, 3), dtype=float)
+    for r in range(n_resid):
+        for d in range(n_dist):
+            f = factors[d]
+            mix = 0.35 + 0.65 * f
+            out[r, d] = base[r] * mix + (1.0 - mix) * np.array([1.0, 1.0, 1.0])
+            out[r, d] = np.clip(out[r, d], 0.0, 1.0)
+    return out
+
 
 def plot_bivariate_resid_distance_spatial_interactive(
     cells_df: pd.DataFrame,
@@ -3044,52 +3082,47 @@ def plot_bivariate_resid_distance_spatial_interactive(
     point_alpha: float = 0.90,
     legend_show_counts: bool = True,
     legend_count_fmt: str = "{:,}",
-    legend_count_fontsize: int = 11,   # plotly font sizes differ from mpl
+    legend_count_fontsize: int = 11,
     legend_count_min: int | None = None,
     palette_dist_lo: float = 0.25,
     palette_dist_hi: float = 0.95,
-    # --- plaque overlay ---
+    # provide the exact palette (3×3×3 RGB floats in [0,1]) from the matplotlib version
+    colors_rgb: np.ndarray | None = None,
+    # plaques
     plaque_x_col: str = "plaque_x",
     plaque_y_col: str = "plaque_y",
     show_plaques: bool = True,
-    plaque_marker: str = "*",          # kept for API compatibility (mapped to Plotly star)
     plaque_color: str = "red",
     plaque_edgecolor: str = "red",
     plaque_size: float = 8,
     plaque_alpha: float = 0.95,
     plaque_linewidth: float = 0.8,
-    plaque_zorder: float = 5,
     plaque_round_decimals: int | None = None,
     plaque_label: str = "Plaque",
     show_marker_legend: bool = True,
-    marker_legend_loc: str = "lower right",  # mapped to plotly position
     marker_legend_fontsize: int = 12,
     marker_legend_framealpha: float = 0.90,
+    # layout control (NEW)
+    layout: str = "vertical",  # "vertical" (default) or "horizontal"
     # output
     title: str = "Residual vs distance bivariate map",
     out_dir: str = "frontend/public/plots",
     filename: str = "residuals_vs_distance.html",
 ) -> go.Figure:
-    """
-    Interactive version of the original matplotlib figure:
-      - Left panel: 3×3 bivariate legend (residual bins × distance bins), with optional counts
-      - Right panel: spatial scatter colored by bivariate bin, plus optional plaque centroids
-    Saves to frontend/public/plots/residuals_vs_distance.html and returns a go.Figure.
-    """
-
     if n_bins != 3:
-        raise ValueError("This implementation expects n_bins=3 to map residual bins to neg/mid/pos.")
+        raise ValueError("This implementation expects n_bins=3.")
+
+    if layout not in {"vertical", "horizontal"}:
+        raise ValueError("layout must be 'vertical' or 'horizontal'")
 
     df = cells_df.copy()
 
-    # robust alignment: assume row-wise y_true corresponds to cells_df
     resid = np.asarray(y_true, dtype=float) - np.asarray(y_pred, dtype=float)
     df["_resid_"] = resid
     df["_dist_"] = pd.to_numeric(df[dist_col], errors="coerce")
     df["_x_"] = pd.to_numeric(df[x_col], errors="coerce")
     df["_y_"] = pd.to_numeric(df[y_col], errors="coerce")
 
-    # drop non-finite (cells)
     mask = (
         np.isfinite(df["_resid_"].to_numpy())
         & np.isfinite(df["_dist_"].to_numpy())
@@ -3098,71 +3131,30 @@ def plot_bivariate_resid_distance_spatial_interactive(
     )
     df = df.loc[mask].copy()
 
-    # bin residuals and distances (qcut)
     df["_resid_bin_"] = pd.qcut(df["_resid_"], q=n_bins, duplicates="drop")
     df["_dist_bin_"] = pd.qcut(df["_dist_"], q=n_bins, duplicates="drop")
 
     if df["_resid_bin_"].cat.categories.size != 3 or df["_dist_bin_"].cat.categories.size != 3:
-        raise ValueError(
-            "qcut produced fewer than 3 bins (ties). Consider adding small jitter "
-            "or switching to pd.cut with fixed edges."
-        )
+        raise ValueError("qcut produced fewer than 3 bins (ties). Consider jitter or fixed edges.")
 
-    resid_cats = df["_resid_bin_"].cat.categories  # low->high
-    dist_cats = df["_dist_bin_"].cat.categories    # near->far (low->high)
-
+    resid_cats = df["_resid_bin_"].cat.categories
+    dist_cats = df["_dist_bin_"].cat.categories
     df["_resid_idx_"] = df["_resid_bin_"].cat.codes  # 0,1,2
     df["_dist_idx_"] = df["_dist_bin_"].cat.codes    # 0,1,2
 
-    # --- palette helpers (self-contained) ---
-    def _hex(rgb: tuple[float, float, float]) -> str:
-        r, g, b = (int(round(255 * v)) for v in rgb)
-        return f"#{r:02x}{g:02x}{b:02x}"
-
-    def _relative_luminance(rgb: tuple[float, float, float]) -> float:
-        r, g, b = rgb
-        # sRGB relative luminance
-        return 0.2126 * r + 0.7152 * g + 0.0722 * b
-
-    def _bivariate_palette_rowwise(*, n_resid: int, n_dist: int, dist_lo: float, dist_hi: float) -> np.ndarray:
-        """
-        Returns array shape (n_resid, n_dist, 3) in [0,1].
-        Residual controls base hue row-wise, distance controls brightness col-wise.
-        """
-        # Base colors for residual bins (low/mid/high)
-        base = np.array(
-            [
-                [0.25, 0.55, 0.85],  # bluish
-                [0.55, 0.75, 0.55],  # greenish
-                [0.90, 0.45, 0.45],  # reddish
-            ],
-            dtype=float,
+    # Use EXACT palette from matplotlib if provided, otherwise compute it the same way.
+    if colors_rgb is None:
+        colors_rgb = _bivariate_palette_rowwise(
+            n_resid=3, n_dist=3, dist_lo=palette_dist_lo, dist_hi=palette_dist_hi
         )
-        base = base[:n_resid]
 
-        # distance brightness factors from dist_lo..dist_hi
-        if n_dist == 1:
-            factors = np.array([dist_hi])
-        else:
-            factors = np.linspace(dist_lo, dist_hi, n_dist)
+    colors_rgb = np.asarray(colors_rgb, dtype=float)
+    if colors_rgb.shape != (3, 3, 3):
+        raise ValueError("colors_rgb must have shape (3, 3, 3).")
 
-        out = np.zeros((n_resid, n_dist, 3), dtype=float)
-        for r in range(n_resid):
-            for d in range(n_dist):
-                # blend towards white depending on distance factor
-                f = factors[d]
-                out[r, d] = base[r] * (0.35 + 0.65 * f) + (1.0 - (0.35 + 0.65 * f)) * np.array([1, 1, 1])
-                out[r, d] = np.clip(out[r, d], 0, 1)
-        return out
+    # Convert using matplotlib's converter (exact hex formatting)
+    flat_hex = [to_hex(colors_rgb[r, d], keep_alpha=False) for r in range(3) for d in range(3)]
 
-    colors = _bivariate_palette_rowwise(
-        n_resid=3,
-        n_dist=3,
-        dist_lo=palette_dist_lo,
-        dist_hi=palette_dist_hi,
-    )
-
-    # counts for legend squares
     counts = (
         df.groupby(["_resid_idx_", "_dist_idx_"], observed=True)
         .size()
@@ -3171,50 +3163,60 @@ def plot_bivariate_resid_distance_spatial_interactive(
         .reshape(3, 3)
     )
 
-    # ---- build figure: 2 columns (legend heatmap | spatial) ----
-    fig = make_subplots(
-        rows=1,
-        cols=2,
-        column_widths=[0.33, 0.67],
-        horizontal_spacing=0.06,
-        subplot_titles=("Bivariate legend (Residual × Distance)", title),
-    )
+    # -----------------------------
+    # Figure layout (NEW)
+    # -----------------------------
+    if layout == "vertical":
+        fig = make_subplots(
+            rows=2,
+            cols=1,
+            row_heights=[0.38, 0.62],
+            vertical_spacing=0.2,
+            subplot_titles=(
+                "Bivariate legend (Residual × Distance)",
+                title,
+            ),
+        )
+        legend_pos = dict(row=1, col=1)
+        spatial_pos = dict(row=2, col=1)
+        fig_width, fig_height = 700, 820
+    else:
+        fig = make_subplots(
+            rows=1,
+            cols=2,
+            column_widths=[0.33, 0.67],
+            horizontal_spacing=0.06,
+            subplot_titles=(
+                "Bivariate legend (Residual × Distance)",
+                title,
+            ),
+        )
+        legend_pos = dict(row=1, col=1)
+        spatial_pos = dict(row=1, col=2)
+        fig_width, fig_height = 900, 520
 
-    # LEFT: legend heatmap (3x3). y inverted so row 0 at top => show high residual on top like mpl (2-r)
-    # We'll construct z as just indices; color comes from a custom colorscale made of 9 discrete colors.
-    z = np.arange(9).reshape(3, 3)  # dummy
+    # -----------------------------
+    # LEFT (or TOP) legend heatmap with discrete 9 colors
+    # -----------------------------
+    z = np.arange(9).reshape(3, 3)
 
-    # Discrete colorscale for the 9 cells
-    flat_colors = [colors[r, d] for r in range(3) for d in range(3)]
-    flat_hex = [_hex(tuple(c)) for c in flat_colors]
-
-    # Map each integer 0..8 to its own color
-    # Plotly colorscale expects pairs in [0,1]
-    cs = []
+    eps = 1e-6
+    cs: list[list[float | str]] = []
     for i, h in enumerate(flat_hex):
-        t0 = i / 8 if 8 else 0
-        cs.append([t0, h])
-        cs.append([t0 + 1e-9, h])
-    cs[-1][0] = 1.0  # ensure last stops at 1
+        t = i / 8.0
+        cs.append([max(0.0, t - eps), h])
+        cs.append([min(1.0, t + eps), h])
 
-    # Put the colors in the same r,d order as z:
-    # z[0,0]=0 -> colors[0,0], z[0,1]=1 -> colors[0,1], ...
-    heat = go.Heatmap(
-        z=z,
-        colorscale=cs,
-        showscale=False,
-        hoverinfo="skip",
+    fig.add_trace(
+        go.Heatmap(z=z, colorscale=cs, showscale=False, hoverinfo="skip"),
+        **legend_pos,
     )
-    fig.add_trace(heat, row=1, col=1)
 
-    # Axis ticks/labels for the legend panel
     dist_labels = [f"{dist_cats[j].left:.0f}-{dist_cats[j].right:.0f} µm" for j in range(3)]
-    resid_labels = [str(c) for c in resid_cats]  # Interval string
-    # show high residual at top => reverse labels on y
-    resid_labels_topdown = resid_labels[::-1]
+    resid_labels_topdown = [str(c) for c in resid_cats][::-1]
 
     fig.update_xaxes(
-        row=1, col=1,
+        **legend_pos,
         tickmode="array",
         tickvals=[0, 1, 2],
         ticktext=dist_labels,
@@ -3224,30 +3226,25 @@ def plot_bivariate_resid_distance_spatial_interactive(
         zeroline=False,
     )
     fig.update_yaxes(
-        row=1, col=1,
+        **legend_pos,
         tickmode="array",
         tickvals=[0, 1, 2],
         ticktext=resid_labels_topdown,
         title_text="Residual bin",
         showgrid=False,
         zeroline=False,
-        autorange="reversed",  # so 0 is at top visually, matching labels
+        autorange="reversed",
     )
 
-    # Add count annotations in legend squares (optional)
+    # Legend counts annotations (xref/yref for legend is always x1/y1 because legend subplot is first)
     if legend_show_counts:
-        annotations = []
+        ann = list(fig.layout.annotations)
         for r in range(3):
             for d in range(3):
                 n = int(counts[r, d])
                 if (legend_count_min is not None) and (n < legend_count_min):
                     continue
-                rgb = tuple(colors[r, d])
-                txt_color = "black" if _relative_luminance(rgb) > 0.55 else "white"
-                # heatmap cell centers are at integer coords (0..2)
-                # but y is reversed; to place text aligned with visible cell,
-                # use y=2-r (top row is r=0 => y=2)
-                annotations.append(
+                ann.append(
                     dict(
                         x=d,
                         y=2 - r,
@@ -3255,12 +3252,14 @@ def plot_bivariate_resid_distance_spatial_interactive(
                         yref="y1",
                         text=legend_count_fmt.format(n),
                         showarrow=False,
-                        font=dict(size=legend_count_fontsize, color=txt_color),
+                        font=dict(size=legend_count_fontsize, color="white"),
                     )
                 )
-        fig.update_layout(annotations=list(fig.layout.annotations) + annotations)
+        fig.update_layout(annotations=ann)
 
-    # RIGHT: spatial scatter colored by bivariate bin (9 discrete colors)
+    # -----------------------------
+    # Spatial scatter (always subplot #2 => axes x2/y2 in both layouts)
+    # -----------------------------
     ridx = df["_resid_idx_"].to_numpy()
     didx = df["_dist_idx_"].to_numpy()
     color_idx = (ridx * 3 + didx).astype(int)
@@ -3272,7 +3271,6 @@ def plot_bivariate_resid_distance_spatial_interactive(
             y=df["_y_"],
             mode="markers",
             marker=dict(size=point_size, color=marker_colors, opacity=point_alpha),
-            name="Cells",
             showlegend=False,
             customdata=np.c_[df["_resid_"], df["_dist_"]],
             hovertemplate=(
@@ -3282,18 +3280,14 @@ def plot_bivariate_resid_distance_spatial_interactive(
                 "Nearest-plaque dist: %{customdata[1]:.1f} µm<extra></extra>"
             ),
         ),
-        row=1,
-        col=2,
+        **spatial_pos,
     )
 
-    # plaques (unique coords)
     if show_plaques and (plaque_x_col in cells_df.columns) and (plaque_y_col in cells_df.columns):
         plaques = cells_df[[plaque_x_col, plaque_y_col]].copy()
         plaques["_px_"] = pd.to_numeric(plaques[plaque_x_col], errors="coerce")
         plaques["_py_"] = pd.to_numeric(plaques[plaque_y_col], errors="coerce")
-        plaques = plaques.loc[
-            np.isfinite(plaques["_px_"].to_numpy()) & np.isfinite(plaques["_py_"].to_numpy())
-        ]
+        plaques = plaques.loc[np.isfinite(plaques["_px_"]) & np.isfinite(plaques["_py_"])]
 
         if plaque_round_decimals is not None:
             plaques["_px_"] = plaques["_px_"].round(plaque_round_decimals)
@@ -3317,14 +3311,12 @@ def plot_bivariate_resid_distance_spatial_interactive(
                 showlegend=bool(show_marker_legend),
                 hoverinfo="skip",
             ),
-            row=1,
-            col=2,
+            **spatial_pos,
         )
 
-    # axes formatting: equal aspect + invert y like matplotlib
-    fig.update_xaxes(row=1, col=2, title_text="X (µm)", showgrid=False, zeroline=False)
+    fig.update_xaxes(**spatial_pos, title_text="X (µm)", showgrid=False, zeroline=False)
     fig.update_yaxes(
-        row=1, col=2,
+        **spatial_pos,
         title_text="Y (µm)",
         showgrid=False,
         zeroline=False,
@@ -3333,18 +3325,17 @@ def plot_bivariate_resid_distance_spatial_interactive(
         scaleratio=1,
     )
 
-    # marker legend (compact): Plotly cannot replicate mpl HandlerTuple exactly,
-    # but we keep plaque entry (and keep cells hidden since they are 9 colors already shown in heatmap)
+    # -----------------------------
+    # Layout & export
+    # -----------------------------
     fig.update_layout(
         title=f"{model_name}: Residual bin × distance bin (bivariate) — spatial map",
-        autosize=True,
+        width=fig_width,
+        height=fig_height,
         template="simple_white",
         margin=dict(l=60, r=30, t=90, b=60),
-
-        # transparent background
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0)",
-
         legend=dict(
             orientation="h",
             yanchor="bottom",
@@ -3356,7 +3347,6 @@ def plot_bivariate_resid_distance_spatial_interactive(
         ),
     )
 
-    # write HTML
     out_path = Path(out_dir) / filename
     out_path.parent.mkdir(parents=True, exist_ok=True)
     fig.write_html(
@@ -3367,8 +3357,9 @@ def plot_bivariate_resid_distance_spatial_interactive(
         default_width="100%",
         default_height="100%",
     )
-
+    fig.show()
     return fig
+
 
 def plot_top_gene_importances_interactive(
     importance_df: pd.DataFrame,
