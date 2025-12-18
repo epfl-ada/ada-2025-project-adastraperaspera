@@ -27,9 +27,9 @@ const Index = () => {
       {/*<MetricsSection /> 
       <MicroscopySection/>*/}
       {/*<GeneExpressionChart />
-      <GeneExpressionSection2 />*/}
+      <GeneExpressionSection2 />
       <CellClusteringSection />
-      <RQSection />
+      <RQSection />*/}
       <RQ1Section />
       <RQ2Section />
       <RQ3Section />
@@ -37,8 +37,8 @@ const Index = () => {
       <RQ5Section />
       {/*<SpatialMapSection />
       <MethodologySection />
-      <ConclusionSection />
-      <Footer />*/}
+      <ConclusionSection />*/}
+      <Footer />
     </main>
   );
 };

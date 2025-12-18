@@ -146,13 +146,13 @@ const PreprocessingSection = () => {
                     </div>
                 </div>
               <p className="text-lg text-muted-foreground leading-relaxed">
-                The data comes from sagittal brain slices of 6 mice stained with DAPI, a fluorescent DNA-binding nucleus dye. Three mice are healthy controls (wild type or Wt) at <span className="font-semibold">2.5, 5.7, and 13.4 months</span>. The remaining three are transgenic (Tg) at <span className="font-semibold">2.5, 5.7, and 17.9 months</span>.
-                The remaining three are transgenic (Tg) at <span className="font-semibold">2.5, 5.7, and 17.9 months</span>.
+                The data comes from sagittal brain slices of 6 mice stained with DAPI, a fluorescent DNA-binding nucleus dye. Three mice are healthy controls (wild type or Wt) at <span className="font-medium text-foreground">2.5, 5.7, and 13.4 months</span>. The remaining three are transgenic (Tg) at <span className="font-medium text-foreground">2.5, 5.7, and 17.9 months</span>.
+                The remaining three are transgenic (Tg) at <span className="font-medium text-foreground">2.5, 5.7, and 17.9 months</span>.
               </p>
               <p className="text-lg text-muted-foreground leading-relaxed">
                 The mutations induced in Tg mice forces the expression of amyloid precursor protein (App) with known familial AD abnormalities. Transgenic mice express up to 5× more App.
                 This leads to early and aggressive Aβ plaque deposition.
-                The plaques in the <span className="font-semibold">17.9 month transgenic mouse</span> are revealed with the IF staining and appear in red.
+                The plaques in the <span className="font-medium text-foreground">17.9 month transgenic mouse</span> are revealed with the IF staining and appear in red.
               </p>
               <figure className="space-y-2">
                   <img
@@ -171,13 +171,13 @@ const PreprocessingSection = () => {
             <div id="plaque-detection" className="space-y-4">
               <h3 className="text-2xl font-bold text-foreground">Plaque detection and coordinate alignment</h3>
               <p className="text-lg text-muted-foreground leading-relaxed">
-                To obtain plaque coordinates, we hand-labeled <span className="font-semibold">11 plaque-free regions</span> and <span className="font-semibold">9 plaques</span> across a range of sizes, then trained a <span className="font-semibold">random forest classifier</span> to segment the remaining plaques in the IF image.
+                To obtain plaque coordinates, we hand-labeled <span className="font-medium text-foreground">11 plaque-free regions</span> and <span className="font-medium text-foreground">9 plaques</span> across a range of sizes, then trained a <span className="font-medium text-foreground">random forest classifier</span> to segment the remaining plaques in the IF image.
               </p>
               <p className="text-lg text-muted-foreground leading-relaxed">
-                Next, plaque coordinates were transformed from IF-image space to morphology-image space using a <span className="font-semibold">RANSAC-based transformation</span> trained on <span className="font-semibold">26 visually aligned landmark pairs</span>. After alignment, we achieved <span className="font-semibold">RMSE = 3.2 µm</span>, which is small relative to the <span className="font-semibold">median cell-to-plaque distance (61 µm)</span>—supporting that alignment error is unlikely to dominate distance-based trends.
+                Next, plaque coordinates were transformed from IF-image space to morphology-image space using a <span className="font-medium text-foreground">RANSAC-based transformation</span> trained on <span className="font-medium text-foreground">26 visually aligned landmark pairs</span>. After alignment, we achieved <span className="font-medium text-foreground">RMSE = 3.2 µm</span>, which is small relative to the <span className="font-medium text-foreground">median cell-to-plaque distance (61 µm)</span>—supporting that alignment error is unlikely to dominate distance-based trends.
               </p>
               <p className="text-lg text-muted-foreground leading-relaxed">
-                After alignment, we performed plaque post-processing to improve biological plausibility and robustness: we merged intersecting plaques, removed plaques outside the brain boundary, and filtered plaques below the 5th percentile in area. This produced <span className="font-semibold">1,736 Aβ plaques</span>, visualized below.
+                After alignment, we performed plaque post-processing to improve biological plausibility and robustness: we merged intersecting plaques, removed plaques outside the brain boundary, and filtered plaques below the 5th percentile in area. This produced <span className="font-medium text-foreground">1,736 Aβ plaques</span>, visualized below.
               </p>
               
               <PlotFrame
