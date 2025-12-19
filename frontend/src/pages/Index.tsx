@@ -17,6 +17,8 @@ import RQ2Section from "@/components/RQ2Section";
 import RQ3Section from "@/components/RQ3Section";
 import RQ4Section from "@/components/RQ4Section";
 import RQ5Section from "@/components/RQ5Section";
+import DiscussionSection from "@/components/DiscussionSection";
+import DiscussionSection2 from "@/components/DiscussionSection2";
 
 const Index = () => {
   return (
@@ -38,6 +40,8 @@ const Index = () => {
       {/*<SpatialMapSection />
       <MethodologySection />
       <ConclusionSection />*/}
+      <DiscussionSection />
+      <DiscussionSection2 />
       <Footer />
     </main>
   );
