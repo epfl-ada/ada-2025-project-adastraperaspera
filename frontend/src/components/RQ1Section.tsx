@@ -141,7 +141,7 @@ const RQ1Section = () => {
             <p className="text-lg text-muted-foreground leading-relaxed">
                 Overall, the results show a clear composition shift near plaques:
             </p>
-            <div className="rounded-2xl border border-border bg-card p-5">
+            {/*<div className="rounded-2xl border border-border bg-card p-5">*/}
                     <ul className="space-y-3 text-muted-foreground">
                       <li className="flex items-start gap-2">
                         <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
@@ -161,7 +161,7 @@ const RQ1Section = () => {
                         at the smallest distances.
                       </li>
                     </ul>
-            </div>
+            {/*</div>*/}
 
             <p className="text-lg text-muted-foreground leading-relaxed">
               This aligns with known AD mechanisms: plaques are associated with neuronal

@@ -369,7 +369,7 @@ const RQ2Section = () => {
                 Cluster-level marker enrichment shows that some clusters exhibit strong over- or under-expression of specific genes. For example:
               </p>
               {/*<div className="rounded-2xl border border-border bg-card p-5">*/}
-                <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
+                <ul className="space-y-3 text-muted-foreground">
                  <li className="flex items-start gap-2">
                     <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
                     Cluster 8 (immune) over-expresses <span className="font-medium text-foreground">Hexb</span> (z-score ~4). 
@@ -398,11 +398,11 @@ const RQ2Section = () => {
             <div id="rq2-spearman" className="space-y-4">
               <h3 className="text-xl font-semibold text-foreground">Correlation: cell-type proportions vs mean PIG expression</h3>
 
-               <p className="text-lg text-muted-foreground leading-relaxed">
+              {/*<div className="rounded-2xl border border-border bg-card p-5">*/}
+                <ul className="space-y-3 text-muted-foreground">
+                  <p className="text-lg text-muted-foreground leading-relaxed">
                 We test whether distance-dependent PIG expression could be explained by changing cell-type composition. Concretely:
               </p>
-              {/*<div className="rounded-2xl border border-border bg-card p-5">*/}
-                <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
                   <li className="flex items-start gap-2">
                     <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
                      Bin cells by plaque distance. 
@@ -435,17 +435,17 @@ const RQ2Section = () => {
               />
 
               <p className="text-lg text-muted-foreground leading-relaxed">
-                We identify **9 cell types** with significant correlations to PIG expression. Notably:
+                We identify 9 <span className="font-medium text-foreground">cell types</span> with significant correlations to PIG expression. Notably:
                 </p>
-                <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
+                <ul className="space-y-3 text-muted-foreground">
                   <li className="flex items-start gap-2">
                     <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
-                    **8/9** are strongly correlated with a **core set of 14 PIGs**.. 
+                    <span className="font-medium text-foreground">8/9</span> are strongly correlated with a <span className="font-medium text-foreground">core set of 14 PIGs</span>.
                   </li>
 
                   <li className="flex items-start gap-2">
                     <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
-                    The remaining cell type is strongly correlated with **Nrep** alone, suggesting a complementary pattern rather than redundancy with the core PIG set.
+                    The remaining cell type is strongly correlated with <span className="font-medium text-foreground">Nrep</span> alone, suggesting a complementary pattern rather than redundancy with the core PIG set.
                   </li>
                 </ul>
               {/*</div>*/}
@@ -465,10 +465,10 @@ const RQ2Section = () => {
               <p className="text-lg text-muted-foreground leading-relaxed">
                 To quantify how much cell composition explains PIG expression gradients, we fit a joint linear regression predicting PIG expression from:
                 </p>
-                <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
+                <ul className="space-y-3 text-muted-foreground">
                   <li className="flex items-start gap-2">
                     <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
-                    Broad cell type (with **Vascular Endothelial Pericyte** as the baseline) 
+                    Broad cell type (with <span className="font-medium text-foreground">Vascular Endothelial Pericyte</span> as the baseline) 
                   </li>
 
                   <li className="flex items-start gap-2">
@@ -479,11 +479,11 @@ const RQ2Section = () => {
               {/*</div>*/}
 
               <p className="text-lg text-muted-foreground leading-relaxed">
-                We illustrate results for **Apoe**.
+                We illustrate results for <span className="font-medium text-foreground">Apoe</span>.
               </p>
 
               <p className="text-lg text-muted-foreground leading-relaxed">
-                The model explains **20.3% of the variance in normalized transcript counts (R² = 0.203), with a highly significant overall fit (F-test p &lt; 2.13 × 10⁻¹⁷⁴), rejecting the joint null hypothesis.
+                The model explains <span className="font-medium text-foreground">20.3% of the variance in normalized transcript counts (R² = 0.203)</span>, with a highly significant overall fit (F-test p &lt; 2.13 × 10⁻¹⁷⁴), rejecting the joint null hypothesis.
               </p>
 
               <p className="text-lg text-muted-foreground leading-relaxed">
