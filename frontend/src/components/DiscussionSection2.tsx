@@ -1,4 +1,4 @@
-import { CircleChevronRight } from "lucide-react";
+import { CircleChevronRight,OctagonX  } from "lucide-react";
 
 const DiscussionSection2 = () => {
   return (
@@ -94,7 +94,7 @@ const DiscussionSection2 = () => {
 
             <ul className="mt-3 space-y-3 text-sm text-muted-foreground">
               <li className="flex items-start gap-2">
-                <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
+                <OctagonX className="w-4 h-4 text-red-400 mt-1 flex-shrink-0" />
                 <span>
                   <span className="font-medium text-foreground">Alignment error:</span>{" "}
                   IF-to-morphology RMSE is small (3.2 µm) but nonzero; fine-scale (single-digit µm) conclusions remain sensitive.
@@ -102,7 +102,7 @@ const DiscussionSection2 = () => {
               </li>
 
               <li className="flex items-start gap-2">
-                <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
+                <OctagonX className="w-4 h-4 text-red-400 mt-1 flex-shrink-0" />
                 <span>
                   <span className="font-medium text-foreground">Zero inflation and sparsity:</span>{" "}
                   genes like Cxcl10 illustrate that statistical significance can coexist with minimal practical effect size due to near-all-zero distributions.
@@ -110,7 +110,7 @@ const DiscussionSection2 = () => {
               </li>
 
               <li className="flex items-start gap-2">
-                <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
+                <OctagonX className="w-4 h-4 text-red-400 mt-1 flex-shrink-0" />
                 <span>
                   <span className="font-medium text-foreground">Anatomical confounding:</span>{" "}
                   plaque density varies by region; any model using coordinates must be treated as potentially learning anatomy rather than pathology.
@@ -118,7 +118,7 @@ const DiscussionSection2 = () => {
               </li>
 
               <li className="flex items-start gap-2">
-                <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
+                <OctagonX className="w-4 h-4 text-red-400 mt-1 flex-shrink-0" />
                 <span>
                   <span className="font-medium text-foreground">Cross-mouse comparability:</span>{" "}
                   batch-like distortions make global cross-mouse normalization risky; the chosen within-cluster z-score approach mitigates but does not eliminate all comparability concerns.
@@ -126,7 +126,7 @@ const DiscussionSection2 = () => {
               </li>
 
               <li className="flex items-start gap-2">
-                <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
+                <OctagonX className="w-4 h-4 text-red-400 mt-1 flex-shrink-0" />
                 <span>
                   <span className="font-medium text-foreground">Causal direction:</span>{" "}
                   composition shifts and PIG changes co-occur; while regression and correlation help disentangle them, they do not establish causality.

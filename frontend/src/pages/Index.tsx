@@ -40,7 +40,7 @@ const Index = () => {
       {/*<SpatialMapSection />
       <MethodologySection />
       <ConclusionSection />*/}
-      <DiscussionSection />
+      {/*<DiscussionSection */}
       <DiscussionSection2/>
       <Footer />
     </main>
