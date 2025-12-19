@@ -52,7 +52,7 @@ function PigNeighborCorrTable() {
       <ul className="mt-3 space-y-3 text-sm text-muted-foreground">
         <p className="text-lg text-muted-foreground leading-relaxed">
                 Interpretations:
-        </p>
+                </p>
         <li className="flex items-start gap-2">
           •
           <span>
@@ -336,12 +336,11 @@ const RQ3Section = () => {
                     </span>
                   </li>
                 </ul>
-                <div className="rounded-2xl border border-border bg-card p-5">
-                  
-                <ul className="mt-3 space-y-3 text-sm text-muted-foreground">
-                  <p className="text-lg text-muted-foreground leading-relaxed">
+              {/*<div className="rounded-2xl border border-border bg-card p-5">*/}
+                <p className="text-lg text-muted-foreground leading-relaxed">
                 We systematically quantify how each feature group improves PIG prediction using nested linear models for each PIG:
                 </p>
+                <ul className="mt-3 space-y-3 text-sm text-muted-foreground">
                   <li className="flex items-start gap-2">
                     <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
                     <span>
@@ -403,12 +402,9 @@ const RQ3Section = () => {
                       neighborhood transcriptional context.
                     </span>
                   </li>
-                </ul>
-
+                  </ul>
+              {/*</div>*/}
               
-
-
-
             </div>
           {/* Sticky panel */}
           <aside className="lg:sticky lg:top-24">
