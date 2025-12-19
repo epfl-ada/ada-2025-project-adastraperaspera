@@ -89,7 +89,7 @@ const RQ1Section = () => {
             </div>
             
              {/*<div className="rounded-2xl border border-border bg-card p-5">*/}
-              <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
+              <ul className="space-y-3 text-muted-foreground">
                 <p className="text-lg text-muted-foreground leading-relaxed">
                 To make coefficients interpretable, we translate them into:
                 </p>
@@ -142,7 +142,7 @@ const RQ1Section = () => {
                 Overall, the results show a clear composition shift near plaques:
             </p>
             <div className="rounded-2xl border border-border bg-card p-5">
-                    <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
+                    <ul className="space-y-3 text-muted-foreground">
                       <li className="flex items-start gap-2">
                         <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
                         <span className="font-medium text-foreground">
@@ -206,12 +206,13 @@ const RQ1Section = () => {
                 caption="Distance to plaque vs % of cells in each bin (interactive)."
               />
 
-              <p className="text-lg text-muted-foreground leading-relaxed">
-                  Several clusters show changes primarily at extreme distances rather than gradual shifts
-              </p>
-                <div className="rounded-2xl border border-border bg-card p-5">
+              
+                {/*<div className="rounded-2xl border border-border bg-card p-5">*/}
                 
-                      <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
+                      <ul className="space-y-3 text-muted-foreground">
+                        <p className="text-lg text-muted-foreground leading-relaxed">
+                            Several clusters show changes primarily at extreme distances rather than gradual shifts
+                        </p>
                         <li className="flex items-start gap-2">
                           <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
                           <span className="font-medium text-foreground">
@@ -241,7 +242,7 @@ const RQ1Section = () => {
                         </li>
                       </ul>
 
-                </div>
+                {/*</div>*/}
                 <p className="text-lg text-muted-foreground leading-relaxed">
                   These non-linearities motivate correlation and regression analyses that do not assume strict linear response across distance.
                 </p>
