@@ -385,11 +385,16 @@ const RQ3Section = () => {
                   </span>
                 </li>
               </ul>
+              <PlotFrame
+                src={`${base}plots/pig_trajectories.html`}
+                title="Multi-plaque proximity features"
+                size="md"
+                caption="Mean adjusted R² across PIGs for each nested model, including min/max ranges, showing which feature groups add meaningful predictive value."
+              />
 
               {/* keep your content, only fix structure */}
               <p className="text-lg text-muted-foreground leading-relaxed">
-                We systematically quantify how each feature group improves PIG prediction
-                using nested linear models for each PIG:
+                Key findings:
               </p>
 
               <ul className="mt-3 space-y-3 text-sm text-muted-foreground">
@@ -452,6 +457,8 @@ const RQ3Section = () => {
                   </span>
                 </li>
               </ul>
+
+
             </div>
           </div>
 
