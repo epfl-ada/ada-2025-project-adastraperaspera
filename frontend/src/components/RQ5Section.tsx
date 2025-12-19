@@ -1,5 +1,5 @@
 import PlotFrame from "@/components/PlotFrame";
-import { Brain } from 'lucide-react'
+import { Brain, CircleChevronRight } from "lucide-react";
 const base = import.meta.env.BASE_URL;
 
 const linearPerf = [
