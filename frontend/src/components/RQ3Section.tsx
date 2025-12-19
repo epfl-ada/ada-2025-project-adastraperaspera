@@ -144,7 +144,6 @@ const RQ3Section = () => {
               <ul className="space-y-3 text-muted-foreground">
                 <li>
                   <p className="text-lg text-muted-foreground leading-relaxed">
-                    <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0 inline-block" />{" "}
                     <span>
                       A prominent example is{" "}
                       <span className="font-medium text-foreground">Gfap</span>, which shows
@@ -181,7 +180,6 @@ const RQ3Section = () => {
 
                 <li>
                   <p className="text-lg text-muted-foreground leading-relaxed">
-                    <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0 inline-block" />{" "}
                     <span>Across genes, the most consistent gradients include:</span>
                   </p>
                 </li>
@@ -331,7 +329,7 @@ const RQ3Section = () => {
               <PlotFrame
                 src={`${base}plots/pigs_coexpression.html`}
                 title="Multi-plaque proximity features"
-                size="md"
+                size="lg"
                 caption="Histogram and CDF of local plaque density (Count within R = 61 µm), validating that multi-plaque proximity provides informative variation beyond nearest-plaque distance."
               />
 
@@ -484,13 +482,13 @@ const RQ3Section = () => {
                   href="#rq3-mean"
                   className="block rounded-xl px-3 py-2 text-muted-foreground hover:text-foreground hover:bg-muted/50 transition"
                 >
-                  Means, intervals & ANOVA
+                  Means, Intervals & ANOVA
                 </a>
                 <a
                   href="#rq3-regression"
                   className="block rounded-xl px-3 py-2 text-muted-foreground hover:text-foreground hover:bg-muted/50 transition"
                 >
-                  Per-genes Regression analysis
+                  Regression analysis
                 </a>
               </nav>
 
