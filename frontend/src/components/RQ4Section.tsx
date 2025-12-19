@@ -1,98 +1,246 @@
 import PlotFrame from "@/components/PlotFrame";
-import { Brain } from 'lucide-react'
+import { Brain,CircleChevronRight } from 'lucide-react'
 const base = import.meta.env.BASE_URL;
 
-const performanceRows = [
-  { model: "LASSO", trainR2: 0.1969, testR2: 0.1955 },
-  { model: "ElasticNet", trainR2: 0.1969, testR2: 0.1955 },
-  { model: "Random Forest", trainR2: 0.2252, testR2: 0.1874 },
-  { model: "XGBoost", trainR2: 0.4784, testR2: 0.2577 },
+const MODEL_R2_ROWS = [
+  { model: "Linear", train: "0.25", test: "0.24" },
+  { model: "PLS", train: "0.19", test: "0.19" },
 ];
 
-const residualClusterRows = [
-  {
-    cluster: 15,
-    cellType: "Hypothalamic GnRH1-expressing glutamatergic neurons",
-    n: 917,
-    mar: 32.2295,
-  },
-  {
-    cluster: 18,
-    cellType: "Pons glutamatergic neurons",
-    n: 499,
-    mar: 17.8746,
-  },
+const MODEL_FULL_R2_ROWS = [
+  { model: "LASSO", train: "0.1969", test: "0.1955" },
+  { model: "ElasticNet", train: "0.1969", test: "0.1955" },
+  { model: "Random Forest", train: "0.2252", test: "0.1874" },
+  { model: "XGBoost", train: "0.4784", test: "0.2577" },
 ];
 
-const topGenes = [
+const RESIDUAL_CLUSTER_ROWS = [
   {
-    rank: 1,
-    elasticNetGene: "Gfap",
-    elasticNetImp: 7.738978,
-    lassoGene: "Gfap",
-    lassoImp: 7.864686,
-    rfGene: "Gfap",
-    rfImp: 0.22845,
-    xgbGene: "Spag16",
-    xgbImp: 0.033058,
+    cluster: "15",
+    type: "Hypothalamic GnRH1-expressing glutamatergic neurons",
+    n: "917",
+    meanAbs: "32.2295",
   },
   {
-    rank: 2,
-    elasticNetGene: "Spag16",
-    elasticNetImp: 3.780172,
-    lassoGene: "Spag16",
-    lassoImp: 3.801531,
-    rfGene: "Spag16",
-    rfImp: 0.084622,
-    xgbGene: "Lyz2",
-    xgbImp: 0.023342,
-  },
-  {
-    rank: 3,
-    elasticNetGene: "Slc17a6",
-    elasticNetImp: 3.025042,
-    lassoGene: "Slc17a6",
-    lassoImp: 3.073279,
-    rfGene: "Lyz2",
-    rfImp: 0.066671,
-    xgbGene: "Gfap",
-    xgbImp: 0.016999,
-  },
-  {
-    rank: 4,
-    elasticNetGene: "Slc17a7",
-    elasticNetImp: 2.953878,
-    lassoGene: "Slc17a7",
-    lassoImp: 3.05738,
-    rfGene: "Cabp7",
-    rfImp: 0.063918,
-    xgbGene: "Igf2",
-    xgbImp: 0.015752,
-  },
-  {
-    rank: 5,
-    elasticNetGene: "Igf2",
-    elasticNetImp: 2.907111,
-    lassoGene: "Igf2",
-    lassoImp: 2.949014,
-    rfGene: "B2m",
-    rfImp: 0.034584,
-    xgbGene: "Strip2",
-    xgbImp: 0.013022,
+    cluster: "18",
+    type: "Pons glutamatergic neurons",
+    n: "499",
+    meanAbs: "17.8746",
   },
 ];
 
-const Th = ({ children }: { children: React.ReactNode }) => (
-  <th className="px-4 py-3 text-left text-xs font-semibold text-foreground">
-    {children}
-  </th>
-);
+const FEATURE_RANK_ROWS = [
+  {
+    rank: "1",
+    en: "Gfap (7.738978)",
+    lasso: "Gfap (7.864686)",
+    rf: "Gfap (0.228450)",
+    xgb: "Spag16 (0.033058)",
+  },
+  {
+    rank: "2",
+    en: "Spag16 (3.780172)",
+    lasso: "Spag16 (3.801531)",
+    rf: "Spag16 (0.084622)",
+    xgb: "Lyz2 (0.023342)",
+  },
+  {
+    rank: "3",
+    en: "Slc17a6 (3.025042)",
+    lasso: "Slc17a6 (3.073279)",
+    rf: "Lyz2 (0.066671)",
+    xgb: "Gfap (0.016999)",
+  },
+  {
+    rank: "4",
+    en: "Slc17a7 (2.953878)",
+    lasso: "Slc17a7 (3.057380)",
+    rf: "Cabp7 (0.063918)",
+    xgb: "Igf2 (0.015752)",
+  },
+  {
+    rank: "5",
+    en: "Igf2 (2.907111)",
+    lasso: "Igf2 (2.949014)",
+    rf: "B2m (0.034584)",
+    xgb: "Strip2 (0.013022)",
+  },
+];
 
-const Td = ({ children }: { children: React.ReactNode }) => (
-  <td className="px-4 py-3 text-sm text-muted-foreground align-top">
-    {children}
-  </td>
-);
+function FeatureRankTable() {
+  return (
+    <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+      <h4 className="text-base font-semibold text-foreground mb-4">
+        Top predictive genes by model
+      </h4>
+
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-border text-muted-foreground">
+              <th className="py-2 pr-4 text-right font-medium">Rank</th>
+              <th className="py-2 pr-4 text-left font-medium">ElasticNet</th>
+              <th className="py-2 pr-4 text-left font-medium">LASSO</th>
+              <th className="py-2 pr-4 text-left font-medium">Random Forest</th>
+              <th className="py-2 text-left font-medium">XGBoost</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {FEATURE_RANK_ROWS.map((r) => (
+              <tr
+                key={r.rank}
+                className="border-b border-border/60 last:border-b-0"
+              >
+                <td className="py-2 pr-4 text-right tabular-nums text-foreground">
+                  {r.rank}
+                </td>
+                <td className="py-2 pr-4 text-foreground whitespace-nowrap">
+                  {r.en}
+                </td>
+                <td className="py-2 pr-4 text-foreground whitespace-nowrap">
+                  {r.lasso}
+                </td>
+                <td className="py-2 pr-4 text-foreground whitespace-nowrap">
+                  {r.rf}
+                </td>
+                <td className="py-2 text-foreground whitespace-nowrap">
+                  {r.xgb}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+
+function ResidualByClusterTable() {
+  return (
+    <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+      <h4 className="text-base font-semibold text-foreground mb-4">
+        Mean absolute residuals by cluster
+      </h4>
+
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-border text-muted-foreground">
+              <th className="py-2 pr-4 text-right font-medium">Cluster (Leiden)</th>
+              <th className="py-2 pr-4 text-left font-medium">Inferred cell type</th>
+              <th className="py-2 pr-4 text-right font-medium">n</th>
+              <th className="py-2 text-right font-medium">
+                Mean |residual| (µm)
+              </th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {RESIDUAL_CLUSTER_ROWS.map((r) => (
+              <tr
+                key={r.cluster}
+                className="border-b border-border/60 last:border-b-0"
+              >
+                <td className="py-2 pr-4 text-right tabular-nums text-foreground">
+                  {r.cluster}
+                </td>
+                <td className="py-2 pr-4 text-muted-foreground min-w-[360px]">
+                  {r.type}
+                </td>
+                <td className="py-2 pr-4 text-right tabular-nums">{r.n}</td>
+                <td className="py-2 text-right tabular-nums">{r.meanAbs}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+
+function ModelPerformanceTable() {
+  return (
+    <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+      <h4 className="text-base font-semibold text-foreground mb-4">
+        Performance :
+      </h4>
+
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-border text-muted-foreground">
+              <th className="py-2 pr-4 text-left font-medium">Model</th>
+              <th className="py-2 pr-4 text-right font-medium">Train R²</th>
+              <th className="py-2 text-right font-medium">Test R²</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {MODEL_FULL_R2_ROWS.map((r) => (
+              <tr
+                key={r.model}
+                className="border-b border-border/60 last:border-b-0"
+              >
+                <td className="py-2 pr-4 text-foreground">{r.model}</td>
+                <td className="py-2 pr-4 text-right tabular-nums">{r.train}</td>
+                <td className="py-2 text-right tabular-nums">{r.test}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+
+function ModelR2Table() {
+  return (
+    <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+      <h4 className="text-base font-semibold text-foreground mb-4">
+        Performance (R²):
+      </h4>
+
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-border text-muted-foreground">
+              <th className="py-2 pr-4 text-left font-medium">Model</th>
+              <th className="py-2 pr-4 text-right font-medium">Train R²</th>
+              <th className="py-2 text-right font-medium">Test R²</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {MODEL_R2_ROWS.map((r) => (
+              <tr
+                key={r.model}
+                className="border-b border-border/60 last:border-b-0"
+              >
+                <td className="py-2 pr-4 text-foreground">
+                  {r.model}
+                </td>
+                <td className="py-2 pr-4 text-right tabular-nums">
+                  {r.train}
+                </td>
+                <td className="py-2 text-right tabular-nums">
+                  {r.test}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+
+
+
 
 const RQ4Section = () => {
   return (
@@ -126,31 +274,12 @@ const RQ4Section = () => {
                                 </a>
             
                                 <a
-                                    href="#rq4-residuals"
+                                    href="#rq4-modalities"
                                     className="block rounded-xl px-3 py-2 text-muted-foreground hover:text-foreground hover:bg-muted/50 transition"
                                 >
-                                    Residual diagnostics
+                                    Additional feature modalities
                                 </a>
-            
-                                <a
-                                    href="#rq4-truepred"
-                                    className="block rounded-xl px-3 py-2 text-muted-foreground hover:text-foreground hover:bg-muted/50 transition"
-                                >
-                                    True vs predicted
-                                </a>
-            
-                                <a
-                                    href="#rq4-spatial"
-                                    className="block rounded-xl px-3 py-2 text-muted-foreground hover:text-foreground hover:bg-muted/50 transition"
-                                >
-                                    Spatial diagnostics
-                                </a>
-                                <a
-                                    href="#rq4-importance"
-                                    className="block rounded-xl px-3 py-2 text-muted-foreground hover:text-foreground hover:bg-muted/50 transition"
-                                >
-                                   Top gene importance
-                                </a>
+          
                                 </nav>
             
                                 {/* Footer hint */}
@@ -159,75 +288,12 @@ const RQ4Section = () => {
                                 </div>
                             </div>
                         </aside>
-          {/* 
-          <aside className="lg:sticky lg:top-24">
-            <div className="rounded-2xl border border-border bg-card p-6 shadow-md">
-              <div className="text-xs uppercase tracking-wide text-muted-foreground">
-                Research Question 4
-              </div>
-              <h2 className="mt-2 text-xl font-bold text-foreground leading-snug">
-                How accurately can we infer plaque distance from gene expression?
-              </h2>
 
-              <div className="mt-5 space-y-3 text-sm">
-                <a
-                  href="#rq4-performance"
-                  className="block rounded-xl border border-border bg-background/40 px-4 py-3 hover:bg-background/70 transition"
-                >
-                  <div className="font-medium text-foreground">Model performance</div>
-                  <div className="text-muted-foreground">Train/Test R² + barplot</div>
-                </a>
-
-                <a
-                  href="#rq4-residuals"
-                  className="block rounded-xl border border-border bg-background/40 px-4 py-3 hover:bg-background/70 transition"
-                >
-                  <div className="font-medium text-foreground">Residual diagnostics</div>
-                  <div className="text-muted-foreground">Heteroscedasticity check</div>
-                </a>
-
-                <a
-                  href="#rq4-truepred"
-                  className="block rounded-xl border border-border bg-background/40 px-4 py-3 hover:bg-background/70 transition"
-                >
-                  <div className="font-medium text-foreground">True vs predicted</div>
-                  <div className="text-muted-foreground">KDE + Q-Q (interactive)</div>
-                </a>
-
-                <a
-                  href="#rq4-spatial"
-                  className="block rounded-xl border border-border bg-background/40 px-4 py-3 hover:bg-background/70 transition"
-                >
-                  <div className="font-medium text-foreground">Spatial diagnostics</div>
-                  <div className="text-muted-foreground">Bivariate residual×distance</div>
-                </a>
-
-                <a
-                  href="#rq4-importance"
-                  className="block rounded-xl border border-border bg-background/40 px-4 py-3 hover:bg-background/70 transition"
-                >
-                  <div className="font-medium text-foreground">Top gene importance</div>
-                  <div className="text-muted-foreground">Heatmap + top-5 table</div>
-                </a>
-              </div>
-
-              <div className="mt-6 text-xs text-muted-foreground">
-                All figures below use the HTML interactive exports in{" "}
-                <span className="font-mono">frontend/public/plots</span>.
-              </div>
-            </div>
-          </aside>Sticky left panel */}
 
           {/* Main content */}
           <div className="space-y-12">
             <div className="space-y-4">
-              <h3 className="text-2xl font-bold text-foreground">RQ4: Analysis</h3>
-              <p className="text-lg text-muted-foreground leading-relaxed">
-                We benchmark predictive models to estimate distance to plaque from a 347-gene
-                expression vector. We compare LASSO, ElasticNet, Random Forest, and XGBoost with an
-                80/20 train/test split. Linear models use standardized log1p counts; tree models use
-                unstandardized log1p counts.
-              </p>
+              <h3 className="text-2xl font-bold text-foreground">RQ4: When modeling plaque distance, which features are most important?</h3>
             </div>
 
             {/* =========================
@@ -235,208 +301,427 @@ const RQ4Section = () => {
                ========================= */}
             <div id="rq4-performance" className="space-y-6">
               <h4 className="text-xl font-semibold text-foreground">Model performance</h4>
+              <ul className="space-y-3 text-muted-foreground">
+                <li className="flex items-start gap-2">
+                  <p className="text-lg text-muted-foreground leading-relaxed"></p>
+                  <span>
+                    We benchmark models that predict plaque distance from the{" "}
+                    <span className="font-medium text-foreground">347-gene expression vector</span>,
+                    using a random <span className="font-medium text-foreground">80/20 train/test split over cells</span>.
+                  </span>
+                  </p>
+                </li>
 
-              <div className="rounded-2xl border border-border bg-card overflow-hidden">
-                <div className="px-6 py-4 border-b border-border">
-                  <div className="text-sm font-semibold text-foreground">
-                    Train/Test R² (reported)
-                  </div>
-                </div>
-                <div className="overflow-x-auto">
-                  <table className="min-w-full">
-                    <thead className="bg-muted/40">
-                      <tr>
-                        <Th>Model</Th>
-                        <Th>Train R²</Th>
-                        <Th>Test R²</Th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {performanceRows.map((r) => (
-                        <tr key={r.model} className="border-t border-border">
-                          <Td>{r.model}</Td>
-                          <Td>{r.trainR2.toFixed(4)}</Td>
-                          <Td>{r.testR2.toFixed(4)}</Td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
+                <li className="flex items-start gap-2">
+                  <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
+                  <span>
+                    Linear models: <span className="font-medium text-foreground">LASSO</span>,{" "}
+                    <span className="font-medium text-foreground">ElasticNet</span> with standardized inputs (log1p-transformed counts)
+                  </span>
+                </li>
 
-              <PlotFrame
-                src={`${base}plots/model_performance_predict_dist.html`}
-                title="Model performance (Train vs Test R²)"
-                size="lg"
-                caption="Interactive bar plot comparing train/test R² across models."
-              />
+                <li className="flex items-start gap-2">
+                  <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
+                  <span>
+                    Tree models: <span className="font-medium text-foreground">Random Forest</span>,{" "}
+                    <span className="font-medium text-foreground">XGBoost</span> with unstandardized inputs (log1p-transformed counts)
+                  </span>
+                </li>
+              </ul>
 
               <p className="text-lg text-muted-foreground leading-relaxed">
-                XGBoost shows the largest train–test gap (overfitting signature) but the best test
-                performance. LASSO and ElasticNet have nearly identical train and test R², consistent
-                with lower model capacity.
-              </p>
-            </div>
+                  We report train/test R² and inspect residual structure and feature importance.
+                </p>
 
-            {/* =========================
-                Residual diagnostics
-               ========================= */}
-            <div id="rq4-residuals" className="space-y-6">
-              <h4 className="text-xl font-semibold text-foreground">Residual diagnostics</h4>
+              <ModelPerformanceTable />
 
               <p className="text-lg text-muted-foreground leading-relaxed">
-                The residual distribution reveals heteroscedasticity: near plaques the model tends to
-                over-predict, while further away it under-predicts.
+                  Residual diagnostics for XGBoost show clear heteroscedasticity: near plaques the model tends to over-predict, while far from plaques it increasingly under-predicts
               </p>
 
+
               <PlotFrame
-                src={`${base}plots/residuals_diagnostics.html`}
+                src={`${base}plots/residual_diagnostics.html`}
                 title="Residual diagnostics (residual vs true distance)"
                 size="lg"
-                caption="Interactive residual scatter (with smoother) for the selected model."
+                caption="Residual diagnostics for the XGBoost distance model, highlighting heteroscedasticity and systematic bias across the true-distance range."
               />
-            </div>
-
-            {/* =========================
-                True vs Predicted
-               ========================= */}
-            <div id="rq4-truepred" className="space-y-6">
-              <h4 className="text-xl font-semibold text-foreground">True vs predicted distance</h4>
 
               <p className="text-lg text-muted-foreground leading-relaxed">
-                Most mass is concentrated in the 0–100 µm range. The KDE/Q-Q view makes it clear the
-                model does not fully utilize the target range.
+                The target distribution is also highly concentrated in the 0–100 µm range, meaning models are effectively trained on a narrow band of distances.
               </p>
 
               <PlotFrame
                 src={`${base}plots/true_vs_predicted.html`}
                 title="True vs predicted plaque distance"
                 size="lg"
-                caption="Interactive KDE (and Q-Q) comparison between true and predicted distances."
+                caption="True vs predicted plaque distance and related distributional diagnostics, illustrating concentration of mass at short distances and systematic residual structure."
               />
-            </div>
 
-            {/* =========================
-                Spatial diagnostics + table
-               ========================= */}
-            <div id="rq4-spatial" className="space-y-6">
-              <h4 className="text-xl font-semibold text-foreground">Spatial diagnostics</h4>
+              <ul className="space-y-3 text-muted-foreground">
+                <li className="flex items-start gap-2">
+                  <p className="text-lg text-muted-foreground leading-relaxed">
+                  <span>
+                    We further categorize residuals:
+                  </span>
+                  </p>
+                </li>
+
+                <li className="flex items-start gap-2">
+                  <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
+                  <span>
+                    <span className="font-medium text-foreground">25.51%</span>: highly negative residuals
+                    (<span className="font-medium text-foreground">−17.2 µm</span>), mostly close to plaques
+                    (within <span className="font-medium text-foreground">49 µm</span>)
+                  </span>
+                </li>
+
+                <li className="flex items-start gap-2">
+                  <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
+                  <span>
+                    <span className="font-medium text-foreground">28.15%</span>: highly positive residuals
+                    (&gt;<span className="font-medium text-foreground">10.6 µm</span>), mostly far from plaques
+                    (beyond <span className="font-medium text-foreground">87 µm</span>)
+                  </span>
+                </li>
+
+                <li className="flex items-start gap-2">
+                  <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
+                  <span>
+                    <span className="font-medium text-foreground">20.94%</span>: moderate residuals
+                    (<span className="font-medium text-foreground">−17.2 to 10.6 µm</span>), mostly mid-range
+                    (<span className="font-medium text-foreground">49–87 µm</span>)
+                  </span>
+                </li>
+              </ul>
+
 
               <p className="text-lg text-muted-foreground leading-relaxed">
-                Residuals cluster spatially and align with plaque centroids, indicating missing
-                covariates and structured error.
+                Spatially mapping residuals reveals non-uniform error patterns aligned with plaque centroids (red stars), implying missing covariates and/or anatomical confounding.
               </p>
 
               <PlotFrame
                 src={`${base}plots/residuals_vs_distance.html`}
                 title="Spatial diagnostics (bivariate residual × distance bins)"
                 size="xl"
-                caption="Interactive: left legend heatmap + right spatial map; plaques overlaid as stars."
+                caption="Spatial error maps showing structured residual patterns aligned with plaque locations, indicating that gene-only models miss important spatial/anatomical factors."
               />
 
-              <div className="rounded-2xl border border-border bg-card overflow-hidden">
-                <div className="px-6 py-4 border-b border-border">
-                  <div className="text-sm font-semibold text-foreground">
-                    Mean absolute residual by cluster (excerpt)
-                  </div>
-                </div>
-                <div className="overflow-x-auto">
-                  <table className="min-w-full">
-                    <thead className="bg-muted/40">
-                      <tr>
-                        <Th>Cluster (Leiden)</Th>
-                        <Th>Inferred cell type</Th>
-                        <Th>n</Th>
-                        <Th>Mean absolute residual (µm)</Th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {residualClusterRows.map((r) => (
-                        <tr key={r.cluster} className="border-t border-border">
-                          <Td>{r.cluster}</Td>
-                          <Td>{r.cellType}</Td>
-                          <Td>{r.n.toLocaleString()}</Td>
-                          <Td>{r.mar.toFixed(4)}</Td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
+              <p className="text-lg text-muted-foreground leading-relaxed">
+                Cluster-specific errors reinforce this: mean absolute residuals are largest for ventricular-associated cluster 15 (GnRH1-expressing glutamatergic neurons), plausibly because these cells occupy regions far from plaques and the model under-utilizes the full distance range.
+              </p>
 
-              <div className="text-lg text-muted-foreground leading-relaxed">
-                Residuals fall into three broad categories (highly negative near plaques, highly
-                positive far away, and moderate in between), consistent with heteroscedasticity and
-                missing covariates.
-              </div>
+              <ResidualByClusterTable />
+
+              <p className="text-lg text-muted-foreground leading-relaxed">
+                Top predictive genes are relatively consistent across modeling classes. Notably, **Gfap** and **Spag16** appear in the top 5 across all models, and three of four models rank **Gfap** as the single most important predictor—reinforcing earlier evidence that Gfap peaks near plaques and decays with distance. Other highly ranked genes include **Lyz2** (immune/glial association) and **Igf2**, which shows an opposite trend (peaking around ~270 µm and declining toward plaques).
+              </p>
+
+
+              <FeatureRankTable />
+
+            <p className="text-lg text-muted-foreground leading-relaxed">
+                Agreement across linear and tree models suggests these genes carry robust, biologically meaningful information about plaque proximity, even if that information alone is insufficient for high-accuracy distance reconstruction.
+            </p>
+
+
             </div>
 
             {/* =========================
-                Importance heatmap + top genes table
+                Additional feature modalities
                ========================= */}
-            <div id="rq4-importance" className="space-y-6">
-              <h4 className="text-xl font-semibold text-foreground">Top gene importance</h4>
+            <div id="rq4-modalities" className="space-y-6">
+              <h4 className="text-xl font-semibold text-foreground">Additional feature modalities</h4>
 
               <p className="text-lg text-muted-foreground leading-relaxed">
-                Top predictive genes are fairly consistent across models: Gfap and Spag16 appear
-                repeatedly, and multiple models rank Gfap as a top predictor of plaque proximity.
+                To improve interpretability and performance while probing feature importance, we add non-transcriptomic predictors: <span className="font-medium text-foreground">cell centroid coordinates, cell area , nucleus area and cell type (Leiden cluster ID)</span>.
+              </p>
+
+              <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
+                <li className="flex items-start gap-2">
+                  <p className="text-lg text-muted-foreground leading-relaxed">
+                  <span>
+                    <span className="font-medium text-foreground">Genes:</span>{" "}
+                    347 expression values
+                  </span>
+                  </p>
+                </li>
+
+                <li className="flex items-start gap-2">
+                  <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
+                  <span>
+                    <span className="font-medium text-foreground">Morphology:</span>{" "}
+                    cell area, nucleus area
+                  </span>
+                </li>
+
+                <li className="flex items-start gap-2">
+                  <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
+                  <span>
+                    <span className="font-medium text-foreground">Spatial:</span>{" "}
+                    centroid coordinates
+                  </span>
+                </li>
+
+                <li className="flex items-start gap-2">
+                  <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
+                  <span>
+                    <span className="font-medium text-foreground">Cluster:</span>{" "}
+                    Leiden cluster identity
+                  </span>
+                </li>
+              </ul>
+
+
+              <p className="text-lg text-muted-foreground leading-relaxed">
+                We compare ordinary linear regression (OLS-like linear model) to Partial Least Squares (PLS), which constrains predictions through a small number of latent components optimized for covariance with plaque distance.
+              </p>
+
+              <ModelR2Table />
+
+              <p className="text-lg text-muted-foreground leading-relaxed">
+                The linear model improves over gene-only linear baselines and narrows the gap to XGBoost, suggesting that a meaningful share of distance variance is linearly attributable to combined gene, spatial, morphological, and cell-type predictors. PLS is lower but extremely stable, consistent with capturing a dominant plaque-related axis rather than all linear variance.
+              </p>
+
+              <p className="text-lg text-muted-foreground leading-relaxed">
+                To test whether the plaque-trained PLS signature reflects biologically meaningful plaque-centered decay (rather than arbitrary structure), we compare Tg17 and WT13 profiles within matched plaque-centered regions after geometric alignment.
+              </p>
+
+               <PlotFrame
+                src={`${base}plots/tg17_wt13_alignment.html`}
+                title="Tg17-vs-WT13 plaque-centered alignment"
+                size="md"
+                caption="Plaque-centered alignment between Tg17 and WT13 tissue regions (flip + translation), used to compare signature decay trends"
+              />
+
+              <ul className="space-y-3 text-muted-foreground">
+
+                <li className="flex items-start gap-2">
+                  <p className="text-lg text-muted-foreground leading-relaxed">
+                    Accross plaques:
+                  </p>
+                </li>
+
+                <li className="flex items-start gap-2">
+                  <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
+                  <span>
+                    <span className="font-medium text-foreground">Tg17</span>{" "}
+                    shows more negative correlations between signature and distance
+                    (<span className="font-medium text-foreground">mean ρ ≈ −0.19</span>) and
+                    steeper negative slopes
+                    (<span className="font-medium text-foreground">mean slope ≈ −0.0055</span>).
+                  </span>
+                </li>
+
+                <li className="flex items-start gap-2">
+                  <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
+                  <span>
+                    <span className="font-medium text-foreground">WT13</span>{" "}
+                    shows near-flat or weak trends
+                    (<span className="font-medium text-foreground">mean ρ ≈ −0.02</span>,{" "}
+                    <span className="font-medium text-foreground">mean slope ≈ −0.0018</span>).
+                  </span>
+                </li>
+
+                <li className="flex items-start gap-2">
+                  <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
+                  <span>
+                    FDR-corrected results indicate{" "}
+                    <span className="font-medium text-foreground">3 plaques</span>{" "}
+                    with significant decay in Tg but not WT, supporting a plaque-linked
+                    gradient in a subset of locations.
+                  </span>
+                </li>
+
+                <li className="flex items-start gap-2">
+                  <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
+                  <span>
+                    Some plaques show decay in both Tg and WT, plausibly reflecting imperfect
+                    cross-animal alignment or shared anatomical gradients rather than true
+                    pathology.
+                  </span>
+                </li>
+
+                <li className="flex items-start gap-2">
+                  <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
+                  <span>
+                    The inner{" "}
+                    <span className="font-medium text-foreground">0–50 µm</span>{" "}
+                    region has, on average, higher signature in Tg than WT, consistent with
+                    localized activation near plaques.
+                  </span>
+                </li>
+              </ul>
+
+              <p className="text-lg text-muted-foreground leading-relaxed">
+                    Two example visualizations:
               </p>
 
               <PlotFrame
-                src={`${base}plots/top_gene_importance.html`}
-                title="Top predictive genes across models"
-                size="lg"
-                caption="Interactive heatmap of normalized gene importances per model."
+                src={`${base}plots/signature_decay_plaque_1794.html`}
+                title="Signature Decay for plaque 1794"
+                size="md"
+                caption="Example plaque (ID 1794): continuous signature values vs distance, illustrating plaque-centered decay behavior."
+              />
+              <PlotFrame
+                src={`${base}plots/binned_signature_decay_plaque_1794.html`}
+                title="Binned-signature Decay for plaque 1794"
+                size="md"
+                caption="Example plaque (ID 1794): binned signature decay vs distance, providing a more robust view of gradient shape."
               />
 
-              <div className="rounded-2xl border border-border bg-card overflow-hidden">
-                <div className="px-6 py-4 border-b border-border">
-                  <div className="text-sm font-semibold text-foreground">
-                    Top 5 genes per model (reported)
-                  </div>
-                </div>
+              <p className="text-lg text-muted-foreground leading-relaxed">
+                Overall, the PLS signature appears biologically informative for a subset of plaques, but interpretation must remain cautious given alignment error and the absence of a true plaque ground truth in WT tissue.
+              </p>
 
-                <div className="overflow-x-auto">
-                  <table className="min-w-full">
-                    <thead className="bg-muted/40">
-                      <tr>
-                        <Th>Rank</Th>
-                        <Th>ElasticNet</Th>
-                        <Th>Imp.</Th>
-                        <Th>LASSO</Th>
-                        <Th>Imp.</Th>
-                        <Th>Random Forest</Th>
-                        <Th>Imp.</Th>
-                        <Th>XGBoost</Th>
-                        <Th>Imp.</Th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {topGenes.map((r) => (
-                        <tr key={r.rank} className="border-t border-border">
-                          <Td>{r.rank}</Td>
+              <p className="text-lg text-muted-foreground leading-relaxed">
+                    We next compare linear models (Ridge/Lasso/PLS) to nonlinear models (especially gradient boosting) under modality ablation. Results show:
+              </p>
+              <ul className="space-y-3 text-muted-foreground">
+                <li className="flex items-start gap-2">
+                  <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
+                  <span>
+                    Linear models reach modest accuracy
+                    (<span className="font-medium text-foreground">R² ≈ 0.20–0.24</span>)
+                    when gene expression is included.
+                  </span>
+                </li>
 
-                          <Td>{r.elasticNetGene}</Td>
-                          <Td>{r.elasticNetImp.toFixed(6)}</Td>
+                <li className="flex items-start gap-2">
+                  <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
+                  <span>
+                    Morphology-only or spatial-only linear models perform near chance.
+                  </span>
+                </li>
 
-                          <Td>{r.lassoGene}</Td>
-                          <Td>{r.lassoImp.toFixed(6)}</Td>
+                <li className="flex items-start gap-2">
+                  <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
+                  <span>
+                    Nonlinear models extract substantially richer structure.
+                  </span>
+                </li>
 
-                          <Td>{r.rfGene}</Td>
-                          <Td>{r.rfImp.toFixed(6)}</Td>
+                <li className="flex items-start gap-2">
+                  <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
+                  <span>
+                    Surprisingly,{" "}
+                    <span className="font-medium text-foreground">spatial-only</span>{" "}
+                    nonlinear models can reach{" "}
+                    <span className="font-medium text-foreground">R² ≈ 0.64</span>{" "}
+                    (HistGradientBoosting), exceeding even full multimodal models.
+                  </span>
+                </li>
 
-                          <Td>{r.xgbGene}</Td>
-                          <Td>{r.xgbImp.toFixed(6)}</Td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
+                <li className="flex items-start gap-2">
+                  <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
+                  <span>
+                    Gene-only and gene+cluster inputs improve tree models moderately
+                    (<span className="font-medium text-foreground">R² ≈ 0.26–0.28</span>),
+                    while morphology adds little.
+                  </span>
+                </li>
+              </ul>
+
+              <PlotFrame
+                src={`${base}plots/modality_ablation.html`}
+                title="Modality ablation"
+                size="md"
+                caption="Modality ablation performance across model classes: heatmap and summary bars highlighting that nonlinear models—especially spatial-only boosting—can achieve high R² driven by spatial structure."
+              />
+              <PlotFrame
+                src={`${base}plots/best_model_per_modality.html`}
+                title="Modality ablation"
+                size="md"
+                caption="Modality ablation performance across model classes: heatmap and summary bars highlighting that nonlinear models—especially spatial-only boosting—can achieve high R² driven by spatial structure."
+              />
+
+              <p className="text-lg text-muted-foreground leading-relaxed">
+                The high R² from spatial-only boosting is not automatically evidence of plaque biology. A plausible explanation is anatomical bias: plaque deposition is not spatially uniform, and certain anatomical regions accumulate more plaques than others. In that case, coordinates predict *regional vulnerability* rather than true plaque distance.
+              </p>
+
+              <p className="text-lg text-muted-foreground leading-relaxed">
+                To test whether spatial-only predictions reflect disease progression versus conserved anatomy, we evaluate cross-mouse stability of spatial predictions.
+              </p>
+
+              <p className="text-lg text-muted-foreground leading-relaxed">
+                We compare spatial-only model outputs across all Tg and WT animals:
+              </p>
+
+              <PlotFrame
+                src={`${base}plots/predicted_plaque_distance.html`}
+                title="Predicted plaque distance"
+                size="md"
+                caption="Spatial-only prediction comparison across mice, illustrating similarity in predicted distributions despite genotype/age differences."
+              />
+
+              <p className="text-lg text-muted-foreground leading-relaxed">
+                The model produces nearly identical prediction distributions across all mice: output
+                distributions differ by at most{" "}
+                <span className="font-medium text-foreground">~6%</span>{" "}
+                at any point, which is inconsistent with a pathology-sensitive model that would be
+                expected to shift with genotype and disease stage.
+              </p>
+
+              <p className="text-lg text-muted-foreground leading-relaxed">
+                We quantify distributional similarity using Jensen–Shannon divergence (JSD) and corroborate with KS tests and ANOVA:
+              </p>
+
+              <PlotFrame
+                src={`${base}plots/distribution_across_mice.html`}
+                title="Distribution across mice"
+                size="md"
+                caption="Predicted plaque-distance score distributions across all mice under the spatial-only model, showing striking overlap across Tg and WT cohorts."
+              />
+
+              <PlotFrame
+                src={`${base}plots/JS_Divergencee.html`}
+                title="Jensen-Shannon divergence between mice"
+                size="md"
+                caption="Jensen–Shannon divergence matrix between spatial-only prediction distributions across mice; values are uniformly low, indicating near-indistinguishable outputs across genotypes and ages."
+              />
+
+              <p className="text-lg text-muted-foreground leading-relaxed">
+                The spatial-only model primarily learns conserved tissue geometry (e.g., cortical curvature and laminar structure), not plaque pathology. The apparent high R² is therefore driven by anatomical confounding rather than disease signal.
+              </p>
+              <p className="text-lg text-muted-foreground leading-relaxed">
+                Findings :
+              </p>
+              <ul className="mt-3 space-y-3 text-sm text-muted-foreground">
+                <li className="flex items-start gap-2">
+                  <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
+                  <span>
+                    JSD values are mostly{" "}
+                    <span className="font-medium text-foreground">0.05–0.10</span>, only slightly
+                    higher (~
+                    <span className="font-medium text-foreground">0.14–0.16</span>) for comparisons
+                    involving WT-13.
+                  </span>
+                </li>
+
+                <li className="flex items-start gap-2">
+                  <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
+                  <span>
+                    KS statistics are small (mostly{" "}
+                    <span className="font-medium text-foreground">0.02–0.08</span>) despite extremely
+                    significant p-values driven by large sample sizes.
+                  </span>
+                </li>
+
+                <li className="flex items-start gap-2">
+                  <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
+                  <span>
+                    ANOVA across Tg mice yields a very significant p-value (p ≈{" "}
+                    <span className="font-medium text-foreground">3.6e−22</span>) but with trivial
+                    effect size and no monotone increase with age.
+                  </span>
+                </li>
+              </ul>
+
+              
             </div>
 
-            {/* End */}
-          </div>
+
+
         </div>
       </div>
     </section>
