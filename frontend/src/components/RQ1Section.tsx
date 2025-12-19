@@ -87,12 +87,11 @@ const RQ1Section = () => {
                 We model the relationship between <span className="font-medium text-foreground">cluster membership</span> and <span className="font-medium text-foreground">distance to the nearest plaque</span> using logistic regression. After fitting, we find statistically significant coefficients for <span className="font-medium text-foreground">14 of 19 clusters</span>, using a <span className="font-medium text-foreground">Bonferroni-adjusted p-value threshold of 0.01</span>.
               </p>
             </div>
-
+            <p className="text-lg text-muted-foreground leading-relaxed">
+                To make coefficients interpretable, we translate them into:
+            </p>
             <div className="rounded-2xl border border-border bg-card p-5">
               <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
-                <p className="text-lg text-muted-foreground leading-relaxed">
-                To make coefficients interpretable, we translate them into:
-                </p>
                 <li>
                   • <span className="font-medium text-foreground">p(0):</span>{" "}
                   baseline probability of observing a cluster at the plaque surface
@@ -135,10 +134,10 @@ const RQ1Section = () => {
               />
             </div>
 
-            <div className="rounded-2xl border border-border bg-card p-5">
-              <p className="text-lg text-muted-foreground leading-relaxed">
+            <p className="text-lg text-muted-foreground leading-relaxed">
                 Overall, the results show a clear composition shift near plaques:
-              </p>
+            </p>
+            <div className="rounded-2xl border border-border bg-card p-5">
                     <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
                       <li>
                         • <span className="font-medium text-foreground">
@@ -201,10 +200,11 @@ const RQ1Section = () => {
                 caption="Distance to plaque vs % of cells in each bin (interactive)."
               />
 
-                <div className="rounded-2xl border border-border bg-card p-5">
-                <p className="text-lg text-muted-foreground leading-relaxed">
+              <p className="text-lg text-muted-foreground leading-relaxed">
                   Several clusters show changes primarily at extreme distances rather than gradual shifts
-                </p>
+              </p>
+                <div className="rounded-2xl border border-border bg-card p-5">
+                
                       <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
                         <li>
                           • <span className="font-medium text-foreground">
