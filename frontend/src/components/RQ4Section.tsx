@@ -412,13 +412,13 @@ const RQ4Section = () => {
                 .
               </p>
 
-              <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
+              <ul className="space-y-3 text-muted-foreground">
                 <li className="flex items-start gap-2">
                   <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
                   <span>
-                    <span className="font-medium text-foreground">Genes:</span>{" "}
+                      <span className="font-medium text-foreground">Genes:</span>{" "}
                       347 expression values
-                  </span>
+                    </span>
                 </li>
 
                 <li className="flex items-start gap-2">
@@ -667,7 +667,7 @@ const RQ4Section = () => {
 
               <p className="text-lg text-muted-foreground leading-relaxed">Findings :</p>
 
-              <ul className="mt-3 space-y-3 text-sm text-muted-foreground">
+              <ul className="space-y-3 text-muted-foreground">
                 <li className="flex items-start gap-2">
                   <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
                   <span>
