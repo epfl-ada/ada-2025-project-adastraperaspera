@@ -1,5 +1,5 @@
 import PlotFrame from "@/components/PlotFrame";
-import { Brain } from 'lucide-react'
+import { Brain, CircleChevronRight} from 'lucide-react'
 
 const base = import.meta.env.BASE_URL;
 
@@ -87,29 +87,33 @@ const RQ1Section = () => {
                 We model the relationship between <span className="font-medium text-foreground">cluster membership</span> and <span className="font-medium text-foreground">distance to the nearest plaque</span> using logistic regression. After fitting, we find statistically significant coefficients for <span className="font-medium text-foreground">14 of 19 clusters</span>, using a <span className="font-medium text-foreground">Bonferroni-adjusted p-value threshold of 0.01</span>.
               </p>
             </div>
-            <p className="text-lg text-muted-foreground leading-relaxed">
-                To make coefficients interpretable, we translate them into:
-            </p>
-            <div className="rounded-2xl border border-border bg-card p-5">
+            
+             {/*<div className="rounded-2xl border border-border bg-card p-5">*/}
               <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
-                <li>
-                  • <span className="font-medium text-foreground">p(0):</span>{" "}
+                <p className="text-lg text-muted-foreground leading-relaxed">
+                To make coefficients interpretable, we translate them into:
+                </p>
+                <li className="flex items-start gap-2">
+                  <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
+                  <span className="font-medium text-foreground">p(0):</span>{" "}
                   baseline probability of observing a cluster at the plaque surface
                 </li>
 
-                <li>
-                  • <span className="font-medium text-foreground">p(100):</span>{" "}
+                <li className="flex items-start gap-2">
+                  <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
+                  <span className="font-medium text-foreground">p(100):</span>{" "}
                   probability of observing a cluster at{" "}
                   <span className="font-medium text-foreground">100 µm</span> from the plaque
                 </li>
 
-                <li>
-                  • <span className="font-medium text-foreground">p(100) − p(0):</span>{" "}
+                <li className="flex items-start gap-2">
+                  <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
+                  <span className="font-medium text-foreground">p(100) − p(0):</span>{" "}
                   relative change over{" "}
                   <span className="font-medium text-foreground">100 µm</span> away from the plaque
                 </li>
               </ul>
-            </div>
+             {/*</div>*/}
             <p className="text-lg text-muted-foreground leading-relaxed">
               Key effects (selected):
             </p>
@@ -139,15 +143,17 @@ const RQ1Section = () => {
             </p>
             <div className="rounded-2xl border border-border bg-card p-5">
                     <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
-                      <li>
-                        • <span className="font-medium text-foreground">
+                      <li className="flex items-start gap-2">
+                        <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
+                        <span className="font-medium text-foreground">
                           Neuronal cell types are generally depleted
                         </span>{" "}
                         around plaques.
                       </li>
 
-                      <li>
-                        • <span className="font-medium text-foreground">
+                      <li className="flex items-start gap-2">
+                        <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
+                        <span className="font-medium text-foreground">
                           Immune, vascular, and astrocytic
                         </span>{" "}
                         populations are{" "}
@@ -206,27 +212,31 @@ const RQ1Section = () => {
                 <div className="rounded-2xl border border-border bg-card p-5">
                 
                       <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
-                        <li>
-                          • <span className="font-medium text-foreground">
+                        <li className="flex items-start gap-2">
+                          <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
+                          <span className="font-medium text-foreground">
                             Cluster 0 (oligodendrocyte lineage)
                           </span>{" "}
                           shows a clear upward trend away from plaques.
                         </li>
 
-                        <li>
-                          • <span className="font-medium text-foreground">Cluster 15</span>{" "}
+                        <li className="flex items-start gap-2">
+                          <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
+                          <span className="font-medium text-foreground">Cluster 15</span>{" "}
                           increases sharply only after{" "}
                           <span className="font-medium text-foreground">~113 µm</span>.
                         </li>
 
-                        <li>
-                          • <span className="font-medium text-foreground">Cluster 14</span>{" "}
+                        <li className="flex items-start gap-2">
+                          <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
+                          <span className="font-medium text-foreground">Cluster 14</span>{" "}
                           declines sharply after{" "}
                           <span className="font-medium text-foreground">~138 µm</span>.
                         </li>
 
-                        <li>
-                          • <span className="font-medium text-foreground">Cluster 8 (immune)</span>{" "}
+                        <li className="flex items-start gap-2">
+                          <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
+                          <span className="font-medium text-foreground">Cluster 8 (immune)</span>{" "}
                           drops sharply after the first bin, then levels off.
                         </li>
                       </ul>

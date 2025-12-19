@@ -1,5 +1,5 @@
 import PlotFrame from "@/components/PlotFrame";
-import { Brain } from 'lucide-react'
+import { Brain,CircleChevronRight} from 'lucide-react'
 
 const base = import.meta.env.BASE_URL;
 
@@ -90,6 +90,109 @@ const DIR_ROWS = [
   },
 ];
 
+const REG_ROWS = [
+  {
+    term: "Intercept (d = 0, baseline)",
+    coef: "1.8328",
+    p: "< 1e−300",
+    factor: "exp(1.8328) − 1 ≈ 5.25",
+    interp: "Baseline expected expression at plaque surface",
+  },
+  {
+    term: "Glia, Astrocyte Ependymal",
+    coef: "+0.9494",
+    p: "< 1e−300",
+    factor: "2.584×",
+    interp: "158% higher than baseline",
+  },
+  {
+    term: "Glia, Oligodendrocyte Lineage",
+    coef: "−0.0700",
+    p: "6.5e−06",
+    factor: "0.932×",
+    interp: "6.8% lower than baseline",
+  },
+  {
+    term: "Immune, Microglia Macrophage",
+    coef: "+0.3562",
+    p: "< 1e−300",
+    factor: "1.428×",
+    interp: "43% higher than baseline",
+  },
+  {
+    term: "Neuron, GABAergic",
+    coef: "−0.0271",
+    p: "0.068",
+    factor: "0.973×",
+    interp: "2.7% lower (not significant at 0.05)",
+  },
+  {
+    term: "Neuron, Glutamatergic",
+    coef: "−0.1924",
+    p: "< 1e−300",
+    factor: "0.825×",
+    interp: "17.5% lower than baseline",
+  },
+  {
+    term: "Distance to plaque (per µm)",
+    coef: "−0.0012",
+    p: "< 1e−300",
+    factor: "0.9988× per µm",
+    interp: "Each µm reduces expected expression by ~0.12%",
+  },
+];
+
+function RegressionCoefTable() {
+  return (
+    <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+      <h4 className="text-base font-semibold text-foreground mb-4">
+        Regression coefficients
+      </h4>
+
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-border text-muted-foreground">
+              <th className="py-2 pr-4 text-left font-medium">Term</th>
+              <th className="py-2 pr-4 text-right font-medium">Coef (log)</th>
+              <th className="py-2 pr-4 text-right font-medium">p-value</th>
+              <th className="py-2 pr-4 text-right font-medium">
+                Natural-scale factor
+              </th>
+              <th className="py-2 text-left font-medium">
+                Interpretation vs baseline
+              </th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {REG_ROWS.map((r) => (
+              <tr key={r.term} className="border-b border-border/60 last:border-b-0">
+                <td className="py-2 pr-4 text-foreground whitespace-nowrap">
+                  {r.term}
+                </td>
+                <td className="py-2 pr-4 text-right tabular-nums">
+                  {r.coef}
+                </td>
+                <td className="py-2 pr-4 text-right tabular-nums">
+                  {r.p}
+                </td>
+                <td className="py-2 pr-4 text-right tabular-nums">
+                  {r.factor}
+                </td>
+                <td className="py-2 text-muted-foreground min-w-[320px]">
+                  {r.interp}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+
 function CorrTable() {
   return (
     <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
@@ -176,22 +279,10 @@ const RQ2Section = () => {
 
               <nav className="mt-6 space-y-2 text-sm">
                 <a
-                  href="#rq2-motivation"
-                  className="block rounded-xl px-3 py-2 text-muted-foreground hover:text-foreground hover:bg-muted/50 transition"
-                >
-                  Motivation
-                </a>
-                <a
                   href="#rq2-spearman"
                   className="block rounded-xl px-3 py-2 text-muted-foreground hover:text-foreground hover:bg-muted/50 transition"
                 >
-                  Spearman correlations
-                </a>
-                <a
-                  href="#rq2-tables"
-                  className="block rounded-xl px-3 py-2 text-muted-foreground hover:text-foreground hover:bg-muted/50 transition"
-                >
-                  Interpretation tables
+                  Correlation
                 </a>
                 <a
                   href="#rq2-linear"
@@ -272,90 +363,159 @@ const RQ2Section = () => {
           {/* Main analysis */}
           <div className="space-y-12">
             <div id="rq2-motivation" className="space-y-4">
-              <h3 className="text-2xl font-bold text-foreground">RQ2 Analysis</h3>
+              <h3 className="text-2xl font-bold text-foreground">RQ2 : How are the cell type composition, PIG expression, and plaque distance related?</h3>
+
+               <p className="text-lg text-muted-foreground leading-relaxed">
+                Cluster-level marker enrichment shows that some clusters exhibit strong over- or under-expression of specific genes. For example:
+              </p>
+              {/*<div className="rounded-2xl border border-border bg-card p-5">*/}
+                <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
+                  <li>
+                    <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
+                    Cluster 8 (immune) over-expresses <span className="font-medium text-foreground">Hexb</span> (z-score ~4). 
+                  </li>
+
+                  <li>
+                    <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
+                    Cluster 14 (dentate gyrus immature glutamatergic) under-expresses <span className="font-medium text-foreground">Cst3</span> (z-score ~−2).
+                  </li>
+                </ul>
+              {/*</div>*/}
 
               <p className="text-lg text-muted-foreground leading-relaxed">
-                Next, we analyze cell-type proportions and PIG expression across distance. Our goal is to see if cell type
-                composition can explain changes in PIG expression. This could reveal a mechanism for how amyloid beta plaques
-                influence gene expression patterns in the surrounding area—potentially by selectively killing some cells while
-                sparing or recruiting others.
+                This reinforces that anatomical/cell-type structure and gene expression patterns are tightly coupled and motivates a central question: <span className="font-medium text-foreground">are plaque-associated PIG gradients direct effects, or are they mediated by cell-type composition shifts?</span>
               </p>
 
-              <p className="text-lg text-muted-foreground leading-relaxed">
-                Having observed a strong relationship between cell type proportions and distance to the nearest plaque, we test
-                whether PIG expression changes could be driven by changes in cell composition.
-              </p>
+              <PlotFrame
+                src={`${base}plots/expression_per_cluster.html`}
+                title="Cluster-by-gene enrichment heatmap"
+                size="lg"
+                caption="Cluster-by-gene enrichment (z-score) heatmap illustrating marker structure and motivating composition–expression coupling analyses.."
+              />
+
             </div>
 
             <div id="rq2-spearman" className="space-y-4">
-              <h3 className="text-xl font-semibold text-foreground">Spearman rank correlation (PIG × cell type)</h3>
+              <h3 className="text-xl font-semibold text-foreground">Correlation: cell-type proportions vs mean PIG expression</h3>
 
-              <p className="text-lg text-muted-foreground leading-relaxed">
-                We compute a Spearman rank correlation matrix between cell type proportions and average PIG expression, aligned
-                on the same distance bins. We choose Spearman over Pearson because we suspect non-linear relationships (e.g.,
-                step-like patterns from “mega-expressing” grouped cells). We also apply multiple testing correction to obtain a
-                p-value for each gene–cell-type pair.
+               <p className="text-lg text-muted-foreground leading-relaxed">
+                We test whether distance-dependent PIG expression could be explained by changing cell-type composition. Concretely:
               </p>
+              {/*<div className="rounded-2xl border border-border bg-card p-5">*/}
+                <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
+                  <li>
+                    <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
+                     Bin cells by plaque distance. 
+                  </li>
 
+                  <li>
+                    <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
+                    For each bin, compute <span className="font-medium text-foreground">cell-type proportions</span> and <span className="font-medium text-foreground">mean PIG expression</span>. 
+                  </li>
+
+                  <li>
+                    <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
+                    Compute a <span className="font-medium text-foreground">Spearman rank correlation matrix</span> between cell-type proportions and PIG expression across bins.  
+                  </li>
+                  <li>
+                    <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
+                     Use Spearman (rather than Pearson) to accommodate plausible non-linear/step-like behaviors.  
+                  </li>
+                  <li>
+                    <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
+                    Perform significance testing with multiple-testing correction per gene–cell-type pair.
+                  </li>
+                </ul>
+              {/*</div>*/}
               <PlotFrame
                 src={`${base}plots/PIG_type_spearman.html`}
                 title="PIG type correlation vs. cellular type proportion"
                 size="lg"
                 caption="Interactive Spearman correlation heatmap (significant cells highlighted)."
               />
-            </div>
-
-            <div id="rq2-tables" className="space-y-6">
-              <p className="text-lg text-muted-foreground leading-relaxed">
-                We found 9 cell types showing significant Spearman rank correlations with PIG expression. Eight of these are
-                strongly correlated with the core 14 PIGs. The remaining cell type is strongly correlated with a single PIG,
-                Nrep.
-              </p>
 
               <p className="text-lg text-muted-foreground leading-relaxed">
-                Overall, the 14 core PIGs are overexpressed in immune cells and underexpressed in most neuronal cell types.
-                Meanwhile, Nrep complements the core PIG set: it correlates with a distinct glutamatergic type that is not
-                strongly tied to other PIGs.
-              </p>
+                We identify **9 cell types** with significant correlations to PIG expression. Notably:
+                </p>
+                <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
+                  <li>
+                    <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
+                    **8/9** are strongly correlated with a **core set of 14 PIGs**.. 
+                  </li>
+
+                  <li>
+                    <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
+                    The remaining cell type is strongly correlated with **Nrep** alone, suggesting a complementary pattern rather than redundancy with the core PIG set.
+                  </li>
+                </ul>
+              {/*</div>*/}
 
               <div className="space-y-6">
                 <CorrTable />
                 <DirectionTable />
               </div>
-            </div>
+              <p className="text-lg text-muted-foreground leading-relaxed">
+                Interpreted biologically, the core PIGs are most aligned with immune enrichment and neuronal depletion, consistent with a glial activation signature that strengthens in plaque-proximal bins.
+              </p>
+          </div>
 
             <div id="rq2-linear" className="space-y-4">
-              <h3 className="text-xl font-semibold text-foreground">Joint regression (broad type + distance)</h3>
+              <h3 className="text-xl font-semibold text-foreground">Joint regression (Apoe): cell type + distance → expression </h3>
 
               <p className="text-lg text-muted-foreground leading-relaxed">
-                We then fit a joint linear regression model to predict PIG expression from broad cell type and distance to the
-                nearest plaque. We discuss one example gene, <span className="font-medium text-foreground">Apoe</span>, setting
-                the baseline cell type to Vascular Endothelial Pericyte cells.
+                To quantify how much cell composition explains PIG expression gradients, we fit a joint linear regression predicting PIG expression from:
+                </p>
+                <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
+                  <li>
+                    <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
+                    Broad cell type (with **Vascular Endothelial Pericyte** as the baseline) 
+                  </li>
+
+                  <li>
+                    <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
+                    Distance to the nearest plaque
+                  </li>
+                </ul>
+              {/*</div>*/}
+
+              <p className="text-lg text-muted-foreground leading-relaxed">
+                We illustrate results for **Apoe**.
               </p>
 
               <p className="text-lg text-muted-foreground leading-relaxed">
-                After fitting the model, we explain 20.3% of the variance of normalized transcript count (R² = 0.203), with a
-                highly significant overall F-test. The coefficients confirm earlier patterns: neuronal populations show reduced
-                Apoe expression relative to the vascular reference, while astrocyte and microglia populations are enriched near
-                plaques.
+                The model explains **20.3% of the variance in normalized transcript counts (R² = 0.203), with a highly significant overall fit (F-test p &lt; 2.13 × 10⁻¹⁷⁴), rejecting the joint null hypothesis.
               </p>
+
+              <p className="text-lg text-muted-foreground leading-relaxed">
+               Coefficients:
+              </p>
+              
+              <RegressionCoefTable />
+
+              <p className="text-lg text-muted-foreground leading-relaxed">
+               These results reinforce two earlier observations. Apoe expression is elevated in astrocytic and immune populations and reduced in neuronal populations, particularly glutamatergic neurons. Moreover, even after accounting for cell type, a significant negative distance effect persists, consistent with a true plaque-centered expression gradient
+              </p>
+
             </div>
 
             <div id="rq2-bytype" className="space-y-4">
-              <h3 className="text-xl font-semibold text-foreground">Mean PIG expression by distance and type (95% CI)</h3>
+              <h3 className="text-xl font-semibold text-foreground">Stratified mean expression by cell type and distance</h3>
 
               <p className="text-lg text-muted-foreground leading-relaxed">
-                We inspect mean PIG expression across distance bins and broad cell types, with 95% confidence intervals based on
-                SEM. The interactive plot confirms that Glia/Astrocyte/Ependymal cells exhibit higher Apoe transcript counts than
-                the vascular reference, while glutamatergic neurons show much lower expression.
+                We also visualize mean Apoe expression by distance bin and cell type, with 95% confidence intervals based on SEM.
               </p>
 
               <PlotFrame
                 src={`${base}plots/interactive_PIG_by_broad_type.html`}
                 title="PIG expression by type"
                 size="xl"
-                caption="Mean expression by distance bin and broad cell type (± 1.96×SEM)."
+                caption="Mean Apoe expression across distance bins stratified by broad cell type, with 95% confidence intervals (SEM-based)."
               />
+
+              <p className="text-lg text-muted-foreground leading-relaxed">
+                The stratified plot corroborates the regression interpretation: astrocyte/ependymal cells show higher Apoe than vascular baseline, and glutamatergic neurons show markedly lower Apoe, with differences that remain meaningful relative to uncertainty.
+              </p>
+
             </div>
           </div>
         </div>
