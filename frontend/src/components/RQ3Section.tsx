@@ -1,5 +1,5 @@
 import PlotFrame from "@/components/PlotFrame";
-import { Brain } from 'lucide-react'
+import { Brain,CircleChevronRight } from 'lucide-react'
 
 const base = import.meta.env.BASE_URL;
 
@@ -52,7 +52,7 @@ function PigNeighborCorrTable() {
       <ul className="mt-3 space-y-3 text-sm text-muted-foreground">
         <p className="text-lg text-muted-foreground leading-relaxed">
                 Interpretations:
-                </p>
+        </p>
         <li className="flex items-start gap-2">
           •
           <span>
@@ -405,39 +405,11 @@ const RQ3Section = () => {
                   </li>
                 </ul>
 
-                </p>
-
                 </div>
 
 
 
             </div>
-
-            {/* =========================
-                SECTION 3 — Half-distances
-               ========================= */}
-            <div id="rq3-halves" className="space-y-4">
-              <h4 className="text-xl font-semibold text-foreground">
-                Distances to halve expression (d₁/₂)
-              </h4>
-
-              <p className="text-lg text-muted-foreground leading-relaxed">
-                We convert each gene’s slope into a half-distance{" "}
-                <span className="font-medium text-foreground">d₁/₂ = ln(2) / |β|</span>.{" "}
-                For example, Gfap halves over ~128 µm, while Cxcl10 halves over ~4,415 µm,
-                indicating nearly constant expression at the scale of the mouse brain.
-                Cxcl10 is also extremely zero-inflated, which reduces apparent spatial variation.
-              </p>
-
-              <PlotFrame
-                src={`${base}plots/distances_to_halve_expression.html`}
-                title="Distances to halve expression for the 16 PIGs"
-                size="lg"
-                caption="Interactive: d₁/₂ per PIG computed from regression slopes."
-              />
-            </div>
-          </div>
-
           {/* Sticky panel */}
           <aside className="lg:sticky lg:top-24">
             <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
