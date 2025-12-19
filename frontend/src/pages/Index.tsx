@@ -41,7 +41,6 @@ const Index = () => {
       <MethodologySection />
       <ConclusionSection />*/}
       <DiscussionSection />
-      <DiscussionSection2 />
       <Footer />
     </main>
   );
