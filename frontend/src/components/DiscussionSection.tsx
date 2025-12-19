@@ -1,4 +1,4 @@
-import { Brain, CircleChevronRight } from "lucide-react";
+import { Brain, CircleChevronRight, ClipboardMinus } from "lucide-react";
 
 const DiscussionSection = () => {
   return (
@@ -11,7 +11,7 @@ const DiscussionSection = () => {
             <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
               <div className="flex items-start gap-3">
                 <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
-                  <Brain className="w-5 h-5 text-primary" />
+                  <ClipboardMinus className="w-5 h-5 text-primary" />
                 </div>
                 <div>
                   <div className="text-sm font-semibold text-foreground">Discussion</div>
