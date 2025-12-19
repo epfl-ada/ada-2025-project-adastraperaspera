@@ -370,12 +370,12 @@ const RQ2Section = () => {
               </p>
               {/*<div className="rounded-2xl border border-border bg-card p-5">*/}
                 <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
-                  <li>
+                 <li className="flex items-start gap-2">
                     <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
                     Cluster 8 (immune) over-expresses <span className="font-medium text-foreground">Hexb</span> (z-score ~4). 
                   </li>
 
-                  <li>
+                  <li className="flex items-start gap-2">
                     <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
                     Cluster 14 (dentate gyrus immature glutamatergic) under-expresses <span className="font-medium text-foreground">Cst3</span> (z-score ~−2).
                   </li>
@@ -403,25 +403,25 @@ const RQ2Section = () => {
               </p>
               {/*<div className="rounded-2xl border border-border bg-card p-5">*/}
                 <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
-                  <li>
+                  <li className="flex items-start gap-2">
                     <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
                      Bin cells by plaque distance. 
                   </li>
 
-                  <li>
+                  <li className="flex items-start gap-2">
                     <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
                     For each bin, compute <span className="font-medium text-foreground">cell-type proportions</span> and <span className="font-medium text-foreground">mean PIG expression</span>. 
                   </li>
 
-                  <li>
+                  <li className="flex items-start gap-2">
                     <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
                     Compute a <span className="font-medium text-foreground">Spearman rank correlation matrix</span> between cell-type proportions and PIG expression across bins.  
                   </li>
-                  <li>
+                  <li className="flex items-start gap-2">
                     <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
                      Use Spearman (rather than Pearson) to accommodate plausible non-linear/step-like behaviors.  
                   </li>
-                  <li>
+                  <li className="flex items-start gap-2">
                     <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
                     Perform significance testing with multiple-testing correction per gene–cell-type pair.
                   </li>
@@ -438,12 +438,12 @@ const RQ2Section = () => {
                 We identify **9 cell types** with significant correlations to PIG expression. Notably:
                 </p>
                 <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
-                  <li>
+                  <li className="flex items-start gap-2">
                     <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
                     **8/9** are strongly correlated with a **core set of 14 PIGs**.. 
                   </li>
 
-                  <li>
+                  <li className="flex items-start gap-2">
                     <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
                     The remaining cell type is strongly correlated with **Nrep** alone, suggesting a complementary pattern rather than redundancy with the core PIG set.
                   </li>
@@ -466,12 +466,12 @@ const RQ2Section = () => {
                 To quantify how much cell composition explains PIG expression gradients, we fit a joint linear regression predicting PIG expression from:
                 </p>
                 <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
-                  <li>
+                  <li className="flex items-start gap-2">
                     <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
                     Broad cell type (with **Vascular Endothelial Pericyte** as the baseline) 
                   </li>
 
-                  <li>
+                  <li className="flex items-start gap-2">
                     <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
                     Distance to the nearest plaque
                   </li>
