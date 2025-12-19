@@ -41,7 +41,7 @@ function PigNeighborCorrTable() {
         </table>
       </div>
 
-      {/* keep your content, only fix structure */}
+      
       <ul className="mt-3 space-y-3 text-sm text-muted-foreground">
         <li>
           <p className="text-lg text-muted-foreground leading-relaxed">
@@ -98,7 +98,7 @@ const RQ3Section = () => {
                 Distance-binned means, confidence intervals, and ANOVA
               </h4>
 
-              {/* keep your content, only fix structure */}
+              
               <ul className="space-y-3 text-muted-foreground">
                 <li>
                   <p className="text-lg text-muted-foreground leading-relaxed">
@@ -140,7 +140,7 @@ const RQ3Section = () => {
                 caption="Distance-binned mean expression of all 16 PIGs with 95% C, showing consistent plaque-proximal elevation for glial/immune markers.."
               />
 
-              {/* keep your content, only fix structure */}
+              
               <ul className="space-y-3 text-muted-foreground">
                 <li>
                   <p className="text-lg text-muted-foreground leading-relaxed">
@@ -305,7 +305,7 @@ const RQ3Section = () => {
                 <span className="font-medium text-foreground">k = 100 nearest neighbors</span>.
               </p>
 
-              {/* keep your content, only fix structure */}
+              
               <ul className="space-y-3 text-muted-foreground">
                 <li>
                   <p className="text-lg text-muted-foreground leading-relaxed">
@@ -340,7 +340,7 @@ const RQ3Section = () => {
 
               <PigNeighborCorrTable />
 
-              {/* keep your content, only fix structure */}
+              
               <ul className="mt-3 space-y-3 text-sm text-muted-foreground">
                 <li>
                   <p className="text-lg text-muted-foreground leading-relaxed">
@@ -390,7 +390,7 @@ const RQ3Section = () => {
                 caption="Mean adjusted R² across PIGs for each nested model, including min/max ranges, showing which feature groups add meaningful predictive value."
               />
 
-              {/* keep your content, only fix structure */}
+              
               <p className="text-lg text-muted-foreground leading-relaxed">
                 Key findings:
               </p>
