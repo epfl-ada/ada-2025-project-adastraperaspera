@@ -15,7 +15,7 @@ const RQ5Section = () => {
           <div className="space-y-12">
             <div className="space-y-4">
               <h3 className="text-2xl font-bold text-foreground">
-                RQ5: Which features matter most for predicting plaque distance?
+                RQ5: Which features matter the most for predicting plaque distance?
               </h3>
             </div>
              {/* =========================
@@ -64,7 +64,7 @@ const RQ5Section = () => {
               <PlotFrame
                 src={`${base}plots/mean_PIG_per_mouse.html`}
                 title="PIG scores per cluster per mouse"
-                size="lg"
+                size="md"
                 caption="Mean PIG activation score per mouse (and cluster context), derived from within-cluster, within-gene z-normalization to enable robust across-mouse comparisons."
               />
 
@@ -99,14 +99,14 @@ const RQ5Section = () => {
               <PlotFrame
                 src={`${base}plots/disease_effect_age_progression.html`}
                 title="Disease effect and age progression"
-                size="lg"
+                size="md"
                 caption="Cluster-level summary of disease specificity (Tg − WT) alongside age progression, used to rank which cell types show the strongest plaque-linked transcriptional activation."
               />
 
               <PlotFrame
                 src={`${base}plots/age_progression.html`}
                 title="Age progression"
-                size="lg"
+                size="md"
                 caption="Per-cluster age progression."
               />
 
@@ -165,14 +165,14 @@ const RQ5Section = () => {
               <PlotFrame
                 src={`${base}plots/ad_specific_genes.html`}
                 title="AD-specific genes"
-                size="lg"
+                size="sm"
                 caption="Heatmap of AD-specific genes (high in Tg, low in WT), emphasizing that plaque-linked activation is concentrated in specific clusters and genes."
               />
 
               <PlotFrame
                 src={`${base}plots/top_genes_per_glial.html`}
                 title="Top genes per glial cluster"
-                size="lg"
+                size="sm"
                 caption="Top differential genes per glial cluster (logFC), highlighting microglial and astrocytic programs most altered in Tg relative to WT."
               />
 
