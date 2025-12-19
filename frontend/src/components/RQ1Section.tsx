@@ -92,6 +92,7 @@ const RQ1Section = () => {
               <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
                 <p className="text-lg text-muted-foreground leading-relaxed">
                 To make coefficients interpretable, we translate them into:
+                </p>
                 <li>
                   • <span className="font-medium text-foreground">p(0):</span>{" "}
                   baseline probability of observing a cluster at the plaque surface
@@ -282,7 +283,7 @@ const RQ1Section = () => {
                         href="#rq1-cluster-dist"
                         className="block rounded-xl px-3 py-2 text-muted-foreground hover:text-foreground hover:bg-muted/50 transition"
                     >
-                        Depletion & enrichment
+                        Depletion & enrichment by cluster
                     </a>
 
                     <a
