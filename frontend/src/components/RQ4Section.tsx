@@ -119,7 +119,7 @@ function ResidualByClusterTable() {
               <th className="py-2 pr-4 text-right font-medium">Cluster (Leiden)</th>
               <th className="py-2 pr-4 text-left font-medium">Inferred cell type</th>
               <th className="py-2 pr-4 text-right font-medium">n</th>
-              <th className="py-2 text-right font-medium">Mean |residual| (µm)</th>
+              <th className="py-2 text-right font-medium">Mean residual (µm)</th>
             </tr>
           </thead>
 
@@ -380,7 +380,7 @@ const RQ4Section = () => {
               <ResidualByClusterTable />
 
               <p className="text-lg text-muted-foreground leading-relaxed">
-                Top predictive genes are relatively consistent across modeling classes. Notably, <span className="font-medium text-foreground">Gfap</span> and
+                Top predictive genes are relatively consistent across modeling classes. Notably, <span className="font-medium text-foreground">Gfap</span> and 
                 <span className="font-medium text-foreground">Spag16</span> appear in the top 5 across all models, and three of four models rank <span className="font-medium text-foreground">Gfap</span> as
                 the single most important predictor—reinforcing earlier evidence that Gfap peaks near plaques
                 and decays with distance. Other highly ranked genes include <span className="font-medium text-foreground">Lyz2</span> (immune/glial
@@ -414,12 +414,11 @@ const RQ4Section = () => {
 
               <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
                 <li className="flex items-start gap-2">
-                  <p className="text-lg text-muted-foreground leading-relaxed">
-                    <span>
-                      <span className="font-medium text-foreground">Genes:</span>{" "}
+                  <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
+                  <span>
+                    <span className="font-medium text-foreground">Genes:</span>{" "}
                       347 expression values
-                    </span>
-                  </p>
+                  </span>
                 </li>
 
                 <li className="flex items-start gap-2">

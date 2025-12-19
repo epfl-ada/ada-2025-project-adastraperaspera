@@ -1,5 +1,5 @@
 import PlotFrame from "@/components/PlotFrame";
-import { Grid2x2Check  } from 'lucide-react'
+import { Grid2x2Check, CircleChevronRight  } from 'lucide-react'
 
 const base = import.meta.env.BASE_URL;
 
@@ -18,7 +18,7 @@ function GeneWeirdnessTable({
   title?: string;
   rows?: { gene: string; zero_frac: string; weird_score: string }[];
 }) {
-  return (
+  return ( 
     <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
       <div className="flex items-center justify-between gap-3 mb-4">
         <h4 className="text-base font-semibold text-foreground">{title}</h4>
@@ -305,7 +305,7 @@ const PreprocessingSection = () => {
               <PlotFrame
               src={`${base}plots/joint_clustering_umap.html`}
               title="Joint clustering UMAP"
-              size="md"
+              size="lg"
               caption="UMAP embedding colored by Leiden clusters (interactive)."
                 />
             
@@ -316,7 +316,7 @@ const PreprocessingSection = () => {
                 <PlotFrame
               src={`${base}plots/joint_clustering_overlayed.html`}
               title="Spatial overlay of clusters"
-              size="md"
+              size="lg"
               caption="Spatial coordinates colored by Leiden clusters (interactive)."
                 />
 
