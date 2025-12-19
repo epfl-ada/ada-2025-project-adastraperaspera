@@ -305,7 +305,7 @@ const RQ4Section = () => {
               </p>
 
               <PlotFrame
-                src={`${base}plots/residual_diagnostics.html`}
+                src={`${base}plots/residuals_diagnostics.html`}
                 title="Residual diagnostics (residual vs true distance)"
                 size="lg"
                 caption="Residual diagnostics for the XGBoost distance model, highlighting heteroscedasticity and systematic bias across the true-distance range."
@@ -380,11 +380,11 @@ const RQ4Section = () => {
               <ResidualByClusterTable />
 
               <p className="text-lg text-muted-foreground leading-relaxed">
-                Top predictive genes are relatively consistent across modeling classes. Notably, **Gfap** and
-                **Spag16** appear in the top 5 across all models, and three of four models rank **Gfap** as
+                Top predictive genes are relatively consistent across modeling classes. Notably, <span className="font-medium text-foreground">Gfap</span> and
+                <span className="font-medium text-foreground">Spag16</span> appear in the top 5 across all models, and three of four models rank <span className="font-medium text-foreground">Gfap</span> as
                 the single most important predictor—reinforcing earlier evidence that Gfap peaks near plaques
-                and decays with distance. Other highly ranked genes include **Lyz2** (immune/glial
-                association) and **Igf2**, which shows an opposite trend (peaking around ~270 µm and
+                and decays with distance. Other highly ranked genes include <span className="font-medium text-foreground">Lyz2</span> (immune/glial
+                association) and <span className="font-medium text-foreground">Igf2</span>, which shows an opposite trend (peaking around ~270 µm and
                 declining toward plaques).
               </p>
 
@@ -654,7 +654,7 @@ const RQ4Section = () => {
               />
 
               <PlotFrame
-                src={`${base}plots/JS_Divergencee.html`}
+                src={`${base}plots/JS_Divergence.html`}
                 title="Jensen-Shannon divergence between mice"
                 size="md"
                 caption="Jensen–Shannon divergence matrix between spatial-only prediction distributions across mice; values are uniformly low, indicating near-indistinguishable outputs across genotypes and ages."
