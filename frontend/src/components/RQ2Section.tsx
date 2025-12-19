@@ -304,62 +304,6 @@ const RQ2Section = () => {
             </div>
           </aside>
 
-          {/*
-          <aside className="lg:sticky lg:top-24">
-            <div className="rounded-2xl border border-border bg-card p-6 shadow-md">
-              <div className="text-xs uppercase tracking-wide text-muted-foreground">Research Question 2</div>
-              <h2 className="mt-2 text-xl font-bold text-foreground leading-snug">
-                How are changes in cell type composition related to PIG expression across plaque distance?
-              </h2>
-
-              <div className="mt-5 space-y-3 text-sm">
-                <a
-                  href="#rq2-motivation"
-                  className="block rounded-xl border border-border bg-background/40 px-4 py-3 hover:bg-background/70 transition"
-                >
-                  <div className="font-medium text-foreground">Motivation</div>
-                  <div className="text-muted-foreground">Do composition shifts explain PIG changes?</div>
-                </a>
-
-                <a
-                  href="#rq2-spearman"
-                  className="block rounded-xl border border-border bg-background/40 px-4 py-3 hover:bg-background/70 transition"
-                >
-                  <div className="font-medium text-foreground">Spearman correlations</div>
-                  <div className="text-muted-foreground">Cell-type proportions × PIG expression</div>
-                </a>
-
-                <a
-                  href="#rq2-tables"
-                  className="block rounded-xl border border-border bg-background/40 px-4 py-3 hover:bg-background/70 transition"
-                >
-                  <div className="font-medium text-foreground">Interpretation tables</div>
-                  <div className="text-muted-foreground">Which types correlate with which PIGs?</div>
-                </a>
-
-                <a
-                  href="#rq2-linear"
-                  className="block rounded-xl border border-border bg-background/40 px-4 py-3 hover:bg-background/70 transition"
-                >
-                  <div className="font-medium text-foreground">Joint regression</div>
-                  <div className="text-muted-foreground">Broad type + distance → expression</div>
-                </a>
-
-                <a
-                  href="#rq2-bytype"
-                  className="block rounded-xl border border-border bg-background/40 px-4 py-3 hover:bg-background/70 transition"
-                >
-                  <div className="font-medium text-foreground">Expression by type</div>
-                  <div className="text-muted-foreground">Mean ± 95% CI across distance bins</div>
-                </a>
-              </div>
-
-              <div className="mt-6 text-xs text-muted-foreground">
-                Tip: use these links, or scroll the analysis on the right.
-              </div>
-            </div>
-          </aside> Sticky left panel */}
-
           {/* Main analysis */}
           <div className="space-y-12">
             <div id="rq2-motivation" className="space-y-4">
@@ -396,7 +340,7 @@ const RQ2Section = () => {
             </div>
 
             <div id="rq2-spearman" className="space-y-4">
-              <h3 className="text-xl font-semibold text-foreground">Correlation: cell-type proportions vs mean PIG expression</h3>
+              <h4 className="text-xl font-semibold text-foreground">Correlation: cell-type proportions vs mean PIG expression</h4>
 
               {/*<div className="rounded-2xl border border-border bg-card p-5">*/}
                 <ul className="space-y-3 text-muted-foreground">
@@ -460,7 +404,7 @@ const RQ2Section = () => {
           </div>
 
             <div id="rq2-linear" className="space-y-4">
-              <h3 className="text-xl font-semibold text-foreground">Joint regression (Apoe): cell type + distance → expression </h3>
+              <h4 className="text-xl font-semibold text-foreground">Joint regression (Apoe): cell type + distance → expression </h4>
 
               <p className="text-lg text-muted-foreground leading-relaxed">
                 To quantify how much cell composition explains PIG expression gradients, we fit a joint linear regression predicting PIG expression from:
@@ -476,7 +420,6 @@ const RQ2Section = () => {
                     Distance to the nearest plaque
                   </li>
                 </ul>
-              {/*</div>*/}
 
               <p className="text-lg text-muted-foreground leading-relaxed">
                 We illustrate results for <span className="font-medium text-foreground">Apoe</span>.
@@ -499,7 +442,7 @@ const RQ2Section = () => {
             </div>
 
             <div id="rq2-bytype" className="space-y-4">
-              <h3 className="text-xl font-semibold text-foreground">Stratified mean expression by cell type and distance</h3>
+              <h4 className="text-xl font-semibold text-foreground">Stratified mean expression by cell type and distance</h4>
 
               <p className="text-lg text-muted-foreground leading-relaxed">
                 We also visualize mean Apoe expression by distance bin and cell type, with 95% confidence intervals based on SEM.
