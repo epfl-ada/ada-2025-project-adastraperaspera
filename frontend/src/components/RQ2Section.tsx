@@ -288,7 +288,7 @@ const RQ2Section = () => {
                   href="#rq2-linear"
                   className="block rounded-xl px-3 py-2 text-muted-foreground hover:text-foreground hover:bg-muted/50 transition"
                 >
-                  Joint regression
+                  Joint regression (Apoe)
                 </a>
                 <a
                   href="#rq2-bytype"
@@ -404,12 +404,12 @@ const RQ2Section = () => {
           </div>
 
             <div id="rq2-linear" className="space-y-4">
-              <h4 className="text-xl font-semibold text-foreground">Joint regression (Apoe): cell type + distance → expression </h4>
+              <h4 className="text-xl font-semibold text-foreground">Joint regression (Apoe) </h4>
 
-              <p className="text-lg text-muted-foreground leading-relaxed">
+                <ul className="space-y-3 text-muted-foreground">
+                  <p className="text-lg text-muted-foreground leading-relaxed">
                 To quantify how much cell composition explains PIG expression gradients, we fit a joint linear regression predicting PIG expression from:
                 </p>
-                <ul className="space-y-3 text-muted-foreground">
                   <li className="flex items-start gap-2">
                     <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
                     Broad cell type (with <span className="font-medium text-foreground">Vascular Endothelial Pericyte</span> as the baseline) 
@@ -421,9 +421,10 @@ const RQ2Section = () => {
                   </li>
                 </ul>
 
+              {/*}
               <p className="text-lg text-muted-foreground leading-relaxed">
                 We illustrate results for <span className="font-medium text-foreground">Apoe</span>.
-              </p>
+              </p>*/}
 
               <p className="text-lg text-muted-foreground leading-relaxed">
                 The model explains <span className="font-medium text-foreground">20.3% of the variance in normalized transcript counts (R² = 0.203)</span>, with a highly significant overall fit (F-test p &lt; 2.13 × 10⁻¹⁷⁴), rejecting the joint null hypothesis.
