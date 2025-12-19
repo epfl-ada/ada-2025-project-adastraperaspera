@@ -114,12 +114,12 @@ const IntroductionSection = () => {
 
                   <a href="#rq-4" className={RQ_LINK_CLASS}>
                     <span className="font-semibold text-foreground">RQ4:</span>{" "}
-                    When modeling plaque distance, which feature modalities are most important?
+                    When modeling plaque distance, which feature modalities are most important?  
                   </a>
 
                   <a href="#rq-5" className={RQ_LINK_CLASS}>
                     <span className="font-semibold text-foreground">RQ5:</span>{" "}
-                    How does gene expression change with age for each cell type and mouse group?
+                    How does the gene expression change with age for each cell type and mouse group?
                   </a>
                 </nav>
 

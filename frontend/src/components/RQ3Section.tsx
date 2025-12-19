@@ -92,7 +92,7 @@ const RQ3Section = () => {
                ========================= */}
             <div id="rq3-mean" className="space-y-4">
               <h3 className="text-2xl font-bold text-foreground">
-                RQ3 : How does PIG expression change in plaque proximity?
+                RQ3 : How does the Plaque Induced Gene (PIG) expression change in plaque proximity?
               </h3>
               <h4 className="text-xl font-semibold text-foreground">
                 Distance-binned means, confidence intervals, and ANOVA
@@ -472,7 +472,7 @@ const RQ3Section = () => {
                     Research Question 3
                   </div>
                   <div className="text-xs text-muted-foreground">
-                    How does PIG expression change in plaque proximity?
+                    How does the Plaque Induced Gene (PIG) expression change in plaque proximity?
                   </div>
                 </div>
               </div>

@@ -220,7 +220,7 @@ const RQ4Section = () => {
                     Research Question 4
                   </div>
                   <div className="text-xs text-muted-foreground">
-                    How accurately can we infer plaque distance from gene expression?
+                    When modeling plaque distance, which feature modalities are most important?
                   </div>
                 </div>
               </div>

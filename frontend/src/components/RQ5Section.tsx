@@ -15,7 +15,7 @@ const RQ5Section = () => {
           <div className="space-y-12">
             <div className="space-y-4">
               <h3 className="text-2xl font-bold text-foreground">
-                RQ5: Which features matter the most for predicting plaque distance?
+                RQ5: How does the gene expression change with age for each cell type and mouse group?
               </h3>
             </div>
              {/* =========================
@@ -226,7 +226,7 @@ const RQ5Section = () => {
                                     Research Question 5
                                     </div>
                                     <div className="text-xs text-muted-foreground">
-                                    Which features matter most for predicting plaque distance?
+                                    How does the gene expression change with age for each cell type and mouse group?
                                     </div>
                                 </div>
                                 </div>

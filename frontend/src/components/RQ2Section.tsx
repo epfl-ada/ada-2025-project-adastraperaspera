@@ -272,7 +272,7 @@ const RQ2Section = () => {
                 <div>
                   <div className="text-sm font-semibold text-foreground">Research Question 2</div>
                   <div className="text-xs text-muted-foreground">
-                    How are changes in cell type composition related to PIG expression across plaque distance?
+                    How are the cell type composition, PIG expression, and plaque distance related?
                   </div>
                 </div>
               </div>
