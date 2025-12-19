@@ -2,22 +2,6 @@ import PlotFrame from "@/components/PlotFrame";
 import { Brain, CircleChevronRight } from "lucide-react";
 const base = import.meta.env.BASE_URL;
 
-const linearPerf = [
-  { model: "Linear", trainR2: 0.25, testR2: 0.24 },
-  { model: "PLS", trainR2: 0.19, testR2: 0.19 },
-];
-
-const Th = ({ children }: { children: React.ReactNode }) => (
-  <th className="px-4 py-3 text-left text-xs font-semibold text-foreground">
-    {children}
-  </th>
-);
-
-const Td = ({ children }: { children: React.ReactNode }) => (
-  <td className="px-4 py-3 text-sm text-muted-foreground align-top">
-    {children}
-  </td>
-);
 
 const RQ5Section = () => {
   return (
@@ -31,14 +15,13 @@ const RQ5Section = () => {
           <div className="space-y-12">
             <div className="space-y-4">
               <h3 className="text-2xl font-bold text-foreground">
-                RQ5: When modeling plaque distance, which features are most important?
+                RQ5: Which features matter most for predicting plaque distance?
               </h3>
             </div>
              {/* =========================
                 RQ5
                 ========================= */}
             <div id="rq5-modalities" className="space-y-4">
-                <h3 className="text-2xl font-bold text-foreground">RQ5 : How does the gene expression change with age for each cell type and mouse group?</h3>
 
                 <p className="text-lg text-muted-foreground leading-relaxed">
                     Because spatial-only prediction is dominated by conserved anatomy, we pivot to gene-expression-anchored, age-aware analyses. This shift is motivated by three constraints:
