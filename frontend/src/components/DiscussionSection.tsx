@@ -4,12 +4,10 @@ const DiscussionSection = () => {
   return (
     <section id="discussion" className="py-24 bg-background">
       <div className="container mx-auto px-6 max-w-6xl">
-        {/* Main content + sticky right panel */}
-        <div className="grid gap-10 lg:grid-cols-[320_1fr] items-start">
-
-
-             {/* Sticky panel (right) */}
-          <aside className="lg:sticky lg:top-24">
+        {/* Sticky LEFT panel + main content RIGHT */}
+        <div className="grid gap-10 items-start lg:grid-cols-[320px_1fr]">
+          {/* Sticky panel (left) */}
+          <aside className="lg:sticky lg:top-24 lg:self-start">
             <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
               <div className="flex items-start gap-3">
                 <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
@@ -50,7 +48,6 @@ const DiscussionSection = () => {
             </div>
           </aside>
 
-
           {/* Main discussion */}
           <div className="space-y-12">
             <div className="space-y-4">
@@ -58,7 +55,10 @@ const DiscussionSection = () => {
             </div>
 
             {/* 6.a */}
-            <div id="discussion-6a" className="rounded-2xl border border-border bg-card p-6 shadow-sm space-y-4">
+            <div
+              id="discussion-6a"
+              className="rounded-2xl border border-border bg-card p-6 shadow-sm space-y-4"
+            >
               <h4 className="text-xl font-semibold text-foreground">
                 What we can conclude robustly (and what we cannot)
               </h4>
@@ -127,7 +127,10 @@ const DiscussionSection = () => {
             </div>
 
             {/* 6.b */}
-            <div id="discussion-6b" className="rounded-2xl border border-border bg-card p-6 shadow-sm space-y-4">
+            <div
+              id="discussion-6b"
+              className="rounded-2xl border border-border bg-card p-6 shadow-sm space-y-4"
+            >
               <h4 className="text-xl font-semibold text-foreground">
                 Confounding, alignment error, sparsity/zero inflation, and interpretation risks
               </h4>
@@ -176,7 +179,10 @@ const DiscussionSection = () => {
             </div>
 
             {/* 6.c */}
-            <div id="discussion-6c" className="rounded-2xl border border-border bg-card p-6 shadow-sm space-y-4">
+            <div
+              id="discussion-6c"
+              className="rounded-2xl border border-border bg-card p-6 shadow-sm space-y-4"
+            >
               <h4 className="text-xl font-semibold text-foreground">
                 Implications for target selection and drug development relevance
               </h4>
