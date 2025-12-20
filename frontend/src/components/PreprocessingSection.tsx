@@ -154,7 +154,7 @@ const PreprocessingSection = () => {
                 This leads to early and aggressive Aβ plaque deposition.
                 The plaques in the <span className="font-medium text-foreground">17.9 month transgenic mouse</span> are revealed with the IF staining and appear in red.
               </p>
-              <figure className="space-y-2">
+              {/*<figure className="space-y-2">
                   <img
                     src={`${base}figures/microscopy_.png`}
                     alt="Microscopy cells unified"
@@ -163,7 +163,12 @@ const PreprocessingSection = () => {
                   <figcaption className="mt-2 text-xs text-muted-foreground text-center">
                     Morphology images of Wt and transgenic mice across ages
                   </figcaption>
-                </figure>
+                </figure>*/}
+                <PlotFrame
+                      src={`${base}plots/microscopy_6_mice.html`}
+                      size="md"
+                      caption="Morphology images of Wt and transgenic mice across ages."
+                />
 
             </div>
 
