@@ -88,18 +88,18 @@ const RQSection = () => {
                 {/* Soft overlay to keep text readable */}
                 <div className="absolute inset-0 bg-gradient-to-b from-background/40 via-background/70 to-background/95" />
 
-                <div className="relative p-5 h-full flex flex-col">
+                {/*<div className="relative p-5 h-full flex flex-col">
                   <div className="flex items-start gap-3">
                     <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0 border border-primary/10">
                       <Icon className="w-5 h-5 text-primary" />
                     </div>
                     <div>
                       <div className="text-sm font-semibold text-foreground">{rq.title}</div>
-                      {/*<div className="text-xs text-muted-foreground mt-0.5">Click to navigate</div>*/}
+                      <div className="text-xs text-muted-foreground mt-0.5">Click to navigate</div>
                     </div>
-                  </div>
+                  </div>*/}
 
-                  <p className="mt-4 text-sm text-muted-foreground leading-relaxed">
+                  <p className="mt-4 font-medium text-sm text-muted-foreground leading-relaxed">
                     {rq.question}
                   </p>
 
