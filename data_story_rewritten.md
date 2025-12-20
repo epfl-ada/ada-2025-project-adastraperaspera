@@ -709,6 +709,55 @@ Conclusion: the spatial-only model primarily learns conserved tissue geometry (e
   <br><em>*Figure 31. Relative variance gap between random cross-validation and spatial block cross-validation, illustrating the model's ability to capture both proximal and distal gradients.*</em>
 </p>
 
+
+<p align="center">
+  <!-- This was obtained with plot_dist_signature_heatmaps_grid in results.ipynb -->
+  <img src="figures/interaction_model.png" width="480">
+  <br><em>*Figure 31. Interaction model between distance and neighbor signature, illustrating the model's ability to capture both proximal and distal gradients.*</em>
+</p>
+
+<p align="center">
+  <!-- This was obtained with plot_model_comparison_with_extremes in results.ipynb -->
+  <img src="figures/interaction_model_performance.png" width="480">
+  <br><em>*Figure 31. Performance of the interaction model, illustrating the model's ability to capture both proximal and distal gradients.*</em>
+</p>
+
+<p align="center">
+  <!-- This was obtained with plot_permutation_effect_across_genes in results.ipynb -->
+  <img src="figures/full_model_neighbor_permute.png" width="480">
+  <br><em>*Figure 31. Performance of the full model with neighbor permutation, illustrating the model's ability to capture both proximal and distal gradients.*</em>
+</p>
+
+<p align="center">
+  <!-- This was obtained with plot_true_vs_fake_far_neighbors_across_genes in results.ipynb -->
+  <img src="figures/fake_neighbors.png" width="480">
+  <br><em>*Figure 31. Performance of the full model with fake neighbors, illustrating the model's ability to capture both proximal and distal gradients.*</em>
+</p>
+
+<p align="center">
+  <!-- This was obtained with plot_spatial_scatter in results.ipynb -->
+  <img src="figures/permuted_neighbors_spatial.png" width="480">
+  <br><em>*Figure 31. Performance of the full model with permuted neighbors, illustrating the model's ability to capture both proximal and distal gradients.*</em>
+</p>
+
+<p align="center">
+  <!-- This was obtained with plot_pred_vs_obs_combined in results.ipynb -->
+  <img src="figures/true_permitted_fake_pred_vs_obs.png" width="480">
+  <br><em>*Figure 31. Performance of the full model with true, permitted, and fake neighbors, illustrating the model's ability to capture both proximal and distal gradients.*</em>
+</p>
+
+<p align="center">
+  <!-- This was obtained with plot_resid_vs_distance_combined in results.ipynb -->
+  <img src="figures/residual_v_dist_true_perm_fake.png" width="480">
+  <br><em>*Figure 31. Performance of the full model with true, permitted, and fake neighbors, illustrating the model's ability to capture both proximal and distal gradients.*</em>
+</p>
+
+<p align="center">
+  <!-- This was obtained with plot_tile_heatmap in results.ipynb -->
+  <img src="figures/perm_vs_true_tiles.png" width="480">
+  <br><em>*Figure 31. Performance of the full model with true, permitted, and fake neighbors, illustrating the model's ability to capture both proximal and distal gradients.*</em>
+</p>
+
 ---
 
 ## 5. Age- and Genotype-Aware Signatures
