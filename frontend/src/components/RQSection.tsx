@@ -14,7 +14,7 @@ const base = import.meta.env.BASE_URL;
 const RQS: RQCard[] = [
   {
     id: "rq-1",
-    title: "Research Question 1",
+    title: "RQ 1",
     question: "How does cell-type composition vary with plaque proximity?",
     href: "#rq-1",
     icon: Microscope,
@@ -22,7 +22,7 @@ const RQS: RQCard[] = [
   },
   {
     id: "rq-2",
-    title: "Research Question 2",
+    title: "RQ 2",
     question: "How are the cell type composition, PIG expression, and plaque distance related?",
     href: "#rq-2",
     icon: BarChart3,
@@ -30,7 +30,7 @@ const RQS: RQCard[] = [
   },
   {
     id: "rq-3",
-    title: "Research Question 3",
+    title: "RQ 3",
     question: "How does the Plaque Induced Gene (PIG) expression change in plaque proximity?  ",
     href: "#rq-3",
     icon: Activity,
@@ -38,7 +38,7 @@ const RQS: RQCard[] = [
   },
   {
     id: "rq-4",
-    title: "Research Question 4",
+    title: "RQ 4",
     question: "When modeling plaque distance, which feature modalities are most important?",
     href: "#rq-4",
     icon: ScanLine,
@@ -46,7 +46,7 @@ const RQS: RQCard[] = [
   },
   {
     id: "rq-5",
-    title: "Research Question 5",
+    title: "RQ 5",
     question: "How does the gene expression change with age for each cell type and mouse group?",
     href: "#rq-5",
     icon: Brain,
@@ -68,9 +68,6 @@ const RQSection = () => {
       <div className="container mx-auto px-6 max-w-6xl">
         <div className="text-center mb-10">
           <h2 className="text-3xl md:text-4xl font-bold text-foreground">Research questions</h2>
-          <p className="mt-3 text-lg text-muted-foreground">
-            Jump to any section. Cards are presented in a single row on large screens (no sticky panels).
-          </p>
         </div>
 
         {/* One-row presentation layout on lg+, responsive grid below */}
@@ -98,7 +95,7 @@ const RQSection = () => {
                     </div>
                     <div>
                       <div className="text-sm font-semibold text-foreground">{rq.title}</div>
-                      <div className="text-xs text-muted-foreground mt-0.5">Click to navigate</div>
+                      {/*<div className="text-xs text-muted-foreground mt-0.5">Click to navigate</div>*/}
                     </div>
                   </div>
 
@@ -106,11 +103,11 @@ const RQSection = () => {
                     {rq.question}
                   </p>
 
-                  <div className="mt-auto pt-4">
+                  {/*<div className="mt-auto pt-4">
                     <span className="inline-flex items-center rounded-xl px-3 py-2 text-sm text-foreground bg-muted/40 border border-border/60 group-hover:bg-muted/60 transition">
                       Open section
                     </span>
-                  </div>
+                  </div>*/}
                 </div>
               </a>
             );
