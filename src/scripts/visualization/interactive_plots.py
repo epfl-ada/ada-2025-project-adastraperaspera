@@ -2301,7 +2301,7 @@ def make_marker_enrichment_heatmap_plotly(
     filename: str = "expression_per_cluster.html",
     out_dir: str = "frontend/public/plots",
     z_clip: float = 3.0,                # clip colors to [-z_clip, z_clip]
-    show_values: bool = False,          # set True if you want numbers in cells
+    show_values: bool = False,       
 ) -> go.Figure:
     """
     Interactive Plotly heatmap for expr_z from analyze_leiden_spatial().

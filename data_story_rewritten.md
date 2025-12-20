@@ -691,11 +691,23 @@ Conclusion: the spatial-only model primarily learns conserved tissue geometry (e
 </p>
 
 <p align="center">
-  <!-- This was obtained with inline code in ## Visual diagnostic: “rectangular partition” behavior of grid-like models in results.ipynb -->
-  <img src="figures/plot_spatial_block_split.png" width="480">
+  <!-- This was obtained with plot_spatial_block_split in results.ipynb -->
+  <img src="figures/spatial_tiles.png" width="480">
   <br><em>*Figure 31. Spatial tiles showing the distribution of predicted plaque distance across the tissue, illustrating the model's ability to capture both proximal and distal gradients.*</em>
 </p>
 
+
+<p align="center">
+  <!-- This was obtained with plot_mean_r2_with_extremes in results.ipynb -->
+  <img src="figures/variance_spatial.png" width="480">
+  <br><em>*Figure 31. Variance explained by the spatial model, illustrating the model's ability to capture both proximal and distal gradients.*</em>
+</p>
+
+<p align="center">
+  <!-- This was obtained with plot_mean_relative_gap_with_extremes in results.ipynb -->
+  <img src="figures/relative_variance_gap.png" width="480">
+  <br><em>*Figure 31. Relative variance gap between random cross-validation and spatial block cross-validation, illustrating the model's ability to capture both proximal and distal gradients.*</em>
+</p>
 
 ---
 

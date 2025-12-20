@@ -324,7 +324,6 @@ def run_gene_distance_modeling(
     if plot_bivariate_resid_dist_spatial is not None:
         fig, ax = plt.subplots(1, 1, figsize=(7.5, 6))
 
-        # Keep extra left margin if your bivariate plot uses a wide inset legend.
         fig.subplots_adjust(left=0.26, right=0.98, top=0.90, bottom=0.08)
 
         plot_bivariate_resid_dist_spatial(

@@ -3065,7 +3065,6 @@ def _format_bin_labels(index):
     def _fmt(v):
         # Works for Interval and prints fallback for plain values
         if hasattr(v, "left") and hasattr(v, "right"):
-            # round to ints; change to round(v.left, 1) if you want 0.1 precision
             return f"{int(round(v.left))}-{int(round(v.right))}"
         return str(v)
 
