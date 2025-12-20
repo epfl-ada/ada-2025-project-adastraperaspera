@@ -281,7 +281,7 @@ const PreprocessingSection = () => {
                   <figcaption className="mt-2 text-xs text-muted-foreground text-center">
                     Spatial distribution of individual cells (points) across all mice, colored by a clustering-derived component to illustrate spatial organization and local heterogeneity.
                   </figcaption>
-                </figure>*/
+                </figure>*/}
                 <ImageGridPlot
                   files={{
                     "wt-2": `${base}images_grid_gold/full/wt-2.webp`,
