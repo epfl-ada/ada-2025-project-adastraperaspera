@@ -4,7 +4,7 @@ import ImageGridPlot from "./ImageGridFrame";
 
 const base = import.meta.env.BASE_URL;
 const bw_grid_path = `${base}images_grid_bw/full/`;
-const gold_grid_path = `${base}images_grid_gold/full/`
+const _grid_path = `${base}images_grid_gold/full/`;
 
 const WEIRD_GENE_ROWS = [
   { gene: "Cxcl10", zero_frac: "1.00", weird_score: "9.35" },
@@ -169,14 +169,12 @@ const PreprocessingSection = () => {
                 </figure>*/}
                 <ImageGridPlot
                   files={{
-                    "wt-2": `wt-2.webp`,
+                    "wt-2": `${base}images_grid_bw/full/wt-2.webp`,
                     "wt-5": `${base}images_grid_bw/full/wt-5.webp`,
                     "wt-13": `${base}images_grid_bw/full/wt-13.webp`,
                     "tg-2": `${base}images_grid_bw/full/tg-2.webp`,
                     "tg-5": `${base}images_grid_bw/full/tg-5.webp`,
                     "tg-17": `${base}images_grid_bw/full/tg-17.webp`,
-
-                    // ...
                   }}
                   keyToPos={{
                     "wt-2": [0, 0],
@@ -189,6 +187,7 @@ const PreprocessingSection = () => {
                   colTicks={["2", "5.7", "13+"]}
                   rowTicks={["Wild Type", "Transgenic"]}
                   caption="Morphology images of Wt and transgenic mice across ages."
+                  cellSize={180}
                 />
 
 
