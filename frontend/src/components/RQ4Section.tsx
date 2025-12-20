@@ -240,6 +240,15 @@ const RQ4Section = () => {
                 >
                   Additional feature modalities
                 </a>
+
+                <a
+                  href="#rq4-regression"
+                  className="block rounded-xl px-3 py-2 text-muted-foreground hover:text-foreground hover:bg-muted/50 transition"
+                >
+                  Regression models
+                </a>
+
+
               </nav>
 
               {/* Footer hint */}
@@ -695,6 +704,97 @@ const RQ4Section = () => {
                 </li>
               </ul>
             </div>
+
+            <div id="rq4-regression" className="space-y-6">
+            <h4 className="text-base font-semibold text-foreground mb-4">
+              Deep dive into the regression models
+            </h4>
+
+            <PlotFrame
+                src={`${base}plots/decision_tree_coarse.html`}
+                title=""
+                size="md"
+                caption="Decision tree showing the split of the data into different regions based on the features."
+              />
+
+            <PlotFrame
+                src={`${base}plots/spatial_tiles.html`}
+                title=""
+                size="md"
+                caption="Spatial tiles showing the distribution of predicted plaque distance across the tissue, illustrating the model's ability to capture both proximal and distal gradients."
+              />
+
+            <PlotFrame
+                src={`${base}plots/variance_spatial.html`}
+                title=""
+                size="md"
+                caption="Variance explained by the spatial model, illustrating the model's ability to capture both proximal and distal gradients."
+              />
+
+            <PlotFrame
+                src={`${base}plots/relative_variance_gap.html`}
+                title=""
+                size="md"
+                caption="Relative variance gap between random cross-validation and spatial block cross-validation, illustrating the model's ability to capture both proximal and distal gradients."
+              />
+
+              <PlotFrame
+                src={`${base}plots/interaction_model.html`}
+                title=""
+                size="md"
+                caption="Performance of the interaction model, illustrating the model's ability to capture both proximal and distal gradients."
+              />
+
+              <PlotFrame
+                src={`${base}plots/full_model_neighbor_permute.html`}
+                title=""
+                size="md"
+                caption="Performance of the full model with neighbor permutation, illustrating the model's ability to capture both proximal and distal gradients."
+              />
+
+              <PlotFrame
+                src={`${base}plots/fake_neighbors.html`}
+                title=""
+                size="md"
+                caption="Performance of the full model with fake neighbors, illustrating the model's ability to capture both proximal and distal gradients."
+              />
+
+              <PlotFrame
+                src={`${base}plots/permuted_neighbors_spatial.html`}
+                title=""
+                size="md"
+                caption="Performance of the full model with permuted neighbors, illustrating the model's ability to capture both proximal and distal gradients."
+              />
+
+              <PlotFrame
+                src={`${base}plots/true_permitted_fake_pred_vs_obs.html`}
+                title=""
+                size="md"
+                caption="Performance of the full model with true, permitted, and fake neighbors, illustrating the model's ability to capture both proximal and distal gradients."
+              />
+
+              <PlotFrame
+                src={`${base}plots/residual_v_dist_true_perm_fake.html`}
+                title=""
+                size="md"
+                caption="Performance of the full model with true, permitted, and fake neighbors, illustrating the model's ability to capture both proximal and distal gradients."
+              />
+
+
+
+
+
+
+
+
+
+
+
+            </div>
+
+
+
+
           </div>
         </div>
       </div>
