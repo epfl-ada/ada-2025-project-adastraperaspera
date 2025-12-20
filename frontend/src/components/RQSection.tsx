@@ -16,9 +16,8 @@ const RQS: RQCard[] = [
     id: "rq-1",
     title: "RQ 1",
     question: "How does cell-type composition vary with plaque proximity?",
-    href: "#rq-1",
     icon: Microscope,
-    bgImage: `${base}images/rq/rq1.jpg`,
+    bgImage: `${base}images/row-1-column-1.webp`,
   },
   {
     id: "rq-2",
@@ -26,7 +25,7 @@ const RQS: RQCard[] = [
     question: "How are the cell type composition, PIG expression, and plaque distance related?",
     href: "#rq-2",
     icon: BarChart3,
-    bgImage: `${base}images/rq/rq2.jpg`,
+    bgImage: `${base}images/row-1-column-2.webp`,
   },
   {
     id: "rq-3",
@@ -34,7 +33,7 @@ const RQS: RQCard[] = [
     question: "How does the Plaque Induced Gene (PIG) expression change in plaque proximity?  ",
     href: "#rq-3",
     icon: Activity,
-    bgImage: `${base}images/rq/rq3.jpg`,
+    bgImage: `${base}images/row-1-column-3.webp`,
   },
   {
     id: "rq-4",
@@ -42,7 +41,7 @@ const RQS: RQCard[] = [
     question: "When modeling plaque distance, which feature modalities are most important?",
     href: "#rq-4",
     icon: ScanLine,
-    bgImage: `${base}images/rq/rq4.jpg`,
+    bgImage: `${base}images/row-1-column-4.webp`,
   },
   {
     id: "rq-5",
@@ -50,7 +49,7 @@ const RQS: RQCard[] = [
     question: "How does the gene expression change with age for each cell type and mouse group?",
     href: "#rq-5",
     icon: Brain,
-    bgImage: `${base}images/rq/rq5.jpg`,
+    bgImage: `${base}images/row-1-column-5.webp`,
   },
   {
     id: "discussion",
@@ -83,6 +82,7 @@ const RQSection = () => {
                 {/* Background image */}
                 <div
                   className="absolute inset-0 bg-cover bg-center"
+                  style={{ backgroundImage: `url(${rq.bgImage})` }}
                   aria-hidden="true"
                 />
                 {/* Soft overlay to keep text readable */}
