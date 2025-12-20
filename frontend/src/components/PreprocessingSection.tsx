@@ -127,21 +127,21 @@ const PreprocessingSection = () => {
               </p>
               <div className="grid gap-4 md:grid-cols-2">
                     <div className="rounded-2xl border border-border bg-card p-5">
-                    <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
-                        <li>• <span className="font-medium text-foreground">6</span> mice</li>
-                        <li>• <span className="font-medium text-foreground">6</span> morphology images</li>
-                        <li>• <span className="font-medium text-foreground">1</span> immunofluorescence (IF) image </li>
-                        <li>• <span className="font-medium text-foreground">347</span> genes</li>
+                    <ul className="space-y-3 text-muted-foreground">
+                        <li className="flex items-start gap-2"><CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" /> <span className="font-medium text-foreground">6</span> mice</li>
+                        <li className="flex items-start gap-2"><CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" /> <span className="font-medium text-foreground">6</span> morphology images</li>
+                        <li className="flex items-start gap-2"><CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" /> <span className="font-medium text-foreground">1</span> immunofluorescence (IF) image </li>
+                        <li className="flex items-start gap-2"><CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" /> <span className="font-medium text-foreground">347</span> genes</li>
                         
                     </ul>
                     </div>
 
                     <div className="rounded-2xl border border-border bg-card p-5">
-                    <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
-                        <li>• <span className="font-medium text-foreground">351,714</span> cells</li>
-                        <li>• <span className="font-medium text-foreground">78,885,074</span> transcripts </li>
-                        <li>• <span className="font-medium text-foreground">34.7</span> GB of data</li>
-                        <li>• <span className="font-medium text-foreground">1,736</span> Aβ plaques</li>
+                    <ul className="space-y-3 text-muted-foreground">
+                        <li className="flex items-start gap-2"><CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" /> <span className="font-medium text-foreground">351,714</span> cells</li>
+                        <li className="flex items-start gap-2"><CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" /> <span className="font-medium text-foreground">78,885,074</span> transcripts </li>
+                        <li className="flex items-start gap-2"><CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" /> <span className="font-medium text-foreground">34.7</span> GB of data</li>
+                        <li className="flex items-start gap-2"><CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" /> <span className="font-medium text-foreground">1,736</span> Aβ plaques</li>
                     </ul>
                     </div>
                 </div>
@@ -211,12 +211,12 @@ const PreprocessingSection = () => {
                     <p className="text-lg text-muted-foreground leading-relaxed">
                     Distances are spatially heterogeneous but concentrated near plaques:
                     </p>
-                    <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
-                        <li>• Maximum distance from any plaque: <span className="font-medium text-foreground">457 µm</span></li>
-                        <li>• <span className="font-medium text-foreground">99%</span> of cells are within <span className="font-medium text-foreground">200 µm</span> of a plaque </li>
-                        <li>• Median distance: <span className="font-medium text-foreground">61 µm</span></li>
-                        <li>• Standard deviation: <span className="font-medium text-foreground">44.4 µm</span></li>
-                        <li>• Distribution is <span className="font-medium text-foreground">right-skewed</span> with a long tail of cells far from plaques</li>
+                    <ul className="space-y-3 text-muted-foreground">
+                        <li className="flex items-start gap-2"><CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />Maximum distance from any plaque: <span className="font-medium text-foreground">457 µm</span></li>
+                        <li className="flex items-start gap-2"><CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" /> <span className="font-medium text-foreground">99%</span> of cells are within <span className="font-medium text-foreground">200 µm</span> of a plaque </li>
+                        <li className="flex items-start gap-2"><CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" /> Median distance: <span className="font-medium text-foreground">61 µm</span></li>
+                        <li className="flex items-start gap-2"><CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" /> Standard deviation: <span className="font-medium text-foreground">44.4 µm</span></li>
+                        <li className="flex items-start gap-2"><CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" /> Distribution is <span className="font-medium text-foreground">right-skewed</span> with a long tail of cells far from plaques</li>
                     </ul>
                 </div>
 
@@ -239,10 +239,10 @@ const PreprocessingSection = () => {
                     <p className="text-lg text-muted-foreground leading-relaxed">
                 The gene panel includes:
                 </p>
-                    <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
-                        <li>• <span className="font-medium text-foreground">248</span> markers for 8 main cell types, neuronal cortical layer markers, and non-neuronal markers  </li>
-                        <li>• <span className="font-medium text-foreground">83</span> genes related to activated microglia and astrocytes </li>
-                        <li>• <span className="font-medium text-foreground">16</span> plaque-induced genes (PIGs) curated from primary literature</li>
+                    <ul className="space-y-3 text-muted-foreground">
+                        <li className="flex items-start gap-2">• <span className="font-medium text-foreground">248</span> markers for 8 main cell types, neuronal cortical layer markers, and non-neuronal markers  </li>
+                        <li className="flex items-start gap-2">• <span className="font-medium text-foreground">83</span> genes related to activated microglia and astrocytes </li>
+                        <li className="flex items-start gap-2">• <span className="font-medium text-foreground">16</span> plaque-induced genes (PIGs) curated from primary literature</li>
                     </ul>
                 </div>
 
@@ -294,11 +294,11 @@ const PreprocessingSection = () => {
                 To characterize cell types and anatomical structure, we cluster cells using their 347-dimensional expression vectors:
               </p>
               <div className="rounded-2xl border border-border bg-card p-6">
-                    <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
-                        <li>• PCA on expression space  </li>
-                        <li>• kNN graph with  <span className="font-medium text-foreground">15 nearest neighbors</span></li>
-                        <li>• <span className="font-medium text-foreground">Leiden clustering</span>, yielding <span className="font-medium text-foreground">K = 19</span> clusters </li>
-                        <li>• 2D embedding via <span className="font-medium text-foreground">UMAP</span> for visualization </li>
+                    <ul className="space-y-3 text-muted-foreground">
+                        <li className="flex items-start gap-2"><CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" /> PCA on expression space  </li>
+                        <li className="flex items-start gap-2"><CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" /> kNN graph with  <span className="font-medium text-foreground">15 nearest neighbors</span></li>
+                        <li className="flex items-start gap-2"><CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" /> <span className="font-medium text-foreground">Leiden clustering</span>, yielding <span className="font-medium text-foreground">K = 19</span> clusters </li>
+                        <li className="flex items-start gap-2"><CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" /> 2D embedding via <span className="font-medium text-foreground">UMAP</span> for visualization </li>
                     </ul>
                 </div>
 
@@ -324,30 +324,30 @@ const PreprocessingSection = () => {
                     <p className="text-lg text-muted-foreground leading-relaxed">
                 Representative cluster interpretations include:
                 </p>
-                    <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
-                        <li>
-                        • <span className="font-medium text-foreground">Cluster 6 (vascular cells)</span>
+                    <ul className="space-y-3 text-muted-foreground">
+                        <li className="flex items-start gap-2">
+                        <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" /> <span className="font-medium text-foreground">Cluster 6 (vascular cells)</span>
                         is concentrated near the outer rim, consistent with epidural space localization.
                         </li>
 
-                        <li>
-                        • <span className="font-medium text-foreground">Cluster 14</span>
+                        <li className="flex items-start gap-2">
+                        <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" /> <span className="font-medium text-foreground">Cluster 14</span>
                         traces hippocampal formation and follows the dentate gyrus shape; inferred as
                         <span className="font-medium text-foreground">
                             dentate gyrus immature glutamatergic neurons
                         </span>.
                         </li>
 
-                        <li>
-                        • <span className="font-medium text-foreground">Cluster 10</span>
+                        <li className="flex items-start gap-2">
+                        <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" /> <span className="font-medium text-foreground">Cluster 10</span>
                         dominates the amygdala/hypothalamus region; inferred as
                         <span className="font-medium text-foreground">
                             hypothalamic medial mammillary glutamatergic neurons
                         </span>.
                         </li>
 
-                        <li>
-                        • Ventricular cavities show a distinct lining cluster
+                        <li className="flex items-start gap-2">
+                        <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" /> Ventricular cavities show a distinct lining cluster
                         (<span className="font-medium text-foreground">cluster 15</span>), inferred as
                         <span className="font-medium text-foreground">
                             hypothalamic GnRH1-expressing glutamatergic neurons
