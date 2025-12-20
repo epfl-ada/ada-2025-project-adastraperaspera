@@ -178,7 +178,7 @@ export default function ImageGridPlot({
                   <img
                     src={src}
                     alt={key}
-                    className="h-full w-full object-cover"
+                    className="h-full w-full object-contain"
                     style={{ transform: flipSet.has(key) ? "scaleX(-1)" : undefined }}
                     draggable={false}
                     loading="lazy"
