@@ -83,7 +83,7 @@ const RQSection = () => {
                 <div
                   className="absolute inset-0 bg-cover bg-center"
                   style={{ backgroundImage: `url(${rq.bgImage})` }}
-                  aria-hidden="true"
+                  aria-hidden="false"
                 />
                 {/* Soft overlay to keep text readable */}
                 <div className="absolute inset-0 bg-gradient-to-b from-background/40 via-background/70 to-background/95" />
