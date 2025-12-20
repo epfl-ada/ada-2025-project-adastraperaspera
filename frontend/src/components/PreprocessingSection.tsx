@@ -165,7 +165,7 @@ const PreprocessingSection = () => {
                   </figcaption>
                 </figure>*/}
                 <PlotFrame
-                      src={`${base}plots/microscopy_6_mice.html`}
+                      src={`${base}plots/image_grid.html`}
                       size="md"
                       caption="Morphology images of Wt and transgenic mice across ages."
                 />
