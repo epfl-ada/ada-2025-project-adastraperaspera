@@ -16,7 +16,7 @@ const RQS: RQCard[] = [
     id: "rq-1",
     title: "RQ 1",
     question: "How does cell-type composition vary with plaque proximity?",
-    href: "#rq-1"
+    href: "#rq-1",
     icon: Microscope,
     bgImage: `${base}images/row-1-column-1.webp`,
   },
