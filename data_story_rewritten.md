@@ -29,7 +29,7 @@
    4.a RQ4 — When modeling plaque distance, which features are most important?
    4.a.i Benchmarking setup and results 
    4.b Additional feature modalities
-   4.c Deep-dive into the regression models
+   4.c Deep-dive into the expression models
 
 5. Age- and Genotype-Aware Signatures  
    5.a RQ5 — How does the gene expression change with age for each cell type and mouse group?
@@ -682,81 +682,94 @@ Findings:
 Conclusion: the spatial-only model primarily learns conserved tissue geometry (e.g., cortical curvature and laminar structure), not plaque pathology. The apparent high R² is therefore driven by anatomical confounding rather than disease signal.
 ---
 
-## 4.c Deep dive into the regression models
+## 4.c Deep dive into the expression models
+
+We begin by interrogating the brain-region segmentation implicitly learned by our decision tree when it is trained to reconstruct the plaque-distance field. Concretely, we approximate the murine brain with a 200×200 grid of spatial tiles and, within each tile, compute the average distance to the nearest plaque (which is then visualized as a colored field across the tissue). When comparing the inferred decision surface to the ground-truth plaque-distance field, several salient behaviors become apparent. First, the model recovers a prominent large-distance region in the ventricular area. Second, it trivially identifies “break-away” cells outside the brain boundary as being far from plaques. Finally—and most consequentially for downstream modeling—the tree draws a clear boundary between (i) coarser, more homogeneous regions around the diencephalon and (ii) finer-grained segmentation around the hippocampus and isocortex. This qualitative shift in granularity is consistent with plaques being more uniformly spaced in the diencephalon, in contrast to the more structured, regionally heterogeneous grouping observed in the hippocampus and isocortex.
 
 <p align="center">
   <!-- This was obtained with plot_true_vs_pred_heatmaps in results.ipynb -->
   <img src="figures/decision_tree_coarse.png" width="480">
-  <br><em>*Figure 31. Decision tree showing the split of the data into different regions based on the features.*</em>
+  <br><em>Figure 31. Ground-truth plaque-distance field and decision-tree reconstruction on a 200×200 grid.</em>
 </p>
+
+To assess whether our expression models genuinely generalize across space (rather than exploiting spatial autocorrelation), we adopt a tile-based cross-validation scheme that withholds contiguous tissue regions during training. We partition the brain into 391 square tiles, holding out 78 tiles (~20%) for testing and using the remaining 313 for training; importantly, the assignment is random at the tile level (not the cell level), so the model is prevented from “seeing” large chunks of brain tissue. This is a substantially more stringent scenario than holding out 20% of cells at random, because random cell-level splits still expose the model to the full spatial extent of the brain and can therefore inflate performance via spatial leakage.
 
 <p align="center">
   <!-- This was obtained with plot_spatial_block_split in results.ipynb -->
   <img src="figures/spatial_tiles.png" width="480">
-  <br><em>*Figure 31. Spatial tiles showing the distribution of predicted plaque distance across the tissue, illustrating the model's ability to capture both proximal and distal gradients.*</em>
+  <br><em>Figure 32. Random tile-based train/test split (391 tiles; 78 test, 313 train).</em>
 </p>
 
+Within this framework, we compare out-of-fold (OOF) performance for a multi-modal linear model and three ablations that isolate distinct sources of spatial signal. The four specifications are: (i) `target expression ~ distance to plaque + 15 PIG expression in neighbors + cell centroid coordinates`, (ii) `target expression ~ 15 PIG expression in neighbors`, (iii) `target expression ~ cell centroid coordinates`, and (iv) `target expression ~ distance to plaque`. Across feature sets, average R² under random cross-validation is consistently higher than under spatial block cross-validation (with overlapping 95% confidence intervals at the aggregate level), indicating that random splits can overstate generalization in the presence of spatial autocorrelation. Critically, this inflation is not uniform across genes: some show extremely large relative differences, including +138.2% for *Ctst* and +1,369% for *Nrep*. These outliers highlight a key organizing principle for the remainder of this section: genes with stronger spatial variation (and/or sharper region-specific regimes) suffer disproportionate performance degradation when portions of the brain are obstructed during training, revealing dependence on localized structure rather than globally transferable trends. We make this leakage effect explicit by quantifying the mean relative leakage gap (%) between random and spatial block cross-validation (log-scaled), where larger gaps indicate stronger performance inflation under random splits and therefore greater susceptibility to spatial autocorrelation across the tested feature sets.
 
 <p align="center">
   <!-- This was obtained with plot_mean_r2_with_extremes in results.ipynb -->
   <img src="figures/variance_spatial.png" width="480">
-  <br><em>*Figure 31. Variance explained by the spatial model, illustrating the model's ability to capture both proximal and distal gradients.*</em>
+  <br><em>Figure 33. Mean OOF R² under random vs spatial block cross-validation across feature sets.</em>
 </p>
 
 <p align="center">
   <!-- This was obtained with plot_mean_relative_gap_with_extremes in results.ipynb -->
   <img src="figures/relative_variance_gap.png" width="480">
-  <br><em>*Figure 31. Relative variance gap between random cross-validation and spatial block cross-validation, illustrating the model's ability to capture both proximal and distal gradients.*</em>
+  <br><em>Figure 34. Mean relative leakage gap (%) between random and spatial block cross-validation (log-scaled).</em>
 </p>
 
+Having established that spatial context matters—and that its impact is highly gene-dependent—we next introduce a non-linear interaction between plaque distance and the local transcriptional context of surrounding PIGs. Specifically, we define the **neighbor signature** (or **signature** for short) as the average expression level of “Other PIGs” in the neighborhood, and we examine average target expression across joint bins of distance and signature. Distance is discretized into five bins (D1–D5 from closest to farthest), and the signature is discretized into five bins (S1–S5 from lowest to highest). Across these distance/signature groups, expression varies substantially, indicating that meaningful information is encoded jointly in proximity to plaques and local neighborhood state for essentially all genes—except *Cxcl10*, where extreme zero inflation limits interpretability. This motivates an interaction-aware formulation: by inspecting per-gene distance–signature interaction maps (log1p-transformed and normalized per gene), we can distinguish smoothly varying gradients (consistent with gradual spatial structure) from localized peaks (suggesting gene-specific regimes in which neighborhood composition modulates distance-dependent effects).
 
 <p align="center">
   <!-- This was obtained with plot_dist_signature_heatmaps_grid in results.ipynb -->
   <img src="figures/interaction_model.png" width="480">
-  <br><em>*Figure 31. Interaction model between distance and neighbor signature, illustrating the model's ability to capture both proximal and distal gradients.*</em>
+  <br><em>Figure 35. Distance–signature interaction patterns across D1–D5 and S1–S5 bins.</em>
 </p>
+
+We then evaluate whether explicitly modeling this interaction improves spatial generalization under the spatial-block split. We compare the spatial-block OOF performance of a distance/signature interaction model against ablations that include only distance or only signature. On average, the interaction model performs best, but the improvement over the simpler signature-only model is not statistically significant at the 95% confidence level. This result is informative in two ways: it reinforces the strength of neighborhood context as a standalone predictor, while also suggesting that (at least in aggregate) much of the interaction’s predictive value may already be captured by the neighbor signature itself. At the same time, the best- and worst-predicted genes vary substantially across variants, underscoring pronounced gene-to-gene heterogeneity in the extent and form of spatial dependence.
 
 <p align="center">
   <!-- This was obtained with plot_model_comparison_with_extremes in results.ipynb -->
   <img src="figures/interaction_model_performance.png" width="480">
-  <br><em>*Figure 31. Performance of the interaction model, illustrating the model's ability to capture both proximal and distal gradients.*</em>
+  <br><em>Figure 36. Spatial-block OOF R² for distance-only, signature-only, and interaction models.</em>
 </p>
+
+Because the neighbor-based model is unexpectedly strong under spatial-block evaluation, we next probe *what* it is learning via two targeted ablations designed to separate fine-grained neighborhood structure from coarser spatial confounding. In the first mode, we permute cells *within each brain tile* and measure the performance drop. Since cells inside a tile remain relatively close, this perturbation is milder than a global random permutation, yet it still breaks cell-to-cell correspondence in local neighborhoods. Even under this conservative disruption, spatial-block OOF performance drops by 62.9%, with no overlap in the 95% confidence intervals, indicating that the model’s predictive power depends materially on correctly matched neighborhood structure rather than merely on coarse location. Spatially localizing the resulting residual shifts reveals where this dependence is most pronounced: the average absolute divergence is highest in highly heterogeneous regions such as the hippocampal formation and isocortex, and it is also elevated near the tissue periphery containing break-away cells. The latter illustrates an extreme but instructive form of heterogeneity: when a single tile mixes “continental” cells within the main tissue mass and “island” cells that are detached and therefore drastically different in distance-to-plaque, within-tile permutation introduces substantial surprise and correspondingly larger residual changes.
 
 <p align="center">
   <!-- This was obtained with plot_permutation_effect_across_genes in results.ipynb -->
   <img src="figures/full_model_neighbor_permute.png" width="480">
-  <br><em>*Figure 31. Performance of the full model with neighbor permutation, illustrating the model's ability to capture both proximal and distal gradients.*</em>
-</p>
-
-<p align="center">
-  <!-- This was obtained with plot_true_vs_fake_far_neighbors_across_genes in results.ipynb -->
-  <img src="figures/fake_neighbors.png" width="480">
-  <br><em>*Figure 31. Performance of the full model with fake neighbors, illustrating the model's ability to capture both proximal and distal gradients.*</em>
+  <br><em>Figure 37. Effect of within-tile permutation on spatial-block OOF R² (62.9% average drop).</em>
 </p>
 
 <p align="center">
   <!-- This was obtained with plot_spatial_scatter in results.ipynb -->
   <img src="figures/permuted_neighbors_spatial.png" width="480">
-  <br><em>*Figure 31. Performance of the full model with permuted neighbors, illustrating the model's ability to capture both proximal and distal gradients.*</em>
-</p>
-
-<p align="center">
-  <!-- This was obtained with plot_pred_vs_obs_combined in results.ipynb -->
-  <img src="figures/true_permitted_fake_pred_vs_obs.png" width="480">
-  <br><em>*Figure 31. Performance of the full model with true, permitted, and fake neighbors, illustrating the model's ability to capture both proximal and distal gradients.*</em>
-</p>
-
-<p align="center">
-  <!-- This was obtained with plot_resid_vs_distance_combined in results.ipynb -->
-  <img src="figures/residual_v_dist_true_perm_fake.png" width="480">
-  <br><em>*Figure 31. Performance of the full model with true, permitted, and fake neighbors, illustrating the model's ability to capture both proximal and distal gradients.*</em>
+  <br><em>Figure 38. Tissue-wide map of permutation-induced residual shifts.</em>
 </p>
 
 <p align="center">
   <!-- This was obtained with plot_tile_heatmap in results.ipynb -->
   <img src="figures/perm_vs_true_tiles.png" width="480">
-  <br><em>*Figure 31. Performance of the full model with true, permitted, and fake neighbors, illustrating the model's ability to capture both proximal and distal gradients.*</em>
+  <br><em>Figure 39. Tile-level summary of permutation-induced residual shifts.</em>
 </p>
+
+In the second mode of ablation, we replace the 100 nearest neighbors with the 100 farthest neighbors—an intervention that should more aggressively remove biologically and spatially relevant context than within-tile permutation. As expected, this induces an even larger deterioration: using average expression over the 100 farthest neighbors yields an 86.4% drop in spatial-block OOF performance (significant at the 95% confidence level), reinforcing that the predictive signal is predominantly local. This ranking of neighborhood quality is also visible when comparing prediction–observation agreement across the three neighborhood constructions (100 farthest neighbors, 100 permuted neighbors within tile, bona fide 100 closest neighbors): the correspondence increases monotonically as neighborhoods become more local and correctly aligned. When aggregating across 16 genes, this progression is reflected both in mean R² (0.018 for farthest, 0.045 for permuted, 0.115 for closest) and in the fitted calibration slopes (0.05, 0.11, and 0.26, respectively). Notably, despite these large differences in predictive strength, residuals remain effectively uncorrelated with plaque distance in all three cases (near-zero fitted trends), suggesting that the models are not leaving a systematic distance-dependent bias unmodeled; instead, remaining error appears as distance-agnostic variability and heteroscedastic spread.
+
+<p align="center">
+  <!-- This was obtained with plot_true_vs_fake_far_neighbors_across_genes in results.ipynb -->
+  <img src="figures/fake_neighbors.png" width="480">
+  <br><em>Figure 40. Closest-neighbor vs farthest-neighbor features under spatial-block CV (86.4% average drop).</em>
+</p>
+
+<p align="center">
+  <!-- This was obtained with plot_pred_vs_obs_combined in results.ipynb -->
+  <img src="figures/true_permitted_fake_pred_vs_obs.png" width="480">
+  <br><em>Figure 41. Predicted vs observed expression under alternative neighborhood controls.</em>
+</p>
+
+<p align="center">
+  <!-- This was obtained with plot_resid_vs_distance_combined in results.ipynb -->
+  <img src="figures/residual_v_dist_true_perm_fake.png" width="480">
+  <br><em>Figure 42. Residuals vs plaque distance under alternative neighborhood controls.</em>
+</p>
+
 
 ---
 
@@ -775,7 +788,7 @@ To avoid cross-mouse normalization pitfalls while isolating cell-type-specific s
 <p align="center">
   <!-- This was obtained with plot_pig_z_scores_per_cluster_per_mouse; usage in results.ipynb -->
   <img src="figures/mean_PIG_per_mouse.png" width="480">
-  <br><em>*Figure 31. Mean PIG activation score per mouse (and cluster context), derived from within-cluster, within-gene z-normalization to enable robust across-mouse comparisons.*</em>
+  <br><em>*Figure 43. Mean PIG activation score per mouse (and cluster context), derived from within-cluster, within-gene z-normalization to enable robust across-mouse comparisons.*</em>
 </p>
 
 With this framework, we analyze two biological dimensions:
@@ -787,13 +800,13 @@ For each Leiden cluster, we compute a disease-specific activation score that hig
 <p align="center">
   <!-- This was obtained with plot_volcano; usage in results.ipynb -->
   <img src="figures/disease_effect_age_progression.png" width="480">
-  <br><em>*Figure 32. Cluster-level summary of disease specificity (Tg − WT) alongside age progression, used to rank which cell types show the strongest plaque-linked transcriptional activation.*</em>
+  <br><em>*Figure 44. Cluster-level summary of disease specificity (Tg − WT) alongside age progression, used to rank which cell types show the strongest plaque-linked transcriptional activation.*</em>
 </p>
 
 <p align="center">
   <!-- This was obtained with plot_age_progression; usage in results.ipynb -->
   <img src="figures/age_progression.png" width="480">
-  <br><em>*Figure 33. Per-cluster age progression.*</em>
+  <br><em>*Figure 45. Per-cluster age progression.*</em>
 </p>
 
 ### 5.c Age trajectories: Tg (2→5→17 months) vs WT stability 
@@ -802,7 +815,7 @@ A complementary perspective is to view the PCA structure within each cluster: WT
 <p align="center">
   <!-- This was obtained with plot_cluster_pcas; usage in results.ipynb -->
   <img src="figures/PCA_clusters.png" width="480">
-  <br><em>*Figure 34. PCA-based projections of cells within each cluster, showing systematic separation of Tg vs WT within the same cell type.*</em>
+  <br><em>*Figure 46. PCA-based projections of cells within each cluster, showing systematic separation of Tg vs WT within the same cell type.*</em>
 </p>
 
 Our analysis identifies:
@@ -816,7 +829,7 @@ To ensure signals are not simply driven by differences in cell-type abundance, w
 <p align="center">
   <!-- This was obtained with plot_ad_specific_heatmap; usage in results.ipynb -->
   <img src="figures/ad_specific_genes.png" width="480">
-  <br><em>*Figure 35. Heatmap of AD-specific genes (high in Tg, low in WT), emphasizing that plaque-linked activation is concentrated in specific clusters and genes.*</em>
+  <br><em>*Figure 47. Heatmap of AD-specific genes (high in Tg, low in WT), emphasizing that plaque-linked activation is concentrated in specific clusters and genes.*</em>
 </p>
 
 <p align="center">
@@ -832,7 +845,7 @@ Finally, age trajectories show divergence:
 <p align="center">
   <!-- This was obtained with plot_age_curves_by_cluster; usage in results.ipynb -->
   <img src="figures/age_progression_wt_tg.png" width="480">
-  <br><em>*Figure 37. Age progression trajectories of cluster-level activation for WT vs Tg, showing AD-specific, age-progressive glial activation in Tg animals.*</em>
+  <br><em>*Figure 48. Age progression trajectories of cluster-level activation for WT vs Tg, showing AD-specific, age-progressive glial activation in Tg animals.*</em>
 </p>
 
 Taken together, RQ6 supports a coherent synthesis: specific glial clusters—particularly microglia (cluster 8) and astrocytes (cluster 18)—undergo robust and progressive transcriptional activation driven by amyloid pathology. These signatures intensify with age in Tg mice but remain absent in age-matched WT animals. Compared to spatial-only modeling, this gene-level, age-resolved approach yields a more stable and pathology-driven understanding of how glial states evolve around Aβ plaques.
@@ -842,22 +855,41 @@ Taken together, RQ6 supports a coherent synthesis: specific glial clusters—par
 ## 6. Discussion and Limitations
 
 ### 6.a. What we can conclude robustly (and what we cannot)
+
+Across analyses spanning composition, differential expression, and predictive modeling, the data support a plaque-centered but strongly spatially structured view of pathology. At the same time, Section 4.c clarifies that spatial autocorrelation and regional heterogeneity can inflate apparent predictability unless evaluation explicitly withholds contiguous tissue.
+
 1. **Plaque proximity reshapes cell-type composition**, with immune/vascular/astrocytic enrichment near plaques and broad neuronal depletion (RQ1).  
 2. **PIG gradients are strongly linked to composition shifts**, especially immune enrichment and neuronal depletion, but remain distance-associated even after accounting for cell type (RQ2).  
-3. **All 16 PIGs show significant plaque-proximal elevation**, with Gfap exhibiting the strongest spatial gradient and Cxcl10 appearing nearly flat due to extreme zero inflation (RQ3).  
-4. **Gene expression contains limited but real distance information** (best gene-only test R² ≈ 0.26 with XGBoost), and error structure is spatially patterned and heteroscedastic (RQ4).  
-5. **Spatial-only models can be misleadingly strong**: cross-mouse diagnostics show they largely learn conserved anatomy rather than plaque pathology (RQ4).  
-6. **Age- and genotype-aware z-normalized signatures reveal AD-specific, age-progressive glial activation**, concentrated in microglia and astrocytes (RQ5).
+3. **All 16 PIGs show significant plaque-proximal elevation**, with *Gfap* exhibiting the strongest spatial gradient and *Cxcl10* appearing nearly flat due to extreme zero inflation (RQ3).  
+4. **Gene expression contains limited but real distance information**, and error structure is spatially patterned and heteroscedastic (RQ4). However, Section 4.c shows that the *magnitude* of predictive performance depends critically on whether spatial leakage is controlled: random splits systematically overstate generalization relative to spatial block splits, sometimes by very large margins (e.g., +138.2% for *Ctst*, +1,369% for *Nrep*).  
+5. **Spatial-only models can be misleadingly strong**: cross-mouse diagnostics indicate they largely learn conserved anatomy rather than plaque pathology (RQ4). Section 4.c extends this point: even when models incorporate biologically motivated features, evaluation that allows the model to see the entire brain (random cell-level CV) can still yield inflated R² due to spatial autocorrelation.  
+6. **Age- and genotype-aware z-normalized signatures reveal AD-specific, age-progressive glial activation**, concentrated in microglia and astrocytes (RQ5).  
+7. **Plaque topology and spatial structure are region-dependent, and models implicitly recover this multi-scale organization.** A decision-tree reconstruction of the plaque-distance field (via a 200×200 spatial grid) yields coarse segmentation in more homogeneous regions (notably around the diencephalon) and finer segmentation in structurally heterogeneous regions (hippocampus and isocortex), consistent with more uniform plaque spacing in the former and more structured grouping in the latter. This regional dependence provides a mechanistic bridge between descriptive anatomy and model behavior: “where” a cell sits in the brain can change not only plaque density but the *spatial regularity* of plaque organization.  
+8. **Local neighborhood context carries substantial predictive signal beyond coarse spatial location.** Under spatial-block cross-validation, models that use neighborhood-derived summaries (e.g., average expression of other PIGs in neighboring cells, summarized as a “neighbor signature”) remain surprisingly strong, indicating that local microenvironment encodes information relevant to gene expression beyond what is explained by distance alone. Introducing an explicit distance×signature interaction improves mean performance, but the gain over a signature-only model is not statistically significant at the 95% level, suggesting that much of the interaction’s predictive value is already captured by the neighbor signature itself.  
+9. **What we cannot conclude robustly is fine-scale causal structure or single-cell–level spatial effects below the resolution of our alignment and sampling.** Even when residuals show no systematic distance-dependent trend after accounting for modeled neighborhood signal, this does not imply that all plaque-distance effects have been “explained”; rather, it indicates that remaining errors are dominated by distance-agnostic variability and heteroscedasticity. Similarly, association patterns do not establish whether plaques drive the local state, whether vulnerable regions drive plaque accumulation, or whether both are shaped by upstream processes.
 
-### 6.b Confounding, alignment error, sparsity/zero inflation, and interpretation risks
-- **Alignment error:** IF-to-morphology RMSE is small (3.2 µm) but nonzero; fine-scale (single-digit µm) conclusions remain sensitive.  
-- **Zero inflation and sparsity:** genes like Cxcl10 illustrate that statistical significance can coexist with minimal practical effect size due to near-all-zero distributions.  
-- **Anatomical confounding:** plaque density varies by region; any model using coordinates must be treated as potentially learning anatomy rather than pathology.  
-- **Cross-mouse comparability:** batch-like distortions make global cross-mouse normalization risky; the chosen within-cluster z-score approach mitigates but does not eliminate all comparability concerns.  
-- **Causal direction:** composition shifts and PIG changes co-occur; while regression and correlation help disentangle them, they do not establish causality.
+Taken together, the paper supports a locally coherent narrative: plaques sit within a spatially heterogeneous brain substrate, and the observed plaque-proximal gene programs and composition shifts are embedded within region-dependent plaque topology and microenvironmental structure. The modeling results are best interpreted as quantifying *how much* of the expression signal is recoverable from distance, anatomy, and neighborhood state under stringent spatial generalization—not as definitive mechanistic attribution.
+
+---
+
+### 6.b Confounding, alignment error, sparsity/zero inflation, spatial leakage, and interpretation risks
+
+- **Alignment error:** IF-to-morphology RMSE is small (3.2 µm) but nonzero; fine-scale (single-digit µm) conclusions remain sensitive. In practice, this means that distance-to-plaque effects should be interpreted as mesoscopic trends rather than precise single-cell radial laws.  
+- **Zero inflation and sparsity:** genes like *Cxcl10* illustrate that statistical significance can coexist with minimal practical effect size due to near-all-zero distributions; zero inflation also complicates interaction visualizations and can mask structured effects present in nonzero subsets.  
+- **Anatomical confounding:** plaque density varies by region; any model using coordinates (and, more broadly, any feature correlated with anatomy) must be treated as potentially learning anatomy rather than pathology. Section 4.c further shows that models can implicitly encode regional structure even when trained on biologically relevant targets (e.g., plaque-distance fields), emphasizing the need to separate “anatomy learning” from “pathology learning.”  
+- **Spatial leakage and evaluation dependence:** random cross-validation can substantially inflate performance because nearby cells share context (spatial autocorrelation). The tile-based spatial block CV (391 tiles with 78 held out, ~20%) provides a more stringent estimate, and the large gene-to-gene variability in leakage gaps (e.g., *Ctst*, *Nrep*) implies that any single pooled performance metric can obscure which genes are truly transferable out-of-region.  
+- **Neighborhood features can still encode location:** although neighborhood summaries are biologically motivated, they can act as proxies for local tissue identity. Ablations in Section 4.c partially address this by breaking neighborhood correspondence: within-tile permutation causes a 62.9% drop in spatial-block OOF performance (no overlap in 95% CIs), and substituting 100 nearest neighbors with 100 farthest neighbors causes an 86.4% drop. These results support a real dependence on local structure, but they do not eliminate the possibility that some neighborhood signal reflects regional identity rather than plaque-specific mechanisms.  
+- **Sensitivity to spatial discretization and neighbor definitions:** tile size, the number of neighbors (e.g., 100), and the precise definition of “neighbor” can change the balance between microenvironmental signal and coarse spatial averaging. This is particularly important in anatomically complex regions (hippocampal formation, isocortex) and near tissue boundaries.  
+- **Boundary artifacts and “break-away” cells:** detached or peripheral cells can be trivially far from plaques and can disproportionately influence segmentation, residual maps, and permutation behavior—especially when tiles mix “continental” (main tissue mass) and “island” (detached) cells.  
+- **Cross-mouse comparability:** batch-like distortions make global cross-mouse normalization risky; the chosen within-cluster z-score approach mitigates but does not eliminate all comparability concerns, particularly for genes with strong regional specificity.  
+- **Causal direction and latent variables:** composition shifts, PIG expression, plaque distance, and neighborhood state co-occur. Regression, ablations, and spatial CV help decompose predictive contributions, but they do not establish causality, nor do they rule out unmeasured covariates (e.g., local damage state, vascular microstructure, technical capture variation) that could drive both plaques and transcriptional programs.
+
+---
 
 ### 6.c. Implications for target selection and drug development relevance
-Despite these limitations, the combined evidence supports a biologically consistent plaque-centered narrative: plaques are surrounded by activated glial niches (microglia/astrocytes) with elevated plaque-induced genes, accompanied by cell-type redistribution and distance-dependent decay. This quantitative framing is directly relevant for identifying plausible therapeutic targets that are (i) proximal to plaques, (ii) cell-type-specific, and (iii) progressive with pathology and age.
+
+Despite these limitations, the combined evidence supports a biologically consistent plaque-centered narrative: plaques are embedded within region-dependent spatial structure and are surrounded by activated glial niches (microglia/astrocytes) with elevated plaque-induced genes, accompanied by cell-type redistribution and distance-dependent decay. Section 4.c adds an important translational nuance: a meaningful fraction of expression variability is encoded not only in plaque proximity but also in *local neighborhood state*, and this neighborhood signal is predominantly local (performance collapses under far-neighbor substitution and declines strongly under within-tile permutation). Consequently, targets that appear promising under naive evaluation may be those that track conserved anatomy or broad regional identity rather than plaque-linked mechanisms; robust prioritization should therefore emphasize signals that (i) remain detectable under spatial block generalization, (ii) exhibit interpretable dependence on plaque proximity and local microenvironment, and (iii) show consistency with age- and genotype-progressive AD-specific activation signatures. This framing aligns therapeutic target selection with the spatial constraints of real tissue biology: interventions are more likely to succeed when they modulate plaque-proximal, cell-type-resolved programs that are locally coherent and progressive with pathology, rather than programs that simply mark where the cell resides in the brain.
+
 
 ---
 
