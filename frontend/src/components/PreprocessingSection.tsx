@@ -1,7 +1,10 @@
 import PlotFrame from "@/components/PlotFrame";
 import { Grid2x2Check, CircleChevronRight  } from 'lucide-react'
+import ImageGridPlot from "./ImageGridFrame";
 
 const base = import.meta.env.BASE_URL;
+const bw_grid_path = `${base}images_grid_bw/full/`;
+const gold_grid_path = `${base}images_grid_gold/full/`
 
 const WEIRD_GENE_ROWS = [
   { gene: "Cxcl10", zero_frac: "1.00", weird_score: "9.35" },
@@ -164,11 +167,30 @@ const PreprocessingSection = () => {
                     Morphology images of Wt and transgenic mice across ages
                   </figcaption>
                 </figure>*/}
-                <PlotFrame
-                      src={`${base}plots/image_grid.html`}
-                      size="md"
-                      caption="Morphology images of Wt and transgenic mice across ages."
+                <ImageGridPlot
+                  files={{
+                    "wt-2": `wt-2.webp`,
+                    "wt-5": `${base}images_grid_bw/full/wt-5.webp`,
+                    "wt-13": `${base}images_grid_bw/full/wt-13.webp`,
+                    "tg-2": `${base}images_grid_bw/full/tg-2.webp`,
+                    "tg-5": `${base}images_grid_bw/full/tg-5.webp`,
+                    "tg-17": `${base}images_grid_bw/full/tg-17.webp`,
+
+                    // ...
+                  }}
+                  keyToPos={{
+                    "wt-2": [0, 0],
+                    "wt-5":  [0, 1],
+                    "wt-13": [0, 2],
+                    "tg-2": [1, 0],
+                    "tg-5": [1, 1],
+                    "tg-17": [1, 2],
+                  }}
+                  colTicks={["2", "5.7", "13+"]}
+                  rowTicks={["Wild Type", "Transgenic"]}
+                  caption="Morphology images of Wt and transgenic mice across ages."
                 />
+
 
             </div>
 
