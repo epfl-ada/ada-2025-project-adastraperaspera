@@ -29,6 +29,7 @@
    4.a RQ4 — When modeling plaque distance, which features are most important?
    4.a.i Benchmarking setup and results 
    4.b Additional feature modalities
+   4.c Deep-dive into the regression models
 
 5. Age- and Genotype-Aware Signatures  
    5.a RQ5 — How does the gene expression change with age for each cell type and mouse group?
@@ -679,6 +680,22 @@ Findings:
 - ANOVA across Tg mice yields a very significant p-value (p ≈ **3.6e−22**) but with trivial effect size and no monotone increase with age.
 
 Conclusion: the spatial-only model primarily learns conserved tissue geometry (e.g., cortical curvature and laminar structure), not plaque pathology. The apparent high R² is therefore driven by anatomical confounding rather than disease signal.
+---
+
+## 4.c Deep dive into the regression models
+
+<p align="center">
+  <!-- This was obtained with inline code in ## Spatial block split: realistic generalization in space section in results.ipynb -->
+  <img src="figures/decision_tree_coarse.png" width="480">
+  <br><em>*Figure 31. Decision tree showing the split of the data into different regions based on the features.*</em>
+</p>
+
+<p align="center">
+  <!-- This was obtained with inline code in ## Visual diagnostic: “rectangular partition” behavior of grid-like models in results.ipynb -->
+  <img src="figures/spatial_tiles.png" width="480">
+  <br><em>*Figure 31. Spatial tiles showing the distribution of predicted plaque distance across the tissue, illustrating the model's ability to capture both proximal and distal gradients.*</em>
+</p>
+
 
 ---
 
