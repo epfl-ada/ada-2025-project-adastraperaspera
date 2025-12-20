@@ -685,7 +685,7 @@ Conclusion: the spatial-only model primarily learns conserved tissue geometry (e
 ## 4.c Deep dive into the regression models
 
 <p align="center">
-  <!-- This was obtained with inline code in ## Spatial block split: realistic generalization in space section in results.ipynb -->
+  <!-- This was obtained with plot_true_vs_pred_heatmaps in results.ipynb -->
   <img src="figures/decision_tree_coarse.png" width="480">
   <br><em>*Figure 31. Decision tree showing the split of the data into different regions based on the features.*</em>
 </p>
