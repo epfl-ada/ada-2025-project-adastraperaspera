@@ -1,9 +1,9 @@
 import { Github } from "lucide-react";
 
 const PARTICIPANTS = [
-  { name: "Alexander", github: "https://github.com/Alex-T-Sharipov" },
+  { name: "Alexander Sharipov", github: "https://github.com/Alex-T-Sharipov" },
   { name: "Sogand Salehi", github: "https://github.com/sogandstormesalehi" },
-  { name: "Zayed", github: "https://github.com/ZayedK1" },
+  { name: "Zayed Kriem", github: "https://github.com/ZayedK1" },
   { name: "Walid Sofiane", github: "https://github.com/Walsof-14" },
   { name: "Rosa Mayila", github: "https://github.com/rosbotmay" },
 ];
