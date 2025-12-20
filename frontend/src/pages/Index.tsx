@@ -30,8 +30,8 @@ const Index = () => {
       <MicroscopySection/>*/}
       {/*<GeneExpressionChart />
       <GeneExpressionSection2 />
-      <CellClusteringSection />
-      <RQSection />*/}
+      <CellClusteringSection />*/}
+      <RQSection />
       <RQ1Section />
       <RQ2Section />
       <RQ3Section />
