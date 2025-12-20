@@ -16,6 +16,7 @@ const RQS: RQCard[] = [
     id: "rq-1",
     title: "RQ 1",
     question: "How does cell-type composition vary with plaque proximity?",
+    href: "#rq-1"
     icon: Microscope,
     bgImage: `${base}images/row-1-column-1.webp`,
   },
@@ -98,7 +99,7 @@ const RQSection = () => {
                     </div>
                   </div>*/}
 
-                  <p className="mt-4 text-sm text-muted-foreground leading-relaxed">
+                  <p className="mt-4 text-sm font-semibold text-muted-foreground leading-relaxed">
                     {rq.question}
                   </p>
 

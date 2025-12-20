@@ -207,7 +207,7 @@ const PreprocessingSection = () => {
                       size="md"
                     />
 
-                <div className="rounded-2xl border border-border bg-card p-6">
+                {/*<div className="rounded-2xl border border-border bg-card p-6">*/}
                     <p className="text-lg text-muted-foreground leading-relaxed">
                     Distances are spatially heterogeneous but concentrated near plaques:
                     </p>
@@ -218,7 +218,7 @@ const PreprocessingSection = () => {
                         <li className="flex items-start gap-2"><CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" /> Standard deviation: <span className="font-medium text-foreground">44.4 µm</span></li>
                         <li className="flex items-start gap-2"><CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" /> Distribution is <span className="font-medium text-foreground">right-skewed</span> with a long tail of cells far from plaques</li>
                     </ul>
-                </div>
+                {/*</div>*/}
 
                 <PlotFrame
                       src={`${base}plots/cell_to_plaque_distance_distribution.html`}
@@ -235,16 +235,16 @@ const PreprocessingSection = () => {
               <p className="text-lg text-muted-foreground leading-relaxed">
                 This Xenium dataset provides single-cell expression for <span className="font-medium text-foreground">347 genes</span>, but expression is sparse. In the most AD-advanced sample (the 17.9-month transgenic mouse), <span className="font-medium text-foreground">302/347 genes</span> have <span className="font-medium text-foreground">zero median transcript count</span>. Across genes, transcript counts are <span className="font-medium text-foreground">right-skewed</span>, and the fraction of cells with nonzero counts varies widely (<span className="font-medium text-foreground">0.002 to 0.989</span>), underscoring substantial gene-dependent detection and expression variability.
               </p>
-              <div className="rounded-2xl border border-border bg-card p-6">
+              {/*<div className="rounded-2xl border border-border bg-card p-6">*/}
                     <p className="text-lg text-muted-foreground leading-relaxed">
                 The gene panel includes:
                 </p>
                     <ul className="space-y-3 text-muted-foreground">
-                        <li className="flex items-start gap-2">• <span className="font-medium text-foreground">248</span> markers for 8 main cell types, neuronal cortical layer markers, and non-neuronal markers  </li>
-                        <li className="flex items-start gap-2">• <span className="font-medium text-foreground">83</span> genes related to activated microglia and astrocytes </li>
-                        <li className="flex items-start gap-2">• <span className="font-medium text-foreground">16</span> plaque-induced genes (PIGs) curated from primary literature</li>
+                        <li className="flex items-start gap-2"><CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" /> <span className="font-medium text-foreground">248</span> markers for 8 main cell types, neuronal cortical layer markers, and non-neuronal markers  </li>
+                        <li className="flex items-start gap-2"><CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" /> <span className="font-medium text-foreground">83</span> genes related to activated microglia and astrocytes </li>
+                        <li className="flex items-start gap-2"><CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" /> <span className="font-medium text-foreground">16</span> plaque-induced genes (PIGs) curated from primary literature</li>
                     </ul>
-                </div>
+                {/*</div>*/}
 
               <figure className="space-y-2">
                   <img
@@ -320,7 +320,7 @@ const PreprocessingSection = () => {
               caption="Spatial coordinates colored by Leiden clusters (interactive)."
                 />
 
-                <div className="rounded-2xl border border-border bg-card p-6">
+                {/*<div className="rounded-2xl border border-border bg-card p-6">*/}
                     <p className="text-lg text-muted-foreground leading-relaxed">
                 Representative cluster interpretations include:
                 </p>
@@ -332,31 +332,25 @@ const PreprocessingSection = () => {
 
                         <li className="flex items-start gap-2">
                         <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" /> <span className="font-medium text-foreground">Cluster 14</span>
-                        traces hippocampal formation and follows the dentate gyrus shape; inferred as
-                        <span className="font-medium text-foreground">
-                            dentate gyrus immature glutamatergic neurons
-                        </span>.
+                        traces hippocampal formation and follows the dentate gyrus shape; inferred as <span className="font-medium text-foreground">dentate gyrus immature glutamatergic neurons</span>.
+                        
+                            
+                        
                         </li>
 
                         <li className="flex items-start gap-2">
                         <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" /> <span className="font-medium text-foreground">Cluster 10</span>
-                        dominates the amygdala/hypothalamus region; inferred as
-                        <span className="font-medium text-foreground">
-                            hypothalamic medial mammillary glutamatergic neurons
-                        </span>.
+                        dominates the amygdala/hypothalamus region; inferred as <span className="font-medium text-foreground">hypothalamic medial mammillary glutamatergic neurons</span>.
                         </li>
 
                         <li className="flex items-start gap-2">
                         <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" /> Ventricular cavities show a distinct lining cluster
-                        (<span className="font-medium text-foreground">cluster 15</span>), inferred as
-                        <span className="font-medium text-foreground">
-                            hypothalamic GnRH1-expressing glutamatergic neurons
-                        </span>,
+                        (<span className="font-medium text-foreground">cluster 15</span>), inferred as <span className="font-medium text-foreground">hypothalamic GnRH1-expressing glutamatergic neurons</span>,
                         consistent with hypothalamic contributions to the third ventricle walls.
                         </li>
 
                     </ul>
-                </div>
+                {/*</div>*/}
                 
                 <p className="text-lg text-muted-foreground leading-relaxed">
                     This anatomical concordance is central for later interpretation: spatial plaque proximity effects can reflect genuine plaque biology, but also the fact that plaques and cell types are unevenly distributed across brain regions.
