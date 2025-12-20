@@ -272,7 +272,7 @@ const PreprocessingSection = () => {
                     </ul>
                 {/*</div>*/}
 
-              <figure className="space-y-2">
+              {/*<figure className="space-y-2">
                   <img
                     src={`${base}figures/microscopy_cells_unified_no_bg.png`}
                     alt="Microscopy cells unified"
@@ -281,7 +281,29 @@ const PreprocessingSection = () => {
                   <figcaption className="mt-2 text-xs text-muted-foreground text-center">
                     Spatial distribution of individual cells (points) across all mice, colored by a clustering-derived component to illustrate spatial organization and local heterogeneity.
                   </figcaption>
-                </figure>
+                </figure>*/
+                <ImageGridPlot
+                  files={{
+                    "wt-2": `${base}images_grid_gold/full/wt-2.webp`,
+                    "wt-5": `${base}images_grid_gold/full/wt-5.webp`,
+                    "wt-13": `${base}images_grid_gold/full/wt-13.webp`,
+                    "tg-2": `${base}images_grid_gold/full/tg-2.webp`,
+                    "tg-5": `${base}images_grid_gold/full/tg-5.webp`,
+                    "tg-17": `${base}images_grid_gold/full/tg-17.webp`,
+                  }}
+                  keyToPos={{
+                    "wt-2": [0, 0],
+                    "wt-5":  [0, 1],
+                    "wt-13": [0, 2],
+                    "tg-2": [1, 0],
+                    "tg-5": [1, 1],
+                    "tg-17": [1, 2],
+                  }}
+                  colTicks={["2", "5.7", "13+"]}
+                  rowTicks={["Wild Type", "Transgenic"]}
+                  caption="Morphology images of Wt and transgenic mice across ages."
+                  cellSize={180}
+                />
             
                 <p className="text-lg text-muted-foreground leading-relaxed">
                     We next compare the distribution of <span className="font-medium text-foreground">log1p-transformed</span> transcript counts for the <span className="font-medium text-foreground">16 PIGs</span> against the typical distribution across all 347 genes, focusing on the <span className="font-medium text-foreground">17.9-month transgenic mouse</span> to study advanced pathology. We plot histograms (B = 50 bins) and (for PIGs) Gaussian KDE curves.
