@@ -310,9 +310,9 @@ const PreprocessingSection = () => {
                 </p>
 
                 <PlotFrame
-                    src={`${base}figures/expression_distribution.png`}
+                    src={`${base}plots/expression_distribution.html`}
                     title="Distribution of distances from each cell centroid to the nearest plaque boundary, showing strong right skew and a long tail of plaque-distant cells."
-                    size="md"
+                    size="lg"
                     fit="contain"
                 />
                 
