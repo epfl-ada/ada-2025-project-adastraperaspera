@@ -3687,7 +3687,7 @@ def plot_radius_color_spatial(
     Default render="binned_rgba":
       - distance to plaque -> color (sequential colormap)
       - mean |residual|    -> opacity (alpha)
-      This avoids the “all points overlap so size doesn't register” problem and is a
+      This avoids the "all points overlap so size doesn't register" problem and is a
       standard approach for large scatter/dense point clouds. :contentReference[oaicite:7]{index=7}
 
     Optional render="scatter":

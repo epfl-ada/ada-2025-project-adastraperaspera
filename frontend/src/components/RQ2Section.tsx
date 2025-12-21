@@ -13,63 +13,63 @@ type CorrRow = {
 
 const CORR_ROWS: CorrRow[] = [
   {
-    idLabel: '07 - “Corticothalamic, Gluta”',
+    idLabel: '07 - "Corticothalamic, Gluta"',
     description: "Near-projecting corticothalamic layer 6b glutamatergic neurons",
     sign: "Negative",
     rho: "−1.00",
     pigs: "Core 14 PIGs",
   },
   {
-    idLabel: '08 - “Immune”',
+    idLabel: '08 - "Immune"',
     description: "Immune cells (microglia, macrophages, etc.)",
     sign: "Positive",
     rho: "+1.00",
     pigs: "Core 14 PIGs",
   },
   {
-    idLabel: '10 - “Hypothalamic medial, Gluta”',
+    idLabel: '10 - "Hypothalamic medial, Gluta"',
     description: "Hypothalamic medial mammillary glutamatergic neurons",
     sign: "Negative",
     rho: "−1.00",
     pigs: "Core 14 PIGs",
   },
   {
-    idLabel: '12 - “Cerebral LGE, GABA”',
+    idLabel: '12 - "Cerebral LGE, GABA"',
     description: "Cerebral nuclei LGE-derived GABAergic neurons",
     sign: "Negative",
     rho: "−1.00",
     pigs: "Core 14 PIGs",
   },
   {
-    idLabel: '14 - “Dentate, Gluta”',
+    idLabel: '14 - "Dentate, Gluta"',
     description: "Dentate gyrus immature neurons (glutamatergic)",
     sign: "Negative",
     rho: "−1.00",
     pigs: "Core 14 PIGs",
   },
   {
-    idLabel: '15 - “Hypothalamic Gnrh1, Gluta”',
+    idLabel: '15 - "Hypothalamic Gnrh1, Gluta"',
     description: "Hypothalamic GnRH1-expressing glutamatergic neurons",
     sign: "Negative",
     rho: "−1.00",
     pigs: "Core 14 PIGs",
   },
   {
-    idLabel: '16 - “Olfactory bulb, Gluta”',
+    idLabel: '16 - "Olfactory bulb, Gluta"',
     description: "Olfactory bulb Cajal–Retzius glutamatergic neurons",
     sign: "Negative",
     rho: "−1.00",
     pigs: "Core 14 PIGs",
   },
   {
-    idLabel: '17 - “Medulla, GABA”',
+    idLabel: '17 - "Medulla, GABA"',
     description: "Medulla GABAergic neurons",
     sign: "Negative",
     rho: "−1.00",
     pigs: "Core 14 PIGs",
   },
   {
-    idLabel: '03 - “Intra/Extratelencephalic, Gluta”',
+    idLabel: '03 - "Intra/Extratelencephalic, Gluta"',
     description: "Intratelencephalic–Extratelencephalic glutamatergic neurons",
     sign: "Positive",
     rho: "+1.00",
@@ -328,7 +328,7 @@ const RQ2Section = () => {
                 </li>
               </ul>*/}
 
-              
+
               {/*</div>
 
               <p className="text-lg text-muted-foreground leading-relaxed">

@@ -99,9 +99,9 @@ const RQ3Section = () => {
               </h4>
 
               <p className="text-lg text-muted-foreground leading-relaxed">
-                  We quantify plaque-induced gene behavior directly by binning cells into <span className="font-medium text-foreground">five equal-count distance bins</span> and computing mean log1p expression with uncertainty estimates. 
-                  ANOVA confirms that <span className="font-medium text-foreground">all 16 PIGs differ significantly across distance bins</span>.
-                  
+                We quantify plaque-induced gene behavior directly by binning cells into <span className="font-medium text-foreground">five equal-count distance bins</span> and computing mean log1p expression with uncertainty estimates.
+                ANOVA confirms that <span className="font-medium text-foreground">all 16 PIGs differ significantly across distance bins</span>.
+
               </p>
 
               <p className="text-lg text-muted-foreground leading-relaxed">
@@ -273,7 +273,7 @@ const RQ3Section = () => {
                ========================= */}
             <div id="rq3-regression" className="space-y-4">
               <h4 className="text-xl font-semibold text-foreground">
-                Per-gene regression slopes and “distance-to-half-expression”
+                Per-gene regression slopes and "distance-to-half-expression"
               </h4>
 
               {/*<p className="text-lg text-muted-foreground leading-relaxed">
@@ -313,7 +313,7 @@ const RQ3Section = () => {
                 .
               </p>*/}
 
-              
+
 
               <p className="text-lg text-muted-foreground leading-relaxed">
                 Nearest-plaque distance captures proximity to <em>one</em> plaque, but local
@@ -364,7 +364,7 @@ const RQ3Section = () => {
               </p>*/}
               <p className="text-lg text-muted-foreground leading-relaxed">
                 Plaque-associated transcriptional responses are not purely cell-autonomous and may reflect local microenvironmental context. To quantify this, we computed neighborhood expression summaries by averaging the expression of the other <span className="font-medium text-foreground">15 PIGs</span> across each cell’s <span className="font-medium text-foreground">100 nearest neighbors</span>. This neighborhood size balances locality with statistical stability, avoiding excessive noise from very small neighborhoods and oversmoothing from very large ones. Given typical cell diameters (~10 µm) and tissue density, this choice corresponds to an interaction scale on the order of <span className="font-medium text-foreground">~100 µm</span>, which is relevant for cell–cell signaling and coordinated glial responses. These neighborhood features allow us to model collective plaque-associated activation rather than isolated single-cell effects.
-               </p>
+              </p>
 
 
               {/*<ul className="space-y-3 text-muted-foreground">

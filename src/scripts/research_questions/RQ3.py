@@ -585,7 +585,7 @@ def process_cell_annotations(
         typically a distance column (default: ``"distance_to_plaque"``).
     annotation_csv : str | pathlib.Path
         Path to the annotation CSV file. Must contain a cell identifier column
-        (e.g., ``cell_id`` or similar containing both “cell” and “id” in its name).
+        (e.g., ``cell_id`` or similar containing both "cell" and "id" in its name).
     distance_col : str, optional
         Name of the column with distances used to create bins if ``"distance_bin"``
         is not already present, by default ``"distance_to_plaque"``.

@@ -23,7 +23,7 @@
    3.b.iii Stratified mean expression by distance and cell type
    3.c RQ3 - How does PIG expression change in plaque proximity?
    3.c.i Binned means, confidence intervals, and ANOVA evidence
-   3.c.ii Per-gene distance regressions, FDR control, and “distance-to-half-expression”
+   3.c.ii Per-gene distance regressions, FDR control, and "distance-to-half-expression"
 
 4. Predictive Modeling: Inferring Plaque Distance
    4.a RQ4 - When modeling plaque distance, which features are most important?
@@ -163,7 +163,7 @@ We next compare the distribution of **log1p-transformed** transcript counts for 
 
 A consistent pattern emerges: for **13/16 PIGs**, the distribution has a **mode at zero**, followed by gradual density decay at higher counts. Different PIGs decay at different rates, indicating heterogeneous activation intensity and/or cell-state specificity.
 
-To identify PIGs with particularly unusual expression structure, we combine diagnostics (including **zero inflation**, dispersion, and shape) into a composite “weirdness score.” The five most unusual PIGs are:
+To identify PIGs with particularly unusual expression structure, we combine diagnostics (including **zero inflation**, dispersion, and shape) into a composite "weirdness score." The five most unusual PIGs are:
 
 | gene | zero_frac | weird_score |
 |---|---:|---:|
@@ -402,12 +402,12 @@ Across genes, the most consistent gradients include:
 
 Collectively, tissue within ~0–29 µm of plaques shows elevated glial/immune signatures that fade with distance.
 
-### 3.c.ii Per-gene regression slopes and “distance-to-half-expression”
+### 3.c.ii Per-gene regression slopes and "distance-to-half-expression"
 To summarize gradients continuously, we regress log1p-normalized transcript count against distance for each PIG and apply Benjamini–Hochberg FDR correction across the 16 regressions.
 
 Results:
 - **All 16 PIGs** show statistically significant **negative slopes** at **FDR = 0.01**.
-- Slope magnitudes vary substantially. Translating slopes into a natural-scale interpretability metric (“distance to halve expression”):
+- Slope magnitudes vary substantially. Translating slopes into a natural-scale interpretability metric ("distance to halve expression"):
   - **Gfap:** ~**128 µm** to halve expression
   - **Cxcl10:** ~**4,415 µm** to halve expression
 
@@ -432,7 +432,7 @@ To increase explanatory power (R²), reduce heteroscedasticity, and test whether
   <br><em>*Figure 16. Distributions of nearest-plaque geometry features (area, perimeter, major axis, orientation) summarized via box plots.*</em>
 </p>
 
-Nearest-plaque distance captures proximity to *one* plaque, but local pathology may depend on plaque *crowding*. We therefore add two “multi-plaque proximity” features within a radius **R = 61 µm** (the median nearest-plaque distance):
+Nearest-plaque distance captures proximity to *one* plaque, but local pathology may depend on plaque *crowding*. We therefore add two "multi-plaque proximity" features within a radius **R = 61 µm** (the median nearest-plaque distance):
 - **Count:** number of plaques within radius R
 - **Mean Distance:** average distance to plaques within radius R
 
@@ -682,15 +682,21 @@ From the results above, we can conclude that the spatial-only model mostly learn
 
 ## 4.c Deep dive into the expression models
 
-We begin by interrogating the brain-region segmentation implicitly learned by our decision tree when it is trained to reconstruct the plaque-distance field. Concretely, we approximate the murine brain with a 200×200 grid of spatial tiles and, within each tile, compute the average distance to the nearest plaque (which is then visualized as a colored field across the tissue). When comparing the inferred decision surface to the ground-truth plaque-distance field, several salient behaviors become apparent. First, the model recovers a prominent large-distance region in the ventricular area.Second, it trivially identifies “break-away” cells outside the brain boundary as being far from plaques. Finally-and most consequentially for downstream modeling-the tree draws a clear boundary between (i) coarser, more homogeneous regions around the diencephalon and (ii) finer-grained segmentation around the hippocampus and isocortex. This qualitative shift in granularity is consistent with plaques being more uniformly spaced in the diencephalon, in contrast to the more structured, regionally heterogeneous grouping observed in the hippocampus and isocortex.
+We begin by investigating the brain-region segmentation learned by our decision tree trained to predict plaque-distance from coordinates. For visualization, we approximate the murine brain with a 200×200 grid of spatial tiles and, within each tile, compute the average distance to the nearest plaque. This average distance is then visualized with color. 
+
+When comparing the inferred decision surface to the ground-truth plaque-distance map, we can notice a prominent large-distance region in the ventricular area learned by the model. Further, the decision tree trivially identifies the "break-away" cells outside the brain boundary as being far from plaques. Finally, we can see that the tree draws a clear boundary between (i) coarser, more homogeneous regions around the diencephalon and (ii) finer-grained segmentation around the hippocampus and isocortex. This change in granularity is consistent with plaques being more uniformly spaced in the diencephalon, in contrast to the heterogeneous grouping observed in the hippocampus and isocortex.
 
 <p align="center">
   <!-- This was obtained with plot_true_vs_pred_heatmaps in results.ipynb -->
   <img src="src/data/figures/decision_tree_coarse.png" width="480">
-  <br><em>Figure 31. Ground-truth plaque-distance field and decision-tree reconstruction on a 200×200 grid.</em>
+  <br><em>Figure 31. Ground-truth plaque-distance map and decision-tree reconstruction on a 200×200 grid.</em>
 </p>
 
-To assess whether our expression models genuinely generalize across space (rather than exploiting spatial autocorrelation), we adopt a tile-based cross-validation scheme that withholds contiguous tissue regions during training. We partition the brain into 391 square tiles, holding out 78 tiles (~20%) for testing and using the remaining 313 for training; importantly, the assignment is random at the tile level (not the cell level), so the model is prevented from “seeing” large chunks of brain tissue. This is a substantially more stringent scenario than holding out 20% of cells at random, because random cell-level splits still expose the model to the full spatial extent of the brain and can therefore inflate performance via spatial leakage.
+To measure the generalization capability of our expression models, we will introduce a tile-based cross-validation scheme. In this setting, we withhold contiguous tissue regions during training. 
+
+Namely, we partition the brain into 391 square tiles. We will hold out 78 tiles (~20%) for testing and use the remaining 313 for training. In this setting, the train/test assignment is random at the tile level, not the cell level. As a result, we prevent the model from "seeing" large chunks of brain tissue. 
+
+This is a substantially more strict scenario than holding out 20% of cells at random, because random cell-level splits still expose the model to the full  brain anatomy. This can inflate performance via spatial leakage. In other words, various (non-coordinate-based) predictors may act as proxies for coordinates, leading to spurious correlations picked up by the downstream model.
 
 <p align="center">
   <!-- This was obtained with plot_spatial_block_split in results.ipynb -->
@@ -698,7 +704,11 @@ To assess whether our expression models genuinely generalize across space (rathe
   <br><em>Figure 32. Random tile-based train/test split (391 tiles; 78 test, 313 train).</em>
 </p>
 
-Within this framework, we compare out-of-fold (OOF) performance for a multi-modal linear model and three ablations that isolate distinct sources of spatial signal. The four specifications are: (i) `target expression ~ distance to plaque + 15 PIG expression in neighbors + cell centroid coordinates`, (ii) `target expression ~ 15 PIG expression in neighbors`, (iii) `target expression ~ cell centroid coordinates`, and (iv) `target expression ~ distance to plaque`. Across feature sets, average R² under random cross-validation is consistently higher than under spatial block cross-validation (with overlapping 95% confidence intervals at the aggregate level), indicating that random splits can overstate generalization in the presence of spatial autocorrelation. Critically, this inflation is not uniform across genes: some show extremely large relative differences, including +138.2% for *Ctst* and +1,369% for *Nrep*. These outliers highlight a key organizing principle for the remainder of this section: genes with stronger spatial variation (and/or sharper region-specific regimes) suffer disproportionate performance degradation when portions of the brain are obstructed during training, revealing dependence on localized structure rather than globally transferable trends. We make this leakage effect explicit by quantifying the mean relative leakage gap (%) between random and spatial block cross-validation (log-scaled), where larger gaps indicate stronger performance inflation under random splits and therefore greater susceptibility to spatial autocorrelation across the tested feature sets.
+Using this framework, we compare out-of-fold (OOF) performance for a multi-modal linear model and its three ablations. The full model is given by `target expression ~ distance to plaque + 15 PIG expression in neighbors + cell centroid coordinates`. Meanwhile, its threee ablations are: (i) `target expression ~ 15 PIG expression in neighbors`, (ii) `target expression ~ cell centroid coordinates`, and (iii) `target expression ~ distance to plaque`. 
+
+Regardless of input features, the average R² under random cross-validation is consistently higher than under spatial block cross-validation (with overlapping 95% confidence intervals at the aggregate level). This indicates that random splits can overestimate generalization in the presence of spatial information leak. 
+
+Further, this R^2 inflation is not uniform across genes. Some genes show extremely large relative differences, such as +138.2% for *Ctst* and +1,369% for *Nrep*. In other words, genes with stronger spatial variation will have the stronger generalization gap between random and spatial block CV. This highlights poor generalization performance for these genes.
 
 <p align="center">
   <!-- This was obtained with plot_mean_r2_with_extremes in results.ipynb -->
@@ -706,13 +716,19 @@ Within this framework, we compare out-of-fold (OOF) performance for a multi-moda
   <br><em>Figure 33. Mean OOF R² under random vs spatial block cross-validation across feature sets.</em>
 </p>
 
+In the next figure, we demonstrate the average relative coordinate leakage gap (%) between random and spatial block cross-validation (log-scaled). Larger gaps indicate a greater susceptibility to overfitting on brain-region-specific plaque accumulation patterns.
+
 <p align="center">
   <!-- This was obtained with plot_mean_relative_gap_with_extremes in results.ipynb -->
   <img src="src/data/figures/relative_variance_gap.png" width="480">
   <br><em>Figure 34. Mean relative leakage gap (%) between random and spatial block cross-validation (log-scaled).</em>
 </p>
 
-Having established that spatial context matters-and that its impact is highly gene-dependent-we next introduce a non-linear interaction between plaque distance and the local transcriptional context of surrounding PIGs. Specifically, we define the **neighbor signature** (or **signature** for short) as the average expression level of “Other PIGs” in the neighborhood, and we examine average target expression across joint bins of distance and signature. Distance is discretized into five bins (D1–D5 from closest to farthest), and the signature is discretized into five bins (S1–S5 from lowest to highest). Across these distance/signature groups, expression varies substantially, indicating that meaningful information is encoded jointly in proximity to plaques and local neighborhood state for essentially all genes-except *Cxcl10*, where extreme zero inflation limits interpretability. This motivates an interaction-aware formulation: by inspecting per-gene distance–signature interaction maps (log1p-transformed and normalized per gene), we can distinguish smoothly varying gradients (consistent with gradual spatial structure) from localized peaks (suggesting gene-specific regimes in which neighborhood composition modulates distance-dependent effects).
+Next, we will explore a non-linear interaction between plaque distance and expression of other PIGs in neighboring cells. Namely, we define the **neighbor signature** (or **signature** for short) as the average expression level of "other PIGs" in the cell's neighborhood. We will examine average target PIG expression across joint bins of distance and signature. 
+
+Distance is discretized into five bins (D1–D5 from closest to farthest from plaque), and the signature is also discretized into five bins (S1–S5 from lowest to highest mean expression of other PIGs). Across these distance/signature groups, target PIG expression varies substantially. This indicates that meaningful information is encoded jointly in proximity to plaques and local neighborhood state. This observation holds true for all PIGs except *Cxcl10*, where extreme zero inflation breaks this visual trend. 
+
+Overall, the per-gene distance–signature interaction maps reveal smoothly varying gradients. The expression level is highest in localized peaks around plaques and maximal signature neighborhoods and decays elsewhere. In other words, the cell's neighborhood modulated the effect of distance to plaque on the target PIG expression. 
 
 <p align="center">
   <!-- This was obtained with plot_dist_signature_heatmaps_grid in results.ipynb -->
@@ -720,7 +736,9 @@ Having established that spatial context matters-and that its impact is highly ge
   <br><em>Figure 35. Distance–signature interaction patterns across D1–D5 and S1–S5 bins.</em>
 </p>
 
-We then evaluate whether explicitly modeling this interaction improves spatial generalization under the spatial-block split. We compare the spatial-block OOF performance of a distance/signature interaction model against ablations that include only distance or only signature. On average, the interaction model performs best, but the improvement over the simpler signature-only model is not statistically significant at the 95% confidence level. This result is informative in two ways: it reinforces the strength of neighborhood context as a standalone predictor, while also suggesting that (at least in aggregate) much of the interaction’s predictive value may already be captured by the neighbor signature itself. At the same time, the best- and worst-predicted genes vary substantially across variants, underscoring pronounced gene-to-gene heterogeneity in the extent and form of spatial dependence.
+We then evaluate whether explicitly modeling this interaction improves generalization under the spatial-block split. To this end, we compare the spatial-block OOF performance of a distance/signature interaction model against ablations that include only distance or only signature. 
+
+On average, the interaction model performs best, but the improvement over the simpler signature-only model is not statistically significant at the 95% confidence level. This result reinforces the strength of neighborhood context as a standalone predictor. Further, it suggests that much of the interaction’s predictive value is already captured by the neighbor signature alone. Interestingly, however, the R^2 in best (Cst3, Gfap) and worst (Nrep) predicted genes varies substantially in all regression models. This highlights the strong variation in gene-to-gene spatial expression changes.
 
 <p align="center">
   <!-- This was obtained with plot_model_comparison_with_extremes in results.ipynb -->
@@ -728,7 +746,11 @@ We then evaluate whether explicitly modeling this interaction improves spatial g
   <br><em>Figure 36. Spatial-block OOF R² for distance-only, signature-only, and interaction models.</em>
 </p>
 
-Because the neighbor-based model is unexpectedly strong under spatial-block evaluation, we next probe *what* it is learning via two targeted ablations designed to separate fine-grained neighborhood structure from coarser spatial confounding. In the first mode, we permute cells *within each brain tile* and measure the performance drop. Since cells inside a tile remain relatively close, this perturbation is milder than a global random permutation, yet it still breaks cell-to-cell correspondence in local neighborhoods. Even under this conservative disruption, spatial-block OOF performance drops by 62.9%, with no overlap in the 95% confidence intervals, indicating that the model’s predictive power depends materially on correctly matched neighborhood structure rather than merely on coarse location. Spatially localizing the resulting residual shifts reveals where this dependence is most pronounced: the average absolute divergence is highest in highly heterogeneous regions such as the hippocampal formation and isocortex, and it is also elevated near the tissue periphery containing break-away cells. The latter illustrates an extreme but instructive form of heterogeneity: when a single tile mixes “continental” cells within the main tissue mass and “island” cells that are detached and therefore drastically different in distance-to-plaque, within-tile permutation introduces substantial surprise and correspondingly larger residual changes.
+Since the interaction model is unexpectedly strong under spatial-block evaluation, we will next investigate *what* it is learning via two targeted ablations. 
+
+In the first mode, we permute the cells *within each brain tile* and measure the performance drop. Since cells inside a tile remain relatively close, this perturbation is milder than a global random permutation. However, it still breaks cell-to-cell correspondence in local neighborhoods. Even under this mild disruption, spatial-block OOF performance drops by 62.9%, with no overlap in the 95% confidence intervals. This means that the model’s predictive power depends significantly on correctly matched neighborhood structure and not on the possibly leaked coarse location. 
+
+Plotting the residuals after the perturbation reveals that the average absolute error is highest in highly heterogeneous regions such as the hippocampal formation and isocortex. Further, the residuals are elevated near the tissue periphery containing break-away cells. This illustrates an extreme form of heterogeneity. When a single tile mixes the "continental" cells within the main tissue mass and the "island" cells that are detached and therefore have extremely high distance-to-plaque, within-tile permutation introduces substantial surprise and correspondingly increases the average residual.
 
 <p align="center">
   <!-- This was obtained with plot_permutation_effect_across_genes in results.ipynb -->
@@ -739,16 +761,20 @@ Because the neighbor-based model is unexpectedly strong under spatial-block eval
 <p align="center">
   <!-- This was obtained with plot_spatial_scatter in results.ipynb -->
   <img src="src/data/figures/permuted_neighbors_spatial.png" width="480">
-  <br><em>Figure 38. Tissue-wide map of permutation-induced residual shifts.</em>
+  <br><em>Figure 38. Tissue-wide map of permutation-induced residual changes.</em>
 </p>
 
 <p align="center">
   <!-- This was obtained with plot_tile_heatmap in results.ipynb -->
   <img src="src/data/figures/perm_vs_true_tiles.png" width="480">
-  <br><em>Figure 39. Tile-level summary of permutation-induced residual shifts.</em>
+  <br><em>Figure 39. Tile-level summary of permutation-induced residual changes.</em>
 </p>
 
-In the second mode of ablation, we replace the 100 nearest neighbors with the 100 farthest neighbors-an intervention that should more aggressively remove biologically and spatially relevant context than within-tile permutation. As expected, this induces an even larger deterioration: using average expression over the 100 farthest neighbors yields an 86.4% drop in spatial-block OOF performance (significant at the 95% confidence level), reinforcing that the predictive signal is predominantly local. This ranking of neighborhood quality is also visible when comparing prediction–observation agreement across the three neighborhood constructions (100 farthest neighbors, 100 permuted neighbors within tile, bona fide 100 closest neighbors): the correspondence increases monotonically as neighborhoods become more local and correctly aligned. When aggregating across 16 genes, this progression is reflected both in mean R² (0.018 for farthest, 0.045 for permuted, 0.115 for closest) and in the fitted calibration slopes (0.05, 0.11, and 0.26, rcvespectively). Notably, despite these large differences in predictive strength, residuals remain effectively uncorrelated with plaque distance in all three cases (near-zero fitted trends), suggesting that the models are not leaving a systematic distance-dependent bias unmodeled; instead, remaining error appears as distance-agnostic variability and heteroscedastic spread.
+In the second mode of ablation, we replace the 100 nearest neighbors with the 100 farthest neighbors. This ablation removes biologically and spatially relevant context more aggressively than within-tile permutation. As expected, this induces an even larger 86.4% drop in the spatial-block OOF R^2(significant at the 95% confidence level). This means that the predictive signal from the neighbor expression levels is highly local. 
+
+When comparing prediction/observation agreement, we can see a monotonic improvement in alignment as we go from 100 farthest neighbors to 100 permuted neighbors within tile to bona fide 100 closest neighbors. The R² (0.018 for farthest, 0.045 for permuted, 0.115 for closest) and the calibration slope (0.05, 0.11, and 0.26, respectively) averaged across 16 PIGs reinforce this result. 
+
+Despite the large differences in predictive strength, the residuals in the original and ablated models remain uncorrelated with plaque distance. This suggests that all three models learn a distance-independent bias. This is evident in the fact that the unexplained variance is distance-agnostic and homoscedastic.
 
 <p align="center">
   <!-- This was obtained with plot_true_vs_fake_far_neighbors_across_genes in results.ipynb -->
@@ -759,13 +785,13 @@ In the second mode of ablation, we replace the 100 nearest neighbors with the 10
 <p align="center">
   <!-- This was obtained with plot_pred_vs_obs_combined in results.ipynb -->
   <img src="src/data/figures/true_permitted_fake_pred_vs_obs.png" width="480">
-  <br><em>Figure 41. Predicted vs observed expression under alternative neighborhood controls.</em>
+  <br><em>Figure 41. Predicted vs observed expression (main model and ablations).</em>
 </p>
 
 <p align="center">
   <!-- This was obtained with plot_resid_vs_distance_combined in results.ipynb -->
   <img src="src/data/figures/residual_v_dist_true_perm_fake.png" width="480">
-  <br><em>Figure 42. Residuals vs plaque distance under alternative neighborhood controls.</em>
+  <br><em>Figure 42. Residuals vs plaque distance (main model and ablations).</em>
 </p>
 
 
