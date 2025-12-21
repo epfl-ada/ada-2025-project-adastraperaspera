@@ -59,7 +59,7 @@ const Index = () => {
       <Chapter5 />
       <Chapter6 />
       <Chapter7 />
-      <Chapter8 />/*}
+      <Chapter8 />*/}
       <Footer />
     </main>
   );
