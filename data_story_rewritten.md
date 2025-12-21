@@ -570,73 +570,73 @@ Agreement across models suggests that these genes carry robust, biologically mea
 ---
 
 ### 4.b. Additional feature modalities
-To improve interpretability and performance while probing feature importance, we add non-transcriptomic predictors:
+To improve interpretability and performance while investigating feature importance, we add non-transcriptomic predictors. These include:
 
 - Cell centroid coordinates
 - Cell area
 - Nucleus area
-- Cell type (Leiden cluster ID)
+- Cell type (given by Leiden cluster ID)
 
-We group predictors into four modalities:
+We group distance predictors into four modalities:
 - **Genes:** 347 expression values
 - **Morphology:** cell area, nucleus area
-- **Spatial:** centroid coordinates
-- **Cluster:** Leiden cluster identity
+- **Spatial:** cell centroid coordinates
+- **Cluster:** Leiden cluster-based cell type
 
-We compare ordinary linear regression (OLS-like linear model) to Partial Least Squares (PLS), which constrains predictions through a small number of latent components optimized for covariance with plaque distance.
+We then compare an ordinary linear regression to Partial Least Squares (PLS) model, which constrains predictions through a small number of latent components with maximal covariance with the plaque distance.
 
-Performance:
+As a result, we obtained the following performance metrics:
 
 | Model | Train R² | Test R² |
 |---|---:|---:|
 | Linear | 0.25 | 0.24 |
 | PLS | 0.19 | 0.19 |
 
-The linear model improves over gene-only linear baselines and narrows the gap to XGBoost, suggesting that a meaningful share of distance variance is linearly attributable to combined gene, spatial, morphological, and cell-type predictors. PLS is lower but extremely stable, consistent with capturing a dominant plaque-related axis rather than all linear variance.
+The full linear model improves over gene-only linear baseline and narrows the gap to XGBoost. This result suggests that a meaningful share of distance variance is explained by a linear combination of gene, spatial, morphological, and cell-type predictors. PLS shows lower R^2 but also better generalizability. This is due to the fact that PLS captures dominant plaque-related features while sacrificing some predictive power.
 
-To test whether the plaque-trained PLS signature reflects biologically meaningful plaque-centered decay (rather than arbitrary structure), we compare Tg17 and WT13 profiles within matched plaque-centered regions after geometric alignment.
+To test whether the PLS signature reflects biologically meaningful plaque-induced decay, we compare the PLS output in Tg17 and Wt13 mice after performing alignment.
 
 <p align="center">
   <!-- This was obtained with plot_overlay; usage in results.ipynb -->
   <img src="src/data/figures/tg17_wt13_alignment.png" width="480">
-  <br><em>*Figure 23. Plaque-centered alignment between Tg17 and WT13 tissue regions (flip + translation), used to compare signature decay trends.*</em>
+  <br><em>*Figure 23. Alignment between Tg17 and Wt13 brain morphology images.*</em>
 </p>
 
-Across plaques:
-- Tg17 shows more negative correlations between signature and distance (**mean ρ ≈ −0.19**) and steeper negative slopes (**mean slope ≈ −0.0055**).
-- WT13 shows near-flat/weak trends (**mean ρ ≈ −0.02**, **mean slope ≈ −0.0018**).
-- FDR-corrected results indicate **3 plaques** with significant decay in Tg but not WT, supporting a plaque-linked gradient in a subset of locations.
-- Some plaques show decay in both Tg and WT, plausibly reflecting imperfect cross-animal alignment or shared anatomical gradients rather than true pathology.
-- The inner (0–50 µm) region has, on average, higher signature in Tg than WT, consistent with localized activation near plaques.
+Our findings reveal that, across plaques:
+- Tg17 has more negative correlations between signature and distance (**mean ρ ≈ −0.19**) and more negative slopes (**mean slope ≈ −0.0055**).
+- WT13 has near-flat trends (**mean ρ ≈ −0.02**, **mean slope ≈ −0.0018**).
+- FDR-corrected results indicate **3 plaques** with significant decay in Tg but not Wt.
+- However, most other plaques show decay in both Tg and Wt. This could be due to shared anatomical gradients: some expression patterns unveil across brain tissue regardless of plaques.
+- We find that the inner (0–50 µm) region has, on average, higher signature in Tg than Wt mice. This is consistent with localized transcriptional programs near plaques.
 
-Two example visualizations:
+To illustrate our findings, we will focus on a specific plaque (ID=1794) which has most cells around it. In the following two figures, we can see how the PLS signature behaves differently in Wt and Tg mice.
 
 <div style="display:flex; justify-content:center; gap:24px; align-items:flex-start; flex-wrap:wrap;">
   <div style="text-align:center;">
     <img src="src/data/figures/signature_decay_plaque_1794.png" width="240" />
-    <br /><em>*Figure 24. Example plaque (ID 1794): continuous signature values vs distance, illustrating plaque-centered decay behavior.*</em>
+    <br /><em>*Figure 24. Continuous PLS signature values vs distance for plaque 1794.*</em>
   </div>
 
   <div style="text-align:center;">
     <img src="src/data/figures/binned_signature_decay_plaque_1794.png" width="240" />
-    <br /><em>*Figure 25. Example plaque (ID 1794): binned signature decay vs distance, providing a more robust view of gradient shape.*</em>
+    <br /><em>*Figure 25. Binned signature decay vs distance for plaque 1794.*</em>
   </div>
 </div>
 
-Overall, the PLS signature appears biologically informative for a subset of plaques, but interpretation must remain cautious given alignment error and the absence of a true plaque ground truth in WT tissue.
+Overall, the PLS signature appears biologically informative for a subset of plaques. Howeverm we remain limited by the large alignment error and the coinciding gene expression gradients across the shared brain anatomy in both Wt and Tg mice.
 
-We next compare linear models (Ridge/Lasso/PLS) to nonlinear models (especially gradient boosting) under modality ablation. Results show:
+Next, we compare linear models (Ridge/Lasso/PLS) to nonlinear tree-based models at various input modalities. Results show:
 
 - Linear models reach modest accuracy (**R² ≈ 0.20–0.24**) when gene expression is included.
-- Morphology-only or spatial-only linear models perform near chance.
-- Nonlinear models extract substantially richer structure.
-- Surprisingly, **spatial-only** nonlinear models can reach **R² ≈ 0.64** (HistGradientBoosting), exceeding even full multimodal models.
-- Gene-only and gene+cluster improve tree models moderately (**R² ≈ 0.26–0.28**), while morphology adds little.
+- Morphology-only or spatial-only linear models perform close to a random guess.
+- Nonlinear models result in much higher R^2.
+- Surprisingly, **spatial-only** nonlinear models can reach **R² ≈ 0.64** (HistGradientBoosting). This exceeds even the full multimodal HistGradientBoosting.
+- Adding cluster information improves tree models moderately (**R² ≈ 0.26–0.28**), while morphology adds little.
 
 <p align="center">
   <!-- This was obtained with plot_ablation_heatmap; usage in results.ipynb -->
   <img src="src/data/figures/modality_ablation.png" width="480">
-  <br><em>*Figure 26. Modality ablation performance across model classes: heatmap and summary bars highlighting that nonlinear models-especially spatial-only boosting-can achieve high R² driven by spatial structure.*</em>
+  <br><em>*Figure 26. Modality ablation performance across model classes.*</em>
 </p>
 <p align="center">
   <!-- This was obtained with plot_best_model_per_modality; usage in results.ipynb -->
@@ -644,42 +644,40 @@ We next compare linear models (Ridge/Lasso/PLS) to nonlinear models (especially 
   <br><em>*Figure 27. Best model class per modality combination.*</em>
 </p>
 
-The high R² from spatial-only boosting is not automatically evidence of plaque biology. A plausible explanation is anatomical bias: plaque deposition is not spatially uniform, and certain anatomical regions accumulate more plaques than others. In that case, coordinates predict *regional vulnerability* rather than true plaque distance.
+The high R² from spatial-only gradient boosted trees is suspicious. This could be due to anatomical bias. Plaque occurrence is not spatially uniform, with some brain regions accumulating more plaques than others. Because of this, coordinates predict *regional vulnerability* rather than the bone fide plaque distance.
 
-To test whether spatial-only predictions reflect disease progression versus conserved anatomy, we evaluate cross-mouse stability of spatial predictions.
-
-We compare spatial-only model outputs across all Tg and WT animals:
+To test whether spatial-only predictions are generalizable, we will evaluate them across different mice. Namely, we compare spatial-only model outputs across all Tg and WT animals:
 
 <p align="center">
   <!-- This was obtained with plot_spatial_compare; usage in results.ipynb -->
   <img src="src/data/figures/predicted_plaque_distance.png" width="480">
-  <br><em>*Figure 28. Spatial-only prediction comparison across mice, illustrating similarity in predicted distributions despite genotype/age differences.*</em>
+  <br><em>*Figure 28. Spatial-only prediction comparison across mice.*</em>
 </p>
-
-The model produces nearly identical prediction distributions across all mice:
-- Output distributions differ by at most ~**6%** at any point.
-- This is inconsistent with a pathology-sensitive model that should shift with genotype and disease stage.
-
-We quantify distributional similarity using Jensen–Shannon divergence (JSD) and corroborate with KS tests and ANOVA:
 
 <p align="center">
   <!-- This was obtained with plot_hist_comparison; usage in results.ipynb -->
   <img src="src/data/figures/distribution_across_mice.png" width="480">
-  <br><em>*Figure 29. Predicted plaque-distance score distributions across all mice under the spatial-only model, showing striking overlap across Tg and WT cohorts.*</em>
+  <br><em>*Figure 29. Predicted plaque-distance score distributions across all mice (spatial-only model).*</em>
 </p>
+
+The model produces nearly identical prediction distributions across all mice:
+- Output distributions differ by at most ~**6%** at any point.
+- This is inconsistent with a pathology-sensitive model that should change its output significantly with genotype and disease stage.
+
+To approach this more formally, we will quantify distributional similarity using Jensen–Shannon divergence (JSD):
 
 <p align="center">
   <!-- This was obtained with plot_jsd_heatmap; usage in results.ipynb -->
   <img src="src/data/figures/JS_Divergence.png" width="480">
-  <br><em>*Figure 30. Jensen–Shannon divergence matrix between spatial-only prediction distributions across mice; values are uniformly low, indicating near-indistinguishable outputs across genotypes and ages.*</em>
+  <br><em>*Figure 30. Jensen–Shannon divergence matrix between spatial-only prediction distributions across mice.*</em>
 </p>
 
-Findings:
-- JSD values are mostly **0.05–0.10**, only slightly higher (~0.14–0.16) for comparisons involving WT-13.
-- KS statistics are small (mostly **0.02–0.08**) despite extremely significant p-values driven by large sample sizes.
+Our findings show that:
+- JSD values are mostly **0.05–0.10**, only slightly higher (~0.14–0.16) for comparisons involving Wt-13.
+- Kolmogorov-Smirnov (KS) statistics are small (mostly **0.02–0.08**) despite extremely significant p-values driven by large sample sizes.
 - ANOVA across Tg mice yields a very significant p-value (p ≈ **3.6e−22**) but with trivial effect size and no monotone increase with age.
 
-Conclusion: the spatial-only model primarily learns conserved tissue geometry (e.g., cortical curvature and laminar structure), not plaque pathology. The apparent high R² is therefore driven by anatomical confounding rather than disease signal.
+From the results above, we can conclude that the spatial-only model mostly learns conserved brain anatomy and not plaque pathology. The high R² is therefore largely due to the anatomical confounding.
 ---
 
 ## 4.c Deep dive into the expression models
