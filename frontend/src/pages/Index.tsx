@@ -31,7 +31,7 @@ const Index = () => {
       {/*<GeneExpressionChart />
       <GeneExpressionSection2 />
       <CellClusteringSection />*/}
-      <RQSection />
+      {/*<RQSection />*/}
       <RQ1Section />
       <RQ2Section />
       <RQ3Section />
