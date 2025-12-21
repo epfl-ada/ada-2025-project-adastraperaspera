@@ -61,7 +61,7 @@ def compute_plaque_geometry_features(plaques_df: pd.DataFrame) -> pd.DataFrame:
             geom = max(geom.geoms, key=lambda p: p.area)
 
         if not isinstance(geom, Polygon) or not geom.is_valid:
-            logger.warning(f"⚠️ Skipping invalid geometry for plaque_id {plaque_id}")
+            logger.warning(f"Skipping invalid geometry for plaque_id {plaque_id}")
             results.append(
                 {
                     "plaque_id": plaque_id,
@@ -121,7 +121,7 @@ def compute_plaque_geometry_features(plaques_df: pd.DataFrame) -> pd.DataFrame:
     geometry_features_df = pd.DataFrame(results)
 
     logger.info(
-        f"✅ Computed geometry features for {len(geometry_features_df)} plaques. "
+        f" Computed geometry features for {len(geometry_features_df)} plaques. "
         f"Mean area: {geometry_features_df['plaque_area'].mean():.2f}, "
         f"Mean perimeter: {geometry_features_df['plaque_perimeter'].mean():.2f}"
     )
@@ -202,7 +202,7 @@ def add_plaque_geometry_features(
 
     n_matched = cells_with_features["nearest_plaque_perimeter"].notna().sum()
     logger.info(
-        f"✅ Added geometry features. "
+        f" Added geometry features. "
         f"{n_matched}/{len(cells_with_features)} cells matched to plaques "
         f"({100 * n_matched / len(cells_with_features):.1f}%)"
     )
@@ -281,7 +281,7 @@ def compute_multi_plaque_proximity_features(
         )
         if len(plaque_centroids) != len(plaques_df):
             logger.warning(
-                f"⚠️ Could not extract centroids for all plaques. "
+                f"Could not extract centroids for all plaques. "
                 f"Expected {len(plaques_df)}, got {len(plaque_centroids)}"
             )
     else:
@@ -292,7 +292,7 @@ def compute_multi_plaque_proximity_features(
 
     if len(plaque_centroids) == 0:
         logger.warning(
-            "⚠️ No plaque centroids found. Setting all proximity features to 0."
+            "No plaque centroids found. Setting all proximity features to 0."
         )
         cells_out = cells_df.copy()
         cells_out[f"n_plaques_within_{dist_threshold:.0f}um"] = 0
@@ -334,7 +334,7 @@ def compute_multi_plaque_proximity_features(
     median_n_plaques = cells_out[col_name_count].median()
 
     logger.info(
-        f"✅ Computed multi-plaque proximity features. "
+        f" Computed multi-plaque proximity features. "
         f"Cells with 0 plaques: {n_zero} ({100*n_zero/len(cells_out):.1f}%), "
         f"Cells with >0 plaques: {n_nonzero} ({100*n_nonzero/len(cells_out):.1f}%). "
         f"Mean plaques per cell: {mean_n_plaques:.2f}, "
@@ -423,7 +423,7 @@ def plot_plaque_proximity_distribution(
 
     if save_path:
         plt.savefig(save_path, dpi=300, bbox_inches="tight")
-        logger.info(f"✅ Saved diagnostic plot to {save_path}")
+        logger.info(f" Saved diagnostic plot to {save_path}")
     else:
         plt.show()
 
@@ -456,14 +456,14 @@ def suggest_radius_threshold(
 
     if len(distances) == 0:
         logger.warning(
-            "⚠️ No valid distances found. Returning default threshold of 30.0"
+            "No valid distances found. Returning default threshold of 30.0"
         )
         return 30.0
 
     suggested_threshold = float(np.percentile(distances, percentile))
 
     logger.info(
-        f"💡 Suggested radius threshold (based on {percentile}th percentile "
+        f"Suggested radius threshold (based on {percentile}th percentile "
         f"of {distance_col}): {suggested_threshold:.2f} µm"
     )
 
@@ -526,7 +526,7 @@ def compute_pig_neighborhood_means(
 
     if missing_genes:
         logger.warning(
-            f"⚠️ Some PIG genes not found in cells_df: {missing_genes}. "
+            f"Some PIG genes not found in cells_df: {missing_genes}. "
             f"Computing neighborhood means only for present genes: {present_genes}"
         )
 
@@ -574,7 +574,7 @@ def compute_pig_neighborhood_means(
         cells_out[f"neigh_mean_{gene}"].notna().sum() for gene in present_genes
     ) / len(present_genes)
     logger.info(
-        f"✅ Computed neighborhood PIG expression means. "
+        f" Computed neighborhood PIG expression means. "
         f"Mean valid values per gene: {n_valid:.0f}/{len(cells_df)} "
         f"({100 * n_valid / len(cells_df):.1f}%)"
     )

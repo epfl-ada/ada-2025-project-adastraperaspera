@@ -29,7 +29,7 @@ def load_plaque_polygons(csv_path: str) -> gpd.GeoDataFrame:
     """
     import io
 
-    logger.info(f"📥 Parsing plaque polygons from {csv_path}")
+    logger.info(f"Parsing plaque polygons from {csv_path}")
 
     with open(csv_path, encoding="utf-8") as f:
         lines = [ln for ln in f.readlines() if not ln.startswith("#") and ln.strip()]
@@ -51,12 +51,12 @@ def load_plaque_polygons(csv_path: str) -> gpd.GeoDataFrame:
                     polygons.append(poly)
                     names.append(sel)
             except Exception as e:
-                logger.warning(f"⚠️ Failed to create polygon for {sel}: {e}")
+                logger.warning(f"Failed to create polygon for {sel}: {e}")
                 continue
 
     gdf = gpd.GeoDataFrame({"selection": names, "geometry": polygons})
     gdf.set_crs(epsg=4326, inplace=True, allow_override=True)
-    logger.info(f"✅ Loaded {len(gdf)} plaque polygons.")
+    logger.info(f" Loaded {len(gdf)} plaque polygons.")
     return gdf
 
 
@@ -70,12 +70,12 @@ def compute_cell_to_plaque_distance(
     Compute distance from each cell centroid to the nearest plaque polygon.
     """
     if plaques_gdf.empty:
-        logger.warning("⚠️ Plaque GeoDataFrame is empty; distances set to NaN.")
+        logger.warning("Plaque GeoDataFrame is empty; distances set to NaN.")
         cells_df["distance_to_plaque"] = float("nan")
         return cells_df
 
     logger.info(
-        f"📏 Computing distances for {len(cells_df)} cells → {len(plaques_gdf)} plaques"
+        f"Computing distances for {len(cells_df)} cells → {len(plaques_gdf)} plaques"
     )
 
     cell_points = gpd.GeoSeries(
@@ -91,5 +91,5 @@ def compute_cell_to_plaque_distance(
 
     cells_out = cells_df.copy()
     cells_out["distance_to_plaque"] = distances
-    logger.info("✅ Distance computation complete.")
+    logger.info(" Distance computation complete.")
     return cells_out

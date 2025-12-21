@@ -2334,7 +2334,7 @@ def make_pig_type_spearman_heatmap_plotly(
     *,
     fdr_alpha: float = 0.01,
     show_values: bool = True,
-    title: str = "PIG correlation ↔ cellular type proportion (per bins distance)",
+    title: str = "PIG correlation <-> cellular type proportion (per bins distance)",
     filename: str = "PIG_type_spearman.html",
     out_dir: str = "frontend/public/plots",
 ) -> go.Figure:

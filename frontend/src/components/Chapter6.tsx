@@ -320,11 +320,6 @@ const Chapter6 = () => {
                                 </li>
                               </ul>
                         
-              
-                <div className="space-y-6">
-                    <CorrTable />
-                    <DirectionTable />
-                </div>
 
 
               <p className="text-lg text-muted-foreground leading-relaxed">
@@ -361,6 +356,11 @@ const Chapter6 = () => {
                   </li>
                 </ol>
               </div>
+
+              <div className="space-y-6">
+                    <CorrTable />
+                    <DirectionTable />
+                </div>
 
               
             </div>

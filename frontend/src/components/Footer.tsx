@@ -66,7 +66,7 @@ const Footer = () => {
         {/* Copyright */}
         <div className="mt-8 text-center">
           <p className="text-background/50 text-sm">
-            © 2025 Spatial Genomics Research Team Adastraperaspera.
+            (c) 2025 Spatial Genomics Research Team Adastraperaspera.
           </p>
         </div>
       </div>
