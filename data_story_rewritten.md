@@ -520,42 +520,42 @@ Performance:
 | Random Forest | 0.2252 | 0.1874 |
 | XGBoost | 0.4784 | 0.2577 |
 
-XGBoost achieves the best test R² but also the largest train–test gap, indicating overfitting consistent with higher model capacity. LASSO and ElasticNet show near-identical train and test R², reflecting stable but limited linear predictability.
+XGBoost achieves the best test R² but also the largest train–test gap, indicating overfitting. This is consistent with a higher model capacity. Meanwhile, LASSO and ElasticNet show near-identical train and test R². This can also be explained by lower model complexity when compared to tree-based models.
 
-Residual diagnostics for XGBoost show clear heteroscedasticity: near plaques the model tends to over-predict, while far from plaques it increasingly under-predicts.
+Residual plot for XGBoost shows heteroscedasticity. In the viscinity of plaques the model over-predicts, while far from plaques it tends to under-predict.
 
 <p align="center">
   <img src="src/data/figures/residuals_diagnostics.png" width="480">
-  <br><em>*Figure 20. Residual diagnostics for the XGBoost distance model, highlighting heteroscedasticity and systematic bias across the true-distance range.*</em>
+  <br><em>*Figure 20. Residual diagnostics for the XGBoost.*</em>
 </p>
 
-The target distribution is also highly concentrated in the 0–100 µm range, meaning models are effectively trained on a narrow band of distances.
+The prediction distribution is highly concentrated in the 0–100 µm range. This implies that XGBoost only learned to model a narrow band of distances.
 
 <p align="center">
   <img src="src/data/figures/true_vs_predicted.png" width="480">
-  <br><em>*Figure 21. True vs predicted plaque distance and related distributional diagnostics, illustrating concentration of mass at short distances and systematic residual structure.*</em>
+  <br><em>*Figure 21. True vs predicted plaque distance distribution.*</em>
 </p>
 
-We further categorize residuals:
+Looking at XGBoost residuals, we can identify 3 main types:
 - **25.51%**: highly negative residuals (< −17.2 µm), mostly close to plaques (within 49 µm)
 - **28.15%**: highly positive residuals (> 10.6 µm), mostly far from plaques (beyond 87 µm)
 - **20.94%**: moderate residuals (−17.2 to 10.6 µm), mostly mid-range (49–87 µm)
 
-Spatially mapping residuals reveals non-uniform error patterns aligned with plaque centroids (red stars), implying missing covariates and/or anatomical confounding.
+Overlaying residuals on top of the brain image reveals a strong association with plaque centroids (red stars). This is once again due to the narrow range of predictions: XGBoost tends to be dominated by the average distance to plaque, meaning that it cannot model the full range of cell-to-plaque distance.
 
 <p align="center">
   <img src="src/data/figures/residuals_vs_distance.png" width="480">
-  <br><em>*Figure 22. Spatial error maps showing structured residual patterns aligned with plaque locations, indicating that gene-only models miss important spatial/anatomical factors.*</em>
+  <br><em>*Figure 22. Spatial error map shows alignment with plaque locations.*</em>
 </p>
 
-Cluster-specific errors reinforce this: mean absolute residuals are largest for ventricular-associated cluster 15 (GnRH1-expressing glutamatergic neurons), plausibly because these cells occupy regions far from plaques and the model under-utilizes the full distance range.
+Let us now explore cluster-specific errors. Mean absolute residuals are largest for ventricular-associated cluster 15 (GnRH1-expressing glutamatergic neurons). This is because these cells occupy regions far from plaques and the model doesn't work in this extreme distance range.
 
 | Cluster (Leiden) | Inferred cell type | n | Mean absolute residual (µm) |
 |---:|---|---:|---:|
 | 15 | Hypothalamic GnRH1-expressing glutamatergic neurons | 917 | 32.2295 |
 | 18 | Pons glutamatergic neurons | 499 | 17.8746 |
 
-Top predictive genes are relatively consistent across modeling classes. Notably, **Gfap** and **Spag16** appear in the top 5 across all models, and three of four models rank **Gfap** as the single most important predictor-reinforcing earlier evidence that Gfap peaks near plaques and decays with distance. Other highly ranked genes include **Lyz2** (immune/glial association) and **Igf2**, which shows an opposite trend (peaking around ~270 µm and declining toward plaques).
+Top predictive genes are mostly consistent across models. Notably, **Gfap** and **Spag16** appear in the top 5 genes across all models, and three of four models rank **Gfap** as the single most important predictor. This reinforces our earlier findings that Gfap peaks near plaques and quickly decays with distance. Other highly ranked genes include **Lyz2** (with association to immune and glial cells) and **Igf2**, which shows an opposite plaque-distal enrichment. Namely, it peakes around ~270 µm and declinines toward plaques.
 
 | Rank | ElasticNet | LASSO | Random Forest | XGBoost |
 |---:|---|---|---|---|
@@ -565,7 +565,7 @@ Top predictive genes are relatively consistent across modeling classes. Notably,
 | 4 | Slc17a7 (2.953878) | Slc17a7 (3.057380) | Cabp7 (0.063918) | Igf2 (0.015752) |
 | 5 | Igf2 (2.907111) | Igf2 (2.949014) | B2m (0.034584) | Strip2 (0.013022) |
 
-Agreement across linear and tree models suggests these genes carry robust, biologically meaningful information about plaque proximity, even if that information alone is insufficient for high-accuracy distance reconstruction.
+Agreement across models suggests that these genes carry robust, biologically meaningful information about plaque proximity.
 
 ---
 
