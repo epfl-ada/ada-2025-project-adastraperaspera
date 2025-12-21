@@ -76,12 +76,13 @@ const PreprocessingSection = () => {
 
                     {/* Navigation (identical hover / spacing / typography) */}
                     <nav className="mt-6 space-y-2 text-sm">
+                    {/* 
                     <a
                         href="#xenium-data"
                         className="block rounded-xl px-3 py-2 text-muted-foreground hover:text-foreground hover:bg-muted/50 transition"
                     >
                         Xenium AD dataset
-                    </a>
+                    </a>*/}  
 
                     <a
                         href="#plaque-detection"
@@ -122,11 +123,11 @@ const PreprocessingSection = () => {
           {/* Analysis content */}
           <div className="space-y-12">
             {/* Intro / method */}
-            
+
             {/* Plaque detection */}
             <div id="plaque-detection" className="space-y-4">
               <h3 className="text-2xl font-bold text-foreground">Plaque detection and coordinate alignment</h3>
-              <p className="text-lg text-muted-foreground leading-relaxed">
+              {/*<p className="text-lg text-muted-foreground leading-relaxed">
                 To obtain plaque coordinates, we hand-labeled <span className="font-medium text-foreground">11 plaque-free regions</span> and <span className="font-medium text-foreground">9 plaques</span> across a range of sizes, then trained a <span className="font-medium text-foreground">random forest classifier</span> to segment the remaining plaques in the IF image.
               </p>
               <p className="text-lg text-muted-foreground leading-relaxed">
@@ -134,7 +135,16 @@ const PreprocessingSection = () => {
               </p>
               <p className="text-lg text-muted-foreground leading-relaxed">
                 After alignment, we performed plaque post-processing to improve biological plausibility and robustness: we merged intersecting plaques, removed plaques outside the brain boundary, and filtered plaques below the 5th percentile in area. This produced <span className="font-medium text-foreground">1,736 Aβ plaques</span>, visualized below.
+              </p>*/}
+
+              <p className="text-lg text-muted-foreground leading-relaxed">
+                Plaques were detected from immunofluorescence images, aligned to morphology images, and post-processed for biological plausibility. After merging overlaps, removing artifacts, and filtering small fragments, we obtained <span className="font-medium text-foreground">1,736 plaques</span>.
               </p>
+              <p className="text-lg text-muted-foreground leading-relaxed">
+              Alignment accuracy was high (<span className="font-medium text-foreground">RMSE = 3.2 µm</span>), small relative to the <span className="font-medium text-foreground">median cell–plaque distance (61 µm)</span>, supporting reliable distance-based analysis.              
+              </p>
+
+
               
               <PlotFrame
                     src={`${base}plots/plaque_geometries.html`}
@@ -142,7 +152,6 @@ const PreprocessingSection = () => {
                     size="md"
                   />
                 
-
             </div>
 
             {/* Distance to plaque analysis */}
@@ -152,9 +161,7 @@ const PreprocessingSection = () => {
               <p className="text-lg text-muted-foreground leading-relaxed">
                 For each cell, we computed distance to the nearest plaque as the <span className="font-medium text-foreground">Euclidean distance between the cell centroid and the nearest plaque boundary</span> (not the plaque centroid). This yields a direct geometric measure of proximity to plaque surfaces.
               </p>
-              <p className="text-lg text-muted-foreground leading-relaxed">
-                To build intuition, we overlay plaque polygons onto the morphology image and color tissue by distance to the nearest plaque, highlighting regions that are consistently near plaques versus regions that are relatively plaque-free.
-              </p>
+              
 
         
               <PlotFrame
@@ -168,11 +175,8 @@ const PreprocessingSection = () => {
                     Distances are spatially heterogeneous but concentrated near plaques:
                     </p>
                     <ul className="space-y-3 text-muted-foreground">
-                        <li className="flex items-start gap-2"><CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />Maximum distance from any plaque: <span className="font-medium text-foreground">457 µm</span></li>
-                        <li className="flex items-start gap-2"><CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" /> <span className="font-medium text-foreground">99%</span> of cells are within <span className="font-medium text-foreground">200 µm</span> of a plaque </li>
-                        <li className="flex items-start gap-2"><CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" /> Median distance: <span className="font-medium text-foreground">61 µm</span></li>
-                        <li className="flex items-start gap-2"><CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" /> Standard deviation: <span className="font-medium text-foreground">44.4 µm</span></li>
-                        <li className="flex items-start gap-2"><CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" /> Distribution is <span className="font-medium text-foreground">right-skewed</span> with a long tail of cells far from plaques</li>
+                        <li className="flex items-start gap-2"><CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" /> <span className="font-medium text-foreground">99%</span> of cells lie within <span className="font-medium text-foreground">200 µm</span> of a plaque </li>
+                        <li className="flex items-start gap-2"><CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" /> Distances are right-skewed, with a long tail of plaque-distant cells</li>
                     </ul>
                 {/*</div>*/}
 
@@ -181,6 +185,10 @@ const PreprocessingSection = () => {
                       title="Cell-to-plaque distance distribution (linear scale)"
                       size="md"
                     />
+                
+                <p className="text-lg text-muted-foreground leading-relaxed">
+                  This confirms that plaque influence is widespread at the tissue scale.
+                </p>
 
             </div>
 
@@ -189,16 +197,11 @@ const PreprocessingSection = () => {
               <h3 className="text-xl font-semibold text-foreground">Gene panel composition and sparsity</h3>
 
               <p className="text-lg text-muted-foreground leading-relaxed">
-                This Xenium dataset provides single-cell expression for <span className="font-medium text-foreground">347 genes</span>, but expression is sparse. In the most AD-advanced sample (the 17.9-month transgenic mouse), <span className="font-medium text-foreground">302/347 genes</span> have <span className="font-medium text-foreground">zero median transcript count</span>. Across genes, transcript counts are <span className="font-medium text-foreground">right-skewed</span>, and the fraction of cells with nonzero counts varies widely (<span className="font-medium text-foreground">0.002 to 0.989</span>), underscoring substantial gene-dependent detection and expression variability.
+                The Xenium panel contains <span className="font-medium text-foreground">347 genes</span>, but expression is sparse. In the most advanced transgenic mouse:
               </p>
-              {/*<div className="rounded-2xl border border-border bg-card p-6">*/}
-                    <p className="text-lg text-muted-foreground leading-relaxed">
-                The gene panel includes:
-                </p>
                     <ul className="space-y-3 text-muted-foreground">
-                        <li className="flex items-start gap-2"><CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" /> <span className="font-medium text-foreground">248</span> markers for 8 main cell types, neuronal cortical layer markers, and non-neuronal markers  </li>
-                        <li className="flex items-start gap-2"><CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" /> <span className="font-medium text-foreground">83</span> genes related to activated microglia and astrocytes </li>
-                        <li className="flex items-start gap-2"><CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" /> <span className="font-medium text-foreground">16</span> plaque-induced genes (PIGs) curated from primary literature</li>
+                        <li className="flex items-start gap-2"><CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" /> <span className="font-medium text-foreground">302/347 genes</span> have zero median expression  </li>
+                        <li className="flex items-start gap-2"><CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" /> Many plaque-induced genes (PIGs) show extreme zero inflation </li>
                     </ul>
                 {/*</div>*/}
 
@@ -245,8 +248,12 @@ const PreprocessingSection = () => {
                     size="lg"
                     fit="contain"
                 />
-                
+
                 <p className="text-lg text-muted-foreground leading-relaxed">
+                    Among the <span className="font-medium text-foreground">16 PIGs</span>, <span className="font-medium text-foreground">13 have a mode at zero</span>, indicating activation in restricted subsets of cells or neighborhoods.
+                </p>
+                
+                {/*<p className="text-lg text-muted-foreground leading-relaxed">
                     A consistent pattern emerges: for <span className="font-medium text-foreground">13/16 PIGs</span>, the distribution has a <span className="font-medium text-foreground">mode at zero</span>, followed by gradual density decay at higher counts. Different PIGs decay at different rates, indicating heterogeneous activation intensity and/or cell-state specificity.
                 </p>
                 <p className="text-lg text-muted-foreground leading-relaxed">
@@ -254,31 +261,29 @@ const PreprocessingSection = () => {
                 (including <span className="font-medium text-foreground">zero inflation</span>, dispersion, and shape)
                 into a composite <span className="font-medium text-foreground">weirdness score</span>. Among PIGs,
                 <span className="font-medium text-foreground"> 13/16 </span> show strong zero inflation. The five most unusual PIGs are:
-                </p>
+                </p>*/}
 
 
                 <GeneWeirdnessTable title="Weird genes (QC)" />
 
                 <p className="text-lg text-muted-foreground leading-relaxed">
-                Cxcl10 and Cd74 clearly stand out: both have weirdness scores &gt; 8 and extremely high zero proportions (&gt;0.97), foreshadowing downstream modeling challenges (e.g., very small effective signal range after log transforms).
+                 Two genes <em>Cxcl10</em> and <em>Cd74</em> are particularly sparse and show minimal dynamic range, despite statistical significance.
                 </p>
+
+                <p className="text-lg text-muted-foreground leading-relaxed">
+                  This sparsity constrains downstream modeling and interpretation.
+                </p>
+
             </div>
 
             {/* Cell clustering workflow (PCA → kNN → Leiden → UMAP) */}
             <div id="cell-clustering" className="space-y-4">
-              <h3 className="text-xl font-semibold text-foreground">Cell clustering workflow (PCA → kNN → Leiden → UMAP)</h3>
+              <h3 className="text-xl font-semibold text-foreground">Cell clustering workflow</h3>
 
               <p className="text-lg text-muted-foreground leading-relaxed">
-                To characterize cell types and anatomical structure, we cluster cells using their 347-dimensional expression vectors:
+                Cells were clustered using expression alone (PCA → kNN → Leiden), yielding **19 clusters**.:
               </p>
-              <div className="rounded-2xl border border-border bg-card p-6">
-                    <ul className="space-y-3 text-muted-foreground">
-                        <li className="flex items-start gap-2"><CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" /> PCA on expression space  </li>
-                        <li className="flex items-start gap-2"><CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" /> kNN graph with  <span className="font-medium text-foreground">15 nearest neighbors</span></li>
-                        <li className="flex items-start gap-2"><CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" /> <span className="font-medium text-foreground">Leiden clustering</span>, yielding <span className="font-medium text-foreground">K = 19</span> clusters </li>
-                        <li className="flex items-start gap-2"><CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" /> 2D embedding via <span className="font-medium text-foreground">UMAP</span> for visualization </li>
-                    </ul>
-                </div>
+
 
               <PlotFrame
               src={`${base}plots/joint_clustering_umap.html`}
@@ -288,7 +293,7 @@ const PreprocessingSection = () => {
                 />
             
                 <p className="text-lg text-muted-foreground leading-relaxed">
-                    Overlaying clusters on tissue reveals strong correspondence with brain morphology:
+                    When mapped back onto tissue, clusters aligned closely with anatomical structures.
                 </p>
 
                 <PlotFrame
@@ -348,7 +353,7 @@ const PreprocessingSection = () => {
                 {/*</div>*/}
                 
                 <p className="text-lg text-muted-foreground leading-relaxed">
-                    This anatomical concordance is central for later interpretation: spatial plaque proximity effects can reflect genuine plaque biology, but also the fact that plaques and cell types are unevenly distributed across brain regions.
+                    This anatomical correspondence is critical: plaque proximity effects must be interpreted in the context of non-uniform cell-type and regional distributions.
                 </p>
                 
             </div>
