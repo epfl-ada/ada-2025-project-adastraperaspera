@@ -272,7 +272,7 @@ const RQ4Section = () => {
             <div id="rq4-performance" className="space-y-6">
               <h4 className="text-xl font-semibold text-foreground">Model performance</h4>
 
-              {/*<ul className="space-y-3 text-muted-foreground">
+              <ul className="space-y-3 text-muted-foreground">
                 <li className="flex items-start gap-2">
                   <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
                   <span>
@@ -304,18 +304,16 @@ const RQ4Section = () => {
 
               <p className="text-lg text-muted-foreground leading-relaxed">
                 We report train/test R² and inspect residual structure and feature importance.
-              </p>*/}
-
-              <p className="text-lg text-muted-foreground leading-relaxed">
-                We benchmark models predicting plaque distance from the <span className="font-medium text-foreground">347-gene expression vector</span>.
-                Linear models (LASSO/ElasticNet) perform similarly and are stable,
-                while XGBoost achieves higher test R² but shows a larger train–test gap.
               </p>
 
               <ModelPerformanceTable />
 
               <p className="text-lg text-muted-foreground leading-relaxed">
-                Residual diagnostics show heteroscedasticity and systematic bias, consistent with the distance target being concentrated near plaques.
+                XGBoost achieves the best test R² but also the largest train–test gap, indicating overfitting. This is consistent with a higher model capacity. Meanwhile, LASSO and ElasticNet show near-identical train and test R². This can also be explained by lower model complexity when compared to tree-based models.
+              </p>
+
+              <p className="text-lg text-muted-foreground leading-relaxed">
+                Residual plot for XGBoost shows heteroscedasticity. In the viscinity of plaques the model over-predicts, while far from plaques it tends to under-predict.
               </p>
 
               <PlotFrame
@@ -326,8 +324,7 @@ const RQ4Section = () => {
               />
 
               <p className="text-lg text-muted-foreground leading-relaxed">
-                The target distribution is also highly concentrated in the 0–100 µm range, meaning models
-                are effectively trained on a narrow band of distances.
+                The prediction distribution is highly concentrated in the 0–100 µm range. This implies that XGBoost only learned to model a narrow band of distances.
               </p>
 
               <PlotFrame
@@ -337,10 +334,10 @@ const RQ4Section = () => {
                 caption="True vs predicted plaque distance and related distributional diagnostics, illustrating concentration of mass at short distances and systematic residual structure."
               />
 
-              {/*<ul className="space-y-3 text-muted-foreground">
+              <ul className="space-y-3 text-muted-foreground">
                 <li className="flex items-start gap-2">
                   <p className="text-lg text-muted-foreground leading-relaxed">
-                    <span>We further categorize residuals:</span>
+                    <span>Looking at XGBoost residuals, we can identify 3 main type</span>
                   </p>
                 </li>
 
@@ -370,12 +367,11 @@ const RQ4Section = () => {
                     (<span className="font-medium text-foreground">49–87 µm</span>)
                   </span>
                 </li>
-              </ul>*/}
+              </ul>
 
               <p className="text-lg text-muted-foreground leading-relaxed">
-                Spatially mapping residuals reveals non-uniform error patterns aligned with plaque centroids
-                (red stars), implying missing covariates and/or anatomical confounding.
-              </p>
+                Overlaying residuals on top of the brain image reveals a strong association with plaque centroids (red stars). This is once again due to the narrow range of predictions: XGBoost tends to be dominated by the average distance to plaque, meaning that it cannot model the full range of cell-to-plaque distance.
+              </p> 
 
               <PlotFrame
                 src={`${base}plots/residuals_vs_distance.html`}
@@ -385,29 +381,19 @@ const RQ4Section = () => {
               />
 
               <p className="text-lg text-muted-foreground leading-relaxed">
-                Cluster-specific errors reinforce this: mean absolute residuals are largest for
-                ventricular-associated cluster 15 (GnRH1-expressing glutamatergic neurons), plausibly because
-                these cells occupy regions far from plaques and the model under-utilizes the full distance
-                range.
+                Let us now explore cluster-specific errors. Mean absolute residuals are largest for ventricular-associated cluster 15 (GnRH1-expressing glutamatergic neurons). This is because these cells occupy regions far from plaques and the model doesn't work in this extreme distance range..
               </p>
 
               <ResidualByClusterTable />
 
               <p className="text-lg text-muted-foreground leading-relaxed">
-                Top predictive genes are relatively consistent across modeling classes. Notably, <span className="font-medium text-foreground">Gfap</span> and
-                <span className="font-medium text-foreground">Spag16</span> appear in the top 5 across all models, and three of four models rank <span className="font-medium text-foreground">Gfap</span> as
-                the single most important predictor-reinforcing earlier evidence that Gfap peaks near plaques
-                and decays with distance. Other highly ranked genes include <span className="font-medium text-foreground">Lyz2</span> (immune/glial
-                association) and <span className="font-medium text-foreground">Igf2</span>, which shows an opposite trend (peaking around ~270 µm and
-                declining toward plaques).
+                Top predictive genes are mostly consistent across models. Notably, <span className="font-medium text-foreground">Gfap</span> and <span className="font-medium text-foreground">Spag16</span> appear in the top 5 across all models, and three of four models rank <span className="font-medium text-foreground">Gfap</span> as the single most important predictor. This reinforces our earlier findings that Gfap peaks near plaques and quickly decays with distance. Other highly ranked genes include <span className="font-medium text-foreground">Lyz2</span> (with association to immune and glial cells) and <span className="font-medium text-foreground">Igf2</span>, which shows an opposite plaque-distal enrichment. Namely, it peakes around ~270 µm and declinines toward plaques..
               </p>
 
               <FeatureRankTable />
 
               <p className="text-lg text-muted-foreground leading-relaxed">
-                Agreement across linear and tree models suggests these genes carry robust, biologically
-                meaningful information about plaque proximity, even if that information alone is
-                insufficient for high-accuracy distance reconstruction.
+                Agreement across models suggests that these genes carry robust, biologically meaningful information about plaque proximity.
               </p>
             </div>
 
@@ -424,6 +410,10 @@ const RQ4Section = () => {
                   cell centroid coordinates, cell area , nucleus area and cell type (Leiden cluster ID)
                 </span>
                 .
+              </p>
+
+              <p className="text-lg text-muted-foreground leading-relaxed">
+                We group distance predictors into four modalities:
               </p>
 
               <ul className="space-y-3 text-muted-foreground">
@@ -461,14 +451,24 @@ const RQ4Section = () => {
               </ul>
 
               <p className="text-lg text-muted-foreground leading-relaxed">
-                We compare ordinary linear regression (OLS-like linear model) to Partial Least Squares (PLS),
-                which constrains predictions through a small number of latent components optimized for
-                covariance with plaque distance.
+                We then compare an ordinary linear regression to Partial Least Squares (PLS) model, which constrains predictions through a small number of latent components with maximal covariance with the plaque distance.
+              </p>
+
+              <p className="text-lg text-muted-foreground leading-relaxed">
+                As a result, we obtained the following performance metrics:
               </p>
 
               <ModelR2Table />
 
-              {/*<p className="text-lg text-muted-foreground leading-relaxed">
+              <p className="text-lg text-muted-foreground leading-relaxed">
+                The full linear model improves over gene-only linear baseline and narrows the gap to XGBoost. This result suggests that a meaningful share of distance variance is explained by a linear combination of gene, spatial, morphological, and cell-type predictors. PLS shows lower R^2 but also better generalizability. This is due to the fact that PLS captures dominant plaque-related features while sacrificing some predictive power.
+              </p>
+
+              <p className="text-lg text-muted-foreground leading-relaxed">
+                To test whether the PLS signature reflects biologically meaningful plaque-induced decay, we compare the PLS output in Tg17 and Wt13 mice after performing alignment.
+              </p>
+
+            {/*<p className="text-lg text-muted-foreground leading-relaxed">
                 The linear model improves over gene-only linear baselines and narrows the gap to XGBoost,
                 suggesting that a meaningful share of distance variance is linearly attributable to combined
                 gene, spatial, morphological, and cell-type predictors. PLS is lower but extremely stable,
@@ -479,17 +479,17 @@ const RQ4Section = () => {
                 To test whether the plaque-trained PLS signature reflects biologically meaningful
                 plaque-centered decay (rather than arbitrary structure), we compare Tg17 and WT13 profiles
                 within matched plaque-centered regions after geometric alignment.
-              </p>*/}
+              </p>
 
               <p className="text-lg text-muted-foreground leading-relaxed">
-                Adding modalities (coordinates, morphology, cluster identity) improves linear performance modestly.
+                Adding modalities (coordinates, morphology, cluster identity) improves linear performance modestly. 
                 However, nonlinear models trained on <span className="font-medium text-foreground">spatial coordinates alone</span> can achieve very high R².
               </p>
 
               <p className="text-lg text-muted-foreground leading-relaxed">
-                This is not automatically plaque biology. Cross-mouse comparisons show spatial-only prediction distributions are almost identical across WT and Tg animals.
+                This is not automatically plaque biology. Cross-mouse comparisons show spatial-only prediction distributions are almost identical across WT and Tg animals. 
                 This indicates the model primarily learns <span className="font-medium text-foreground">conserved tissue geometry</span>, not genotype- or pathology-specific plaque structure.
-              </p>
+              </p>*/}
 
 
               <PlotFrame
@@ -502,7 +502,7 @@ const RQ4Section = () => {
               <ul className="space-y-3 text-muted-foreground">
                 <li className="flex items-start gap-2">
                   <p className="text-lg text-muted-foreground leading-relaxed">
-                    Accross plaques:
+                    Our findings reveal that, across plaques:
                   </p>
                 </li>
 
@@ -556,7 +556,7 @@ const RQ4Section = () => {
               </ul>
 
               <p className="text-lg text-muted-foreground leading-relaxed">
-                Two example visualizations:
+                To illustrate our findings, we will focus on a specific plaque (ID=1794) which has most cells around it. In the following two figures, we can see how the PLS signature behaves differently in Wt and Tg mice.
               </p>
 
               <PlotFrame
@@ -572,15 +572,12 @@ const RQ4Section = () => {
                 caption="Example plaque (ID 1794): binned signature decay vs distance, providing a more robust view of gradient shape."
               />
 
-              {/*<p className="text-lg text-muted-foreground leading-relaxed">
-                Overall, the PLS signature appears biologically informative for a subset of plaques, but
-                interpretation must remain cautious given alignment error and the absence of a true plaque
-                ground truth in WT tissue.
-              </p>*/}
+              <p className="text-lg text-muted-foreground leading-relaxed">
+                Overall, the PLS signature appears biologically informative for a subset of plaques. Howeverm we remain limited by the large alignment error and the coinciding gene expression gradients across the shared brain anatomy in both Wt and Tg mice.
+              </p>
 
               <p className="text-lg text-muted-foreground leading-relaxed">
-                We next compare linear models (Ridge/Lasso/PLS) to nonlinear models (especially gradient
-                boosting) under modality ablation. Results show:
+                Next, we compare linear models (Ridge/Lasso/PLS) to nonlinear tree-based models at various input modalities. Results show:
               </p>
 
               <ul className="space-y-3 text-muted-foreground">
@@ -636,19 +633,12 @@ const RQ4Section = () => {
               />
 
               <p className="text-lg text-muted-foreground leading-relaxed">
-                The high R² from spatial-only boosting is not automatically evidence of plaque biology. A
-                plausible explanation is anatomical bias: plaque deposition is not spatially uniform, and
-                certain anatomical regions accumulate more plaques than others. In that case, coordinates
-                predict <span className="font-medium italic text-foreground">regional vulnerability</span> rather than true plaque distance.
+                The high R² from spatial-only gradient boosted trees is suspicious. This could be due to anatomical bias. Plaque occurrence is not spatially uniform, with some brain regions accumulating more plaques than others. Because of this, coordinates predict
+                predict <span className="font-medium italic text-foreground">regional vulnerability</span>rather than the bone fide plaque distance.
               </p>
 
               <p className="text-lg text-muted-foreground leading-relaxed">
-                To test whether spatial-only predictions reflect disease progression versus conserved
-                anatomy, we evaluate cross-mouse stability of spatial predictions.
-              </p>
-
-              <p className="text-lg text-muted-foreground leading-relaxed">
-                We compare spatial-only model outputs across all Tg and WT animals:
+                To test whether spatial-only predictions are generalizable, we will evaluate them across different mice. Namely, we compare spatial-only model outputs across all Tg and WT animals:
               </p>
 
               <PlotFrame
@@ -656,6 +646,12 @@ const RQ4Section = () => {
                 title="Predicted plaque distance"
                 size="md"
                 caption="Spatial-only prediction comparison across mice, illustrating similarity in predicted distributions despite genotype/age differences."
+              />
+              <PlotFrame
+                src={`${base}plots/distribution_across_mice.html`}
+                title="Distribution across mice"
+                size="md"
+                caption="Predicted plaque-distance score distributions across all mice under the spatial-only model, showing striking overlap across Tg and WT cohorts."
               />
 
               <p className="text-lg text-muted-foreground leading-relaxed">
@@ -666,16 +662,8 @@ const RQ4Section = () => {
               </p>
 
               <p className="text-lg text-muted-foreground leading-relaxed">
-                We quantify distributional similarity using Jensen–Shannon divergence (JSD) and corroborate
-                with KS tests and ANOVA:
+                To approach this more formally, we will quantify distributional similarity using Jensen–Shannon divergence (JSD):
               </p>
-
-              <PlotFrame
-                src={`${base}plots/distribution_across_mice.html`}
-                title="Distribution across mice"
-                size="md"
-                caption="Predicted plaque-distance score distributions across all mice under the spatial-only model, showing striking overlap across Tg and WT cohorts."
-              />
 
               <PlotFrame
                 src={`${base}plots/JS_Divergence.html`}
@@ -684,13 +672,7 @@ const RQ4Section = () => {
                 caption="Jensen–Shannon divergence matrix between spatial-only prediction distributions across mice; values are uniformly low, indicating near-indistinguishable outputs across genotypes and ages."
               />
 
-              <p className="text-lg text-muted-foreground leading-relaxed">
-                The spatial-only model primarily learns conserved tissue geometry (e.g., cortical curvature
-                and laminar structure), not plaque pathology. The apparent high R² is therefore driven by
-                anatomical confounding rather than disease signal.
-              </p>
-
-              <p className="text-lg text-muted-foreground leading-relaxed">Findings :</p>
+              <p className="text-lg text-muted-foreground leading-relaxed">Our findings show that: :</p>
 
               <ul className="space-y-3 text-muted-foreground">
                 <li className="flex items-start gap-2">
@@ -726,21 +708,19 @@ const RQ4Section = () => {
                 Deep dive into the regression models
               </h4>
 
-              {/*<p className="text-lg text-muted-foreground leading-relaxed">
+              <p className="text-lg text-muted-foreground leading-relaxed">
                 We begin by interrogating the brain-region segmentation implicitly learned by our decision tree when it is trained to reconstruct the plaque-distance field. Concretely, we approximate the murine brain with a 200×200 grid of spatial tiles and, within each tile, compute the average distance to the nearest plaque (which is then visualized as a colored field across the tissue). When comparing the inferred decision surface to the ground-truth plaque-distance field, several salient behaviors become apparent. First, the model recovers a prominent large-distance region in the ventricular area.
               </p>
 
               <p className="text-lg text-muted-foreground leading-relaxed">
-                Second, it trivially identifies "break-away" cells outside the brain boundary as being far from plaques.
+                Second, it trivially identifies “break-away” cells outside the brain boundary as being far from plaques.
               </p>
 
               <p className="text-lg text-muted-foreground leading-relaxed">
                 Finally-and most consequentially for downstream modeling-the tree draws a clear boundary between <span className="font-medium text-foreground">(i)</span> coarser, more homogeneous regions around the diencephalon and <span className="font-medium text-foreground">(ii)</span> finer-grained segmentation around the hippocampus and isocortex. This qualitative shift in granularity is consistent with plaques being more uniformly spaced in the diencephalon, in contrast to the more structured, regionally heterogeneous grouping observed in the hippocampus and isocortex.
-              </p>*/}
-
-              <p className="text-lg text-muted-foreground leading-relaxed">
-                A decision-tree reconstruction of the plaque-distance field shows distinct behavior across brain regions. Coarser segmentation emerges in more homogeneous regions, while finer segmentation appears in hippocampus/isocortex-like areas. This aligns with region-dependent plaque spacing and tissue heterogeneity, but should still be interpreted cautiously as a learned model representation.
               </p>
+
+              
 
               <PlotFrame
                 src={`${base}plots/decision_tree_coarse.html`}
@@ -749,11 +729,11 @@ const RQ4Section = () => {
                 caption="Ground-truth plaque-distance field and decision-tree reconstruction on a 200×200 grid."
               />
 
-              {/*<p className="text-lg text-muted-foreground leading-relaxed">
-                To assess whether our expression models genuinely generalize across space (rather than exploiting spatial autocorrelation), we adopt a tile-based cross-validation scheme that withholds contiguous tissue regions during training.
+              <p className="text-lg text-muted-foreground leading-relaxed">
+              To assess whether our expression models genuinely generalize across space (rather than exploiting spatial autocorrelation), we adopt a tile-based cross-validation scheme that withholds contiguous tissue regions during training. We partition the brain into 391 square tiles, holding out 78 tiles (~20%) for testing and using the remaining 313 for training; importantly, the assignment is random at the tile level (not the cell level), so the model is prevented from “seeing” large chunks of brain tissue. This is a substantially more stringent scenario than holding out 20% of cells at random, because random cell-level splits still expose the model to the full spatial extent of the brain and can therefore inflate performance via spatial leakage.
               </p>
 
-              <div className="rounded-2xl border border-border bg-card p-6">
+              {/*<div className="rounded-2xl border border-border bg-card p-6">
                 <p className="text-lg text-muted-foreground leading-relaxed">
                   Brain partition into 391 square tiles :
                 </p>
@@ -764,12 +744,12 @@ const RQ4Section = () => {
               </div>
 
               <p className="text-lg text-muted-foreground leading-relaxed">
-                Importantly, the assignment is random at the tile level (not the cell level), so the model is prevented from "seeing" large chunks of brain tissue. This is a substantially more stringent scenario than holding out 20% of cells at random, because random cell-level splits still expose the model to the full spatial extent of the brain and can therefore inflate performance via spatial leakage.
-              </p>*/}
+                Importantly, the assignment is random at the tile level (not the cell level), so the model is prevented from “seeing” large chunks of brain tissue. This is a substantially more stringent scenario than holding out 20% of cells at random, because random cell-level splits still expose the model to the full spatial extent of the brain and can therefore inflate performance via spatial leakage.
+              </p>
 
               <p className="text-lg text-muted-foreground leading-relaxed">
                 Random cell-level splits can leak spatial context, because nearby cells share local structure. We therefore evaluate models using tile-based spatial splits that hold out contiguous regions.
-              </p>
+              </p>*/}
 
 
               <PlotFrame
@@ -789,7 +769,7 @@ const RQ4Section = () => {
                 <li className="flex items-start gap-2"><CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" /> `target expression ~ distance to plaque``</li>
               </ul>
               <p className="text-lg text-muted-foreground leading-relaxed">
-                Across feature sets, average R² under random cross-validation is consistently higher than under spatial block cross-validation (with overlapping 95% confidence intervals at the aggregate level), indicating that random splits can overstate generalization in the presence of spatial autocorrelation.
+               Across feature sets, average R² under random cross-validation is consistently higher than under spatial block cross-validation (with overlapping 95% confidence intervals at the aggregate level), indicating that random splits can overstate generalization in the presence of spatial autocorrelation. Critically, this inflation is not uniform across genes: some show extremely large relative differences, including +138.2% for *Ctst* and +1,369% for *Nrep*. These outliers highlight a key organizing principle for the remainder of this section: genes with stronger spatial variation (and/or sharper region-specific regimes) suffer disproportionate performance degradation when portions of the brain are obstructed during training, revealing dependence on localized structure rather than globally transferable trends. We make this leakage effect explicit by quantifying the mean relative leakage gap (%) between random and spatial block cross-validation (log-scaled), where larger gaps indicate stronger performance inflation under random splits and therefore greater susceptibility to spatial autocorrelation across the tested feature sets.
               </p>
 
               <PlotFrame
@@ -811,6 +791,13 @@ const RQ4Section = () => {
               </p>
 
               <PlotFrame
+                src={`${base}plots/variance_spatial.html`}
+                title=""
+                size="sm"
+                caption="Figure 33. Mean OOF R² under random vs spatial block cross-validation across feature sets.."
+              />
+
+              <PlotFrame
                 src={`${base}plots/relative_variance_gap.html`}
                 title=""
                 size="sm"
@@ -822,10 +809,9 @@ const RQ4Section = () => {
                 Having established that spatial context matters and that its impact is highly gene-dependent, we next introduce a non-linear interaction between plaque distance and the local transcriptional context of surrounding PIGs.
               </p>
               <p className="text-lg text-muted-foreground leading-relaxed">
-                Specifically, we define the <span className="font-medium text-foreground">neighbor signature</span> (or <span className="font-medium text-foreground">signature</span> for short) as the average expression level of "Other PIGs" in the neighborhood, and we examine average target expression across joint bins of distance and signature.
+                Specifically, we define the <span className="font-medium text-foreground">neighbor signature</span> (or <span className="font-medium text-foreground">signature</span> for short) as the average expression level of “Other PIGs” in the neighborhood, and we examine average target expression across joint bins of distance and signature. 
                 Distance is discretized into five bins (D1–D5 from closest to farthest), and the signature is discretized into five bins (S1–S5 from lowest to highest). Across these distance/signature groups, expression varies substantially, indicating that meaningful information is encoded jointly in proximity to plaques and local neighborhood state for essentially all genes-except <span className="font-medium italic text-foreground">Cxcl10</span>, where extreme zero inflation limits interpretability.
               </p>
-
               <p className="text-lg text-muted-foreground leading-relaxed">
                 This motivates an interaction-aware formulation: by inspecting per-gene distance–signature interaction maps (log1p-transformed and normalized per gene), we can distinguish smoothly varying gradients (consistent with gradual spatial structure) from localized peaks (suggesting gene-specific regimes in which neighborhood composition modulates distance-dependent effects).
               </p>
@@ -873,7 +859,7 @@ const RQ4Section = () => {
               />
 
               <p className="text-lg text-muted-foreground leading-relaxed">
-                Spatially localizing the resulting residual shifts reveals where this dependence is most pronounced: the average absolute divergence is highest in highly heterogeneous regions such as the hippocampal formation and isocortex, and it is also elevated near the tissue periphery containing break-away cells. The latter illustrates an extreme but instructive form of heterogeneity: when a single tile mixes "continental" cells within the main tissue mass and "island" cells that are detached and therefore drastically different in distance-to-plaque, within-tile permutation introduces substantial surprise and correspondingly larger residual changes.
+                Spatially localizing the resulting residual shifts reveals where this dependence is most pronounced: the average absolute divergence is highest in highly heterogeneous regions such as the hippocampal formation and isocortex, and it is also elevated near the tissue periphery containing break-away cells. The latter illustrates an extreme but instructive form of heterogeneity: when a single tile mixes “continental” cells within the main tissue mass and “island” cells that are detached and therefore drastically different in distance-to-plaque, within-tile permutation introduces substantial surprise and correspondingly larger residual changes.
               </p>
 
               <PlotFrame
