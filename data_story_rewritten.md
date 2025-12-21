@@ -776,26 +776,25 @@ In the second mode of ablation, we replace the 100 nearest neighbors with the 10
 ## 5. Age and Genotype specific patterns
 
 ## 5.a RQ5 - How does the gene expression change with age for each cell type and mouse group?
-Because spatial-only prediction is dominated by conserved anatomy, we pivot to gene-expression-anchored, age-aware analyses. This shift is motivated by three constraints:
+Predicting gene expression only on the cell coordinate has clear limitations:
 
-1. Plaque-induced transcriptional responses are **cell-state specific** (microglia, astrocytes, and some oligodendrocyte populations can change strongly near plaques in ways spatial position alone cannot resolve).  
-2. Direct normalization across mice is unreliable: orientation, capture area, imaging depth, and detection efficiency create batch-like distortions, and global scaling/quantile matching can suppress real gradients or introduce artifacts.  
-3. Common harmonization methods (Harmony, MNN, scVI) are ill-suited here: the panel is sparse, cell count is very large, and plaque-associated variance is biological signal-not batch noise to be removed.
+1. Plaque-dependent gene expression changes vary by cell type. For instance, microglia, astrocytes, and oligodendrocytes show much stronger changes near plaques than other cell types.
+2. Aligning the morphology images across mice is complicated and introduces a significant mismatch due to the individual variations in anatomy and brain proportions. Thus, a coordinate-only model is unlikely to generalize well to unseen mice
+
+To overcome these issues, we take into account the mouse type (Wt/Tg) and age in the following section.
 
 ### 5.b Disease specificity (Tg vs WT) by cell type
-To avoid cross-mouse normalization pitfalls while isolating cell-type-specific signals, we construct within-cluster and within-gene z-normalized signatures, then average z-scores across the **16 PIGs** to obtain a single **plaque-induced gene activation score** per cluster.
+
+To examine the per-mouse variation in gene expression, we compute a z-normalized signature which is the log1p-transformed expression level averaged across 16 PIGs. The signature is computed for each mouse type and cell type pair (Tg/Wt x Leiden cluster). The results reveal that the average PIG expression in clusters 2, 5, 17 (Hypothalamic GABAergic, Thalamic Glutaergic, and Medulla GABAergic neurons, respectively) is much lower in oldest Tg mice compared to others. This indicates that these cell types can carry key importance in the development of AD.
 
 <p align="center">
   <!-- This was obtained with plot_pig_z_scores_per_cluster_per_mouse; usage in results.ipynb -->
   <img src="src/data/figures/mean_PIG_per_mouse.png" width="480">
-  <br><em>*Figure 43. Mean PIG activation score per mouse (and cluster context), derived from within-cluster, within-gene z-normalization to enable robust across-mouse comparisons.*</em>
+  <br><em>*Figure 43. Within gene z-normalized average PIG expression per mouse per cell type.*</em>
 </p>
 
-With this framework, we analyze two biological dimensions:
-- Disease status: **Tg vs WT**  
-- Age progression: **2 → 5 → 17 months**
-
-For each Leiden cluster, we compute a disease-specific activation score that highlights genes strongly expressed in Tg mice but minimally expressed in WT controls-capturing plaque-linked induction rather than baseline glial identity or general aging. We then rank clusters by the mean disease specificity across genes.
+We will now analyze more closely how exactly the gene expression signature changes with genotype (Tg/Wt) and with age. This framework reveals plaque-induced changes in expression since it operates with general Wt aging as the baseline.
+To this end, we will compute the difference in signatures between age-matched Tg/Wt mice and compute the correlation between this difference and age. We encode the absolute value of this relationship in oY while representing the sign as the circle radius. In other words, circles on the right half of the canvas represent cell types whose average PIG expression increases with age. Meanwhile, the height represents the strength of association with age. We can note that the cluster 18 (Pons Glutaergic neurons) is the right uppermost circle corresponding to the largest age-progressive relative increase of PIG expression. Meanwhile, on the other end of the spectrum, we have cluster 6 (vascular cells) with the largest age-progressive relative decrease in PIG expression. This result can be due to opposite effects plaques have on these cell types as plaque proximity is known to induce neural death but vascular enrichment.
 
 <p align="center">
   <!-- This was obtained with plot_volcano; usage in results.ipynb -->
@@ -803,44 +802,25 @@ For each Leiden cluster, we compute a disease-specific activation score that hig
   <br><em>*Figure 44. Cluster-level summary of disease specificity (Tg − WT) alongside age progression, used to rank which cell types show the strongest plaque-linked transcriptional activation.*</em>
 </p>
 
+The same pattern can be seen in the next line plot where, in Tg mice, cluster 6 shows a steep decline with age whereas cluster 18 shows a steep increase.
+
 <p align="center">
   <!-- This was obtained with plot_age_progression; usage in results.ipynb -->
   <img src="src/data/figures/age_progression.png" width="480">
-  <br><em>*Figure 45. Per-cluster age progression.*</em>
+  <br><em>*Figure 45. Per-cluster changes in gene expression signature with age.*</em>
 </p>
 
-### 5.c Age trajectories for Tg and WT at (2, 5, 13+ months)
-A complementary perspective is to view the PCA structure within each cluster: WT and Tg cells separate within the same cluster, with WT occupying the bulk and Tg pushed toward the periphery. This indicates anomalous expression patterns even after conditioning on cell type.
+Next, we will look at the PCA-based vizualisation of each cell type. We can see that within each cluster, Wt and Tg cells are somewhat separated. Typically, the Wt cells compose the bulk of the point cloud whereas the Tg cells appear on the periphery. This shows systematic differences in the expression patterns between Tg and Wt mice that appear in most cell types.
 
 <p align="center">
   <!-- This was obtained with plot_cluster_pcas; usage in results.ipynb -->
   <img src="src/data/figures/PCA_clusters.png" width="480">
-  <br><em>*Figure 46. PCA-based projections of cells within each cluster, showing systematic separation of Tg vs WT within the same cell type.*</em>
+  <br><em>*Figure 46. PCA-based visualization Tg/Wt differences in each cell type.*</em>
 </p>
 
-Our analysis identifies:
-- **Cluster 8 (microglia)** as the strongest AD-specific activation cluster  
-- **Cluster 18 (astrocytes)** as the next strongest
+### 5.c Age trajectories for Tg and WT at (2, 5, 13+ months)
 
-In these clusters, disease-specific genes such as **Syngr1, Gfap, and Sparcl1** show large positive specificity scores (high in Tg, mostly silent in WT), consistent with glial reactivity, complement/inflammatory remodeling, and plaque-associated activation programs.
-
-To ensure signals are not simply driven by differences in cell-type abundance, we incorporate Tg vs WT differential expression and age progression comparisons. Tg − WT effect sizes confirm that microglia and astrocytes exhibit the largest positive shifts in PIG expression.
-
-<p align="center">
-  <!-- This was obtained with plot_ad_specific_heatmap; usage in results.ipynb -->
-  <img src="src/data/figures/ad_specific_genes.png" width="480">
-  <br><em>*Figure 47. Heatmap of AD-specific genes (high in Tg, low in WT), emphasizing that plaque-linked activation is concentrated in specific clusters and genes.*</em>
-</p>
-
-<p align="center">
-  <!-- This was obtained with plot_top_de_heatmap; usage in results.ipynb -->
-  <img src="src/data/figures/top_genes_per_glial.png" width="480">
-  <br><em>*Figure 36. Top differential genes per glial cluster (logFC), highlighting microglial and astrocytic programs most altered in Tg relative to WT.*</em>
-</p>
-
-Finally, age trajectories show divergence:
-- In Tg mice, microglia and astrocytes show **monotone increases** from **2 to 5 to 17 months**.  
-- WT mice remain stable or slightly decline.
+We will now review the age trajectories in both mouse types. The following figure reveals that in transgenic mice, cluster 8 (immune cells) shows a monotone increase in average PIG expression from 2 to 5 to 17 months. The same cell type in the Wt mice remains stable.
 
 <p align="center">
   <!-- This was obtained with plot_age_curves_by_cluster; usage in results.ipynb -->
@@ -848,7 +828,23 @@ Finally, age trajectories show divergence:
   <br><em>*Figure 48. Age progression trajectories of cluster-level activation for WT vs Tg, showing AD-specific, age-progressive glial activation in Tg animals.*</em>
 </p>
 
-Taken together, RQ6 supports a coherent synthesis: specific glial clusters-particularly microglia (cluster 8) and astrocytes (cluster 18)-undergo robust and progressive transcriptional activation driven by amyloid pathology. These signatures intensify with age in Tg mice but remain absent in age-matched WT animals. Compared to spatial-only modeling, this gene-level, age-resolved approach yields a more stable and pathology-driven understanding of how glial states evolve around Aβ plaques.
+Examining the heatmap of AD-specific genes, we can see that **Cluster 15 (Hypothalamic Gnrh1, Glutaergic)** is the strongest AD-specific activation cluster with **Cluster 6 (vascular)** as the next strongest. In these clusters, disease-specific genes such as **Syngr1, and Sparcl1** show large positive specificity scores (high in Tg, mostly silent in WT). This matches the existing knowledge on inflammatory remodeling pathways in AD as well as plaque-induced gene expression programs.
+
+<p align="center">
+  <!-- This was obtained with plot_ad_specific_heatmap; usage in results.ipynb -->
+  <img src="src/data/figures/ad_specific_genes.png" width="480">
+  <br><em>*Figure 47. Heatmap of AD-specific genes (high in Tg, low in WT).*</em>
+</p>
+
+Shifting our focus to glial cells, we can see that the genes C3, Nme8, and Lyz2 show the biggest relative increase in expression in Tg relative to Wt.
+
+<p align="center">
+  <!-- This was obtained with plot_top_de_heatmap; usage in results.ipynb -->
+  <img src="src/data/figures/top_genes_per_glial.png" width="480">
+  <br><em>*Figure 36. Top differential genes per glial cluster.*</em>
+</p>
+
+Overall, our findings demonstrate that clusters 6 and 15 undergo progressive changes in gene expression patterns as a result of amyloid pathology. These signatures become increasingly more pronounced with age in Tg mice but not in the age-matched Wt mice.
 
 ---
 

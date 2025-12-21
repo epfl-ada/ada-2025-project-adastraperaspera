@@ -1290,10 +1290,10 @@ def evaluate_leakage_for_gene(
     n_tiles_y=10,
     n_splits=5,
     eps=1e-8,
-    x_col=None,
-    y_col=None,
-    dist_col=None,
-    optional_covs=None,
+    x_col='x_centroid', 
+    y_col='y_centroid',
+    dist_col='distance_to_plaque',
+    optional_covs=[],
     neigh_cols=None,
 ):
     groups = make_tile_groups(
@@ -1311,7 +1311,7 @@ def evaluate_leakage_for_gene(
         ("XY_only", FEAT_XY),
         ("Distance_only", FEAT_DIST),
         ("Neighbor_only", FEAT_NEIGH),
-        ("Full_(dist+opt+neighbors)", FEAT_FULL),
+        ("Full_(dist+neighbors+XY)", FEAT_FULL),
     ]:
         r2_rand, _ = cv_r2_random(
             df, target_gene, feats, n_splits=n_splits, alpha=1.0, seed=0
@@ -1423,6 +1423,9 @@ def build_leakage_all(
     n_tiles_x: int = 10,
     n_tiles_y: int = 10,
     n_splits: int = 5,
+    x_col = None,
+    y_col = None,
+    neigh_cols = None,
 ) -> pd.DataFrame:
     missing = [g for g in target_genes if g not in df.columns]
     if missing:
@@ -1431,7 +1434,7 @@ def build_leakage_all(
     rows = []
     for g in target_genes:
         tab = evaluate_leakage_for_gene(
-            df, g, n_tiles_x=n_tiles_x, n_tiles_y=n_tiles_y, n_splits=n_splits
+            df, g, n_tiles_x=n_tiles_x, n_tiles_y=n_tiles_y, n_splits=n_splits, x_col=x_col, y_col=y_col, neigh_cols=neigh_cols
         ).copy()
         tab.insert(0, "target_gene", g)
         tab.insert(1, "model", tab.index)
@@ -1441,6 +1444,7 @@ def build_leakage_all(
 
     expected = set(model_order)
     found = set(leakage_all["model"].unique())
+    print(found)
     missing_models = expected - found
     if missing_models:
         raise ValueError(
