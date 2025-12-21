@@ -183,14 +183,17 @@ const PreprocessingSection = () => {
 
                 {/*<div className="rounded-2xl border border-border bg-card p-6">*/}
                     <p className="text-lg text-muted-foreground leading-relaxed">
-                    We then visualize plaque proximity as a tissue-wide field and summarize the distribution of distances:
+                    Plaque proximity was visualized as a continuous tissue-wide distance field, with each cell assigned its distance to the nearest plaque boundary. 
+                    Distances are strongly concentrated near plaques, with a <span className="font-medium text-foreground">median of 61 µm </span> (SD 44.4 µm), and <span className="font-medium text-foreground">more than 99% of cells lie within 200 µm</span> of a plaque. 
+                    The maximum observed distance is <span className="font-medium text-foreground">457 µm</span>, indicating that even the most plaque-distant regions remain relatively close in absolute terms. 
+                    The distribution is <span className="font-medium text-foreground">right-skewed with a long tail</span>, reflecting a small subset of anatomically distinct, plaque-sparse regions.
                     </p>
-                    <ul className="space-y-3 text-muted-foreground">
+                    {/*<ul className="space-y-3 text-muted-foreground">
                       <li className="flex items-start gap-2"><CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" /> Maximum distances: <span className="font-medium text-foreground">457 µm</span></li>
                       <li className="flex items-start gap-2"><CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" /> <span className="font-medium text-foreground">99%</span> of cells lie within <span className="font-medium text-foreground">200 µm</span> of a plaque </li>
                         <li className="flex items-start gap-2"><CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" /> Median:  <span className="font-medium text-foreground">61 µm</span> , SD: <span className="font-medium text-foreground">44.4 µm</span> </li>
                         <li className="flex items-start gap-2"><CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" /> Right-skew with a long tail</li>
-                    </ul>
+                    </ul>*/}
                 {/*</div>*/}
 
                 <PlotFrame

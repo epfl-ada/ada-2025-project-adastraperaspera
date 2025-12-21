@@ -24,23 +24,22 @@ const RQ5Section = () => {
             <div id="rq5-modalities" className="space-y-4">
 
               <p className="text-lg text-muted-foreground leading-relaxed">
-                Because spatial-only prediction is dominated by conserved anatomy, we pivot to gene-expression-anchored, age-aware analyses. This shift is motivated by three constraints:
+                Predicting gene expression only on the cell coordinate has clear limitations:
               </p>
 
 
               <div className="rounded-2xl border border-border bg-card p-5">
                 <ul className="space-y-3 text-muted-foreground">
-                  <li className="flex items-start gap-2"><CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
-                    Plaque-induced transcriptional responses are **cell-state specific** (microglia, astrocytes, and some oligodendrocyte populations can change strongly near plaques in ways spatial position alone cannot resolve).
+                  <li className="flex items-start gap-2"><CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />Plaque-dependent gene expression changes vary by cell type. For instance, microglia, astrocytes, and oligodendrocytes show much stronger changes near plaques than other cell types.
                   </li>
                   <li className="flex items-start gap-2"><CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
-                    Direct normalization across mice is unreliable: orientation, capture area, imaging depth, and detection efficiency create batch-like distortions, and global scaling/quantile matching can suppress real gradients or introduce artifacts.
-                  </li>
-                  <li className="flex items-start gap-2"><CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
-                    Common harmonization methods (Harmony, MNN, scVI) are ill-suited here: the panel is sparse, cell count is very large, and plaque-associated variance is biological signal-not batch noise to be removed.
-                  </li>
+                    Aligning the morphology images across mice is complicated and introduces a significant mismatch due to the individual variations in anatomy and brain proportions. Thus, a coordinate-only model is unlikely to generalize well to unseen mice                  </li>
                 </ul>
               </div>
+
+              <p className="text-lg text-muted-foreground leading-relaxed">
+                To overcome these issues, we take into account the mouse type (Wt/Tg) and age in the following section.
+              </p>
 
             </div>
 
@@ -58,7 +57,7 @@ const RQ5Section = () => {
               </h4>
 
               <p className="text-lg text-muted-foreground leading-relaxed">
-                To avoid cross-mouse normalization pitfalls while isolating cell-type-specific signals, we construct within-cluster and within-gene z-normalized signatures, then average z-scores across the <span className="font-medium text-foreground">16 PIGs</span> to obtain a single <span className="font-medium text-foreground">plaque-induced gene activation score</span> per cluster.
+                To examine the per-mouse variation in gene expression, we compute a z-normalized signature which is the log1p-transformed expression level averaged across 16 PIGs. The signature is computed for each mouse type and cell type pair (Tg/Wt x Leiden cluster). The results reveal that the average PIG expression in clusters 2, 5, 17 (Hypothalamic GABAergic, Thalamic Glutaergic, and Medulla GABAergic neurons, respectively) is much lower in oldest Tg mice compared to others. This indicates that these cell types can carry key importance in the development of AD.
               </p>
 
               <PlotFrame
@@ -68,7 +67,7 @@ const RQ5Section = () => {
                 caption="Mean PIG activation score per mouse (and cluster context), derived from within-cluster, within-gene z-normalization to enable robust across-mouse comparisons."
               />
 
-              <ul className="space-y-3 text-muted-foreground">
+            {/*<ul className="space-y-3 text-muted-foreground">
                 <li>
                   <p className="text-lg text-muted-foreground leading-relaxed">
                     <span>
@@ -90,10 +89,11 @@ const RQ5Section = () => {
                     Age progression: <span className="font-medium text-foreground">2 → 5 → 17 months</span>
                   </span>
                 </li>
-              </ul>
+              </ul> */}
 
               <p className="text-lg text-muted-foreground leading-relaxed">
-                For each Leiden cluster, we compute a disease-specific activation score that highlights genes strongly expressed in Tg mice but minimally expressed in WT controls-capturing plaque-linked induction rather than baseline glial identity or general aging. We then rank clusters by the mean disease specificity across genes.
+                We will now analyze more closely how exactly the gene expression signature changes with genotype (Tg/Wt) and with age. This framework reveals plaque-induced changes in expression since it operates with general Wt aging as the baseline.
+                To this end, we will compute the difference in signatures between age-matched Tg/Wt mice and compute the correlation between this difference and age. We encode the absolute value of this relationship in oY while representing the sign as the circle radius. In other words, circles on the right half of the canvas represent cell types whose average PIG expression increases with age. Meanwhile, the height represents the strength of association with age. We can note that the cluster 18 (Pons Glutaergic neurons) is the right uppermost circle corresponding to the largest age-progressive relative increase of PIG expression. Meanwhile, on the other end of the spectrum, we have cluster 6 (vascular cells) with the largest age-progressive relative decrease in PIG expression. This result can be due to opposite effects plaques have on these cell types as plaque proximity is known to induce neural death but vascular enrichment.
               </p>
 
               <PlotFrame
@@ -103,12 +103,29 @@ const RQ5Section = () => {
                 caption="Cluster-level summary of disease specificity (Tg − WT) alongside age progression, used to rank which cell types show the strongest plaque-linked transcriptional activation."
               />
 
+              <p className="text-lg text-muted-foreground leading-relaxed">
+                The same pattern can be seen in the next line plot where, in Tg mice, cluster 6 shows a steep decline with age whereas cluster 18 shows a steep increase.
+              </p>
+
               <PlotFrame
                 src={`${base}plots/age_progression.html`}
                 title="Age progression"
                 size="md"
                 caption="Per-cluster age progression."
               />
+
+              <p className="text-lg text-muted-foreground leading-relaxed">
+                Next, we will look at the PCA-based vizualisation of each cell type. We can see that within each cluster, Wt and Tg cells are somewhat separated. Typically, the Wt cells compose the bulk of the point cloud whereas the Tg cells appear on the periphery. This shows systematic differences in the expression patterns between Tg and Wt mice that appear in most cell types.
+              </p>
+
+              <PlotFrame
+                src={`${base}plots/PCA_clusters.html`}
+                title="Age progression"
+                size="lg"
+                caption="Per-cluster age progression."
+              />
+
+              
 
 
             </div>
@@ -120,17 +137,17 @@ const RQ5Section = () => {
               <h4 className="text-xl font-semibold text-foreground">Age trajectories: Tg (2→5→17 months) vs WT stability </h4>
 
               <p className="text-lg text-muted-foreground leading-relaxed">
-                A complementary perspective is to view the PCA structure within each cluster: WT and Tg cells separate within the same cluster, with WT occupying the bulk and Tg pushed toward the periphery. This indicates anomalous expression patterns even after conditioning on cell type.
+                We will now review the age trajectories in both mouse types. The following figure reveals that in transgenic mice, cluster 8 (immune cells) shows a monotone increase in average PIG expression from 2 to 5 to 17 months. The same cell type in the Wt mice remains stable.
               </p>
 
               <PlotFrame
-                src={`${base}plots/PCA_clusters.html`}
-                title="Age progression"
+                src={`${base}plots/age_progression_wt_tg.html`}
+                title="Age progression WT vs Tg"
                 size="lg"
-                caption="Per-cluster age progression."
+                caption="Age progression trajectories of cluster-level activation for WT vs Tg, showing AD-specific, age-progressive glial activation in Tg animals"
               />
 
-              <ul className="space-y-3 text-muted-foreground">
+              {/*<ul className="space-y-3 text-muted-foreground">
                 <li>
                   <p className="text-lg text-muted-foreground leading-relaxed">
                     <span>
@@ -160,6 +177,10 @@ const RQ5Section = () => {
 
               <p className="text-lg text-muted-foreground leading-relaxed">
                 To ensure signals are not simply driven by differences in cell-type abundance, we incorporate Tg vs WT differential expression and age progression comparisons. Tg − WT effect sizes confirm that microglia and astrocytes exhibit the largest positive shifts in PIG expression.
+              </p>*/}
+              
+              <p className="text-lg text-muted-foreground leading-relaxed">
+                Examining the heatmap of AD-specific genes, we can see that <span className="font-medium text-foreground">Cluster 15 (Hypothalamic Gnrh1, Glutaergic)</span> is the strongest AD-specific activation cluster with <span className="font-medium text-foreground">Cluster 6 (vascular)</span> as the next strongest. In these clusters, disease-specific genes such as <span className="font-medium text-foreground">Syngr1, and Sparcl1</span> show large positive specificity scores (high in Tg, mostly silent in WT). This matches the existing knowledge on inflammatory remodeling pathways in AD as well as plaque-induced gene expression programs.
               </p>
 
               <PlotFrame
@@ -169,6 +190,10 @@ const RQ5Section = () => {
                 caption="Heatmap of AD-specific genes (high in Tg, low in WT), emphasizing that plaque-linked activation is concentrated in specific clusters and genes."
               />
 
+              <p className="text-lg text-muted-foreground leading-relaxed">
+                Shifting our focus to glial cells, we can see that the genes C3, Nme8, and Lyz2 show the biggest relative increase in expression in Tg relative to Wt.
+              </p>
+
               <PlotFrame
                 src={`${base}plots/top_genes_per_glial.html`}
                 title="Top genes per glial cluster"
@@ -176,39 +201,10 @@ const RQ5Section = () => {
                 caption="Top differential genes per glial cluster (logFC), highlighting microglial and astrocytic programs most altered in Tg relative to WT."
               />
 
-              <ul className="space-y-3 text-muted-foreground">
-                <li>
-                  <p className="text-lg text-muted-foreground leading-relaxed">
-                    <span>
-                      Finally, age trajectories show divergence:
-                    </span>
-                  </p>
-                </li>
-
-                <li className="flex items-start gap-2">
-                  <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
-                  <span>
-                    In Tg mice, microglia and astrocytes show *<span className="font-medium text-foreground">monotone increases</span> from <span className="font-medium text-foreground">2 to 5 to 17 months</span>.
-                  </span>
-                </li>
-
-                <li className="flex items-start gap-2">
-                  <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
-                  <span>
-                    WT mice remain stable or slightly decline.
-                  </span>
-                </li>
-              </ul>
-
-              <PlotFrame
-                src={`${base}plots/age_progression_wt_tg.html`}
-                title="Age progression WT vs Tg"
-                size="lg"
-                caption="Age progression trajectories of cluster-level activation for WT vs Tg, showing AD-specific, age-progressive glial activation in Tg animals"
-              />
+              
 
               <p className="text-lg text-muted-foreground leading-relaxed">
-                Taken together, RQ6 supports a coherent synthesis: specific glial clusters-particularly microglia (cluster 8) and astrocytes (cluster 18)-undergo robust and progressive transcriptional activation driven by amyloid pathology. These signatures intensify with age in Tg mice but remain absent in age-matched WT animals. Compared to spatial-only modeling, this gene-level, age-resolved approach yields a more stable and pathology-driven understanding of how glial states evolve around Aβ plaques..
+                Overall, our findings demonstrate that clusters 6 and 15 undergo progressive changes in gene expression patterns as a result of amyloid pathology. These signatures become increasingly more pronounced with age in Tg mice but not in the age-matched Wt mice.
               </p>
             </div>
           </div>
