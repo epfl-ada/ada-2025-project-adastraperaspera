@@ -76,13 +76,7 @@ const PreprocessingSection = () => {
 
               {/* Navigation (identical hover / spacing / typography) */}
               <nav className="mt-6 space-y-2 text-sm">
-                {/* 
-                    <a
-                        href="#xenium-data"
-                        className="block rounded-xl px-3 py-2 text-muted-foreground hover:text-foreground hover:bg-muted/50 transition"
-                    >
-                        Xenium AD dataset
-                    </a>*/}
+                
 
                 <a
                   href="#plaque-detection"
@@ -127,21 +121,7 @@ const PreprocessingSection = () => {
             {/* Plaque detection */}
             <div id="plaque-detection" className="space-y-4">
               <h3 className="text-2xl font-bold text-foreground">Plaque detection and coordinate alignment</h3>
-              {/*<p className="text-lg text-muted-foreground leading-relaxed">
-                To obtain plaque coordinates, we hand-labeled <span className="font-medium text-foreground">11 plaque-free regions</span> and <span className="font-medium text-foreground">9 plaques</span> across a range of sizes, then trained a <span className="font-medium text-foreground">random forest classifier</span> to segment the remaining plaques in the IF image.
-              </p>
-              <p className="text-lg text-muted-foreground leading-relaxed">
-                Next, plaque coordinates were transformed from IF-image space to morphology-image space using a <span className="font-medium text-foreground">RANSAC-based transformation</span> trained on <span className="font-medium text-foreground">26 visually aligned landmark pairs</span>. After alignment, we achieved <span className="font-medium text-foreground">RMSE = 3.2 µm</span>, which is small relative to the <span className="font-medium text-foreground">median cell-to-plaque distance (61 µm)</span>—supporting that alignment error is unlikely to dominate distance-based trends.
-              </p>
-              <p className="text-lg text-muted-foreground leading-relaxed">
-                After alignment, we performed plaque post-processing to improve biological plausibility and robustness: we merged intersecting plaques, removed plaques outside the brain boundary, and filtered plaques below the 5th percentile in area. This produced <span className="font-medium text-foreground">1,736 Aβ plaques</span>, visualized below.
-              </p>
-
-              <p className="text-lg text-muted-foreground leading-relaxed">In the oldest Tg mouse (17.9 months), plaques are directly visible via immunofluorescence staining. We treat plaques as spatial objects rather than vague regions. We annotate plaque and plaque-free areas, train a classifier to segment plaques, and then refine the plaque set to improve robustness and biological plausibility (merging overlaps, removing outside-brain detections, filtering very small plaques)  Plaques were detected from immunofluorescence images, aligned to morphology images, and post-processed for biological plausibility. After merging overlaps, removing artifacts, and filtering small fragments, we obtained <span className="font-medium text-foreground">1,736 plaques</span>.
-              </p>
-              <p className="text-lg text-muted-foreground leading-relaxed">
-              Alignment accuracy was high (<span className="font-medium text-foreground">RMSE = 3.2 µm</span>), small relative to the <span className="font-medium text-foreground">median cell–plaque distance (61 µm)</span>, supporting reliable distance-based analysis.              
-              </p>*/}
+              
 
               <p className="text-lg text-muted-foreground leading-relaxed">
                 In the oldest Tg mouse (17.9 months), plaques are directly visible via immunofluorescence staining. We treat plaques as spatial objects rather than vague regions. We annotate plaque and plaque-free areas, train a classifier to segment plaques, and then refine the plaque set to improve robustness and biological plausibility (merging overlaps, removing outside-brain detections, filtering very small plaques)
@@ -163,12 +143,10 @@ const PreprocessingSection = () => {
             <div id="plaque-dist" className="space-y-4">
               <h3 className="text-xl font-semibold text-foreground">Distance to plaque</h3>
 
-              {/*<p className="text-lg text-muted-foreground leading-relaxed">
-                For each cell, we computed distance to the nearest plaque as the <span className="font-medium text-foreground">Euclidean distance between the cell centroid and the nearest plaque boundary</span> (not the plaque centroid). This yields a direct geometric measure of proximity to plaque surfaces.
-              </p>*/}
+              
 
               <p className="text-lg text-muted-foreground leading-relaxed">
-                Plaque pathology is expected to be strongest close to plaques, so the key variable is distance to plaque. For each cell, we compute distance to the nearest plaque boundary (not the plaque centroid). This makes proximity a direct geometric measure of the cell’s relationship to the plaque surfac
+                Plaque pathology is expected to be strongest close to plaques, so the key variable is distance to plaque. For each cell, we compute distance to the nearest plaque boundary (not the plaque centroid). This makes proximity a direct geometric measure of the cell’s relationship to the plaque surface.
               </p>
 
               <PlotFrame
@@ -188,13 +166,7 @@ const PreprocessingSection = () => {
                 The maximum observed distance is <span className="font-medium text-foreground">457 µm</span>, indicating that even the most plaque-distant regions remain relatively close in absolute terms.
                 The distribution is <span className="font-medium text-foreground">right-skewed with a long tail</span>, reflecting a small subset of anatomically distinct, plaque-sparse regions.
               </p>
-              {/*<ul className="space-y-3 text-muted-foreground">
-                      <li className="flex items-start gap-2"><CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" /> Maximum distances: <span className="font-medium text-foreground">457 µm</span></li>
-                      <li className="flex items-start gap-2"><CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" /> <span className="font-medium text-foreground">99%</span> of cells lie within <span className="font-medium text-foreground">200 µm</span> of a plaque </li>
-                        <li className="flex items-start gap-2"><CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" /> Median:  <span className="font-medium text-foreground">61 µm</span> , SD: <span className="font-medium text-foreground">44.4 µm</span> </li>
-                        <li className="flex items-start gap-2"><CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" /> Right-skew with a long tail</li>
-                    </ul>*/}
-              {/*</div>*/}
+              
 
               <PlotFrame
                 src={`${base}plots/cell_to_plaque_distance_distribution.html`}
@@ -212,25 +184,7 @@ const PreprocessingSection = () => {
             <div id="gene-comp" className="space-y-4">
               <h3 className="text-xl font-semibold text-foreground">Gene panel composition and sparsity</h3>
 
-              {/*<p className="text-lg text-muted-foreground leading-relaxed">
-                The Xenium panel contains <span className="font-medium text-foreground">347 genes</span>, but expression is sparse. In the most advanced transgenic mouse:
-              </p>
-                    <ul className="space-y-3 text-muted-foreground">
-                        <li className="flex items-start gap-2"><CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" /> <span className="font-medium text-foreground">302/347 genes</span> have zero median expression  </li>
-                        <li className="flex items-start gap-2"><CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" /> Many plaque-induced genes (PIGs) show extreme zero inflation </li>
-                    </ul>
-                </div>*/}
-
-              {/*<figure className="space-y-2">
-                  <img
-                    src={`${base}figures/microscopy_cells_unified_no_bg.png`}
-                    alt="Microscopy cells unified"
-                    className="w-full h-auto rounded-xl border border-border"
-                  />
-                  <figcaption className="mt-2 text-xs text-muted-foreground text-center">
-                    Spatial distribution of individual cells (points) across all mice, colored by a clustering-derived component to illustrate spatial organization and local heterogeneity.
-                  </figcaption>
-                </figure>*/}
+              
 
               <p className="text-lg text-muted-foreground leading-relaxed">
                 The Xenium panel measures <span className="font-medium text-foreground">347 genes</span>, but expression is sparse. In the most AD-advanced sample (Tg 17.9 months),
@@ -262,9 +216,7 @@ const PreprocessingSection = () => {
                 cellSize={180}
               />
 
-              {/*<p className="text-lg text-muted-foreground leading-relaxed">
-                    We next compare the distribution of <span className="font-medium text-foreground">log1p-transformed</span> transcript counts for the <span className="font-medium text-foreground">16 PIGs</span> against the typical distribution across all 347 genes, focusing on the <span className="font-medium text-foreground">17.9-month transgenic mouse</span> to study advanced pathology. We plot histograms (B = 50 bins) and (for PIGs) Gaussian KDE curves.
-                </p>*/}
+              {
 
               <p className="text-lg text-muted-foreground leading-relaxed">
                 We focus on <span className="font-medium text-foreground">16 plaque-induced genes (PIGs)</span> curated from prior literature. Their expression distributions show a consistent pattern: <span className="font-medium text-foreground">13/16 PIGs have a mode at zero</span>, followed by long tails at higher expression. This indicates plaque-linked activation is strong in some microenvironments but absent in most cells.
@@ -277,19 +229,7 @@ const PreprocessingSection = () => {
                 fit="contain"
               />
 
-              {/* <p className="text-lg text-muted-foreground leading-relaxed">
-                    Among the <span className="font-medium text-foreground">16 PIGs</span>, <span className="font-medium text-foreground">13 have a mode at zero</span>, indicating activation in restricted subsets of cells or neighborhoods.
-                </p>
-                
-                <p className="text-lg text-muted-foreground leading-relaxed">
-                    A consistent pattern emerges: for <span className="font-medium text-foreground">13/16 PIGs</span>, the distribution has a <span className="font-medium text-foreground">mode at zero</span>, followed by gradual density decay at higher counts. Different PIGs decay at different rates, indicating heterogeneous activation intensity and/or cell-state specificity.
-                </p>
-                <p className="text-lg text-muted-foreground leading-relaxed">
-                To identify PIGs with particularly unusual expression structure, we combine diagnostics
-                (including <span className="font-medium text-foreground">zero inflation</span>, dispersion, and shape)
-                into a composite <span className="font-medium text-foreground">weirdness score</span>. Among PIGs,
-                <span className="font-medium text-foreground"> 13/16 </span> show strong zero inflation. The five most unusual PIGs are:
-                </p>*/}
+          
 
               <p className="text-lg text-muted-foreground leading-relaxed">
                 To formalize which genes are most challenging, we compute a composite "weirdness score" combining zero inflation and distributional features.
@@ -345,59 +285,6 @@ const PreprocessingSection = () => {
                 <span className="font-medium text-foreground">Cluster 14</span> traces the hippocampal formation and follows the dentate gyrus morphology, consistent with immature dentate gyrus glutamatergic neurons, while <span className="font-medium text-foreground">cluster 10</span> is concentrated in the amygdala and hypothalamic regions,
                 consistent with medial mammillary glutamatergic neurons. In addition, <span className="font-medium text-foreground">cluster 15</span> forms a thin lining along ventricular cavities, consistent with GnRH1-expressing hypothalamic glutamatergic neurons associated with the walls of the third ventricle.
               </p>
-
-
-
-              {/*<div className="rounded-2xl border border-border bg-card p-6">
-                    <p className="text-lg text-muted-foreground leading-relaxed">
-                Representative cluster interpretations include:
-                </p>*/}
-              {/*<ul className="space-y-3 text-muted-foreground">
-                      <li className="flex items-start gap-2">
-                        <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
-                        <span>
-                          <span className="font-medium text-foreground">Cluster 6 (vascular cells)</span>{" "}
-                          is concentrated near the outer rim, consistent with epidural space localization.
-                        </span>
-                      </li>
-
-                      <li className="flex items-start gap-2">
-                        <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
-                        <span>
-                          <span className="font-medium text-foreground">Cluster 14</span>{" "}
-                          traces hippocampal formation and follows the dentate gyrus shape; inferred as{" "}
-                          <span className="font-medium text-foreground">
-                            dentate gyrus immature glutamatergic neurons
-                          </span>.
-                        </span>
-                      </li>
-
-                      <li className="flex items-start gap-2">
-                        <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
-                        <span>
-                          <span className="font-medium text-foreground">Cluster 10</span>{" "}
-                          dominates the amygdala/hypothalamus region; inferred as{" "}
-                          <span className="font-medium text-foreground">
-                            hypothalamic medial mammillary glutamatergic neurons
-                          </span>.
-                        </span>
-                      </li>
-
-                      <li className="flex items-start gap-2">
-                        <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
-                        <span>
-                          Ventricular cavities show a distinct lining cluster{" "}
-                          (<span className="font-medium text-foreground">cluster 15</span>), inferred as{" "}
-                          <span className="font-medium text-foreground">
-                            hypothalamic GnRH1-expressing glutamatergic neurons
-                          </span>, consistent with hypothalamic contributions to the third ventricle walls.
-                        </span>
-                      </li>
-                    </ul>3/}
-
-                  
-
-                {/*</div>*/}
 
             </div>
 
