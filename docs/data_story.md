@@ -92,7 +92,7 @@ The data comes from sagittal brain slices of 6 mice stained with DAPI, a fluores
 The mutations induced in Tg mice forces the expression of amyloid precursor protein (App) with known familial AD abnormalities. Transgenic mice express up to 5× more App. This leads to early and aggressive Aβ plaque deposition. The plaques in the **17.9 month transgenic mouse** are revealed with the IF staining and appear in red.
 
 <p align="center">
-  <img src="src/data/figures/microscopy_6_mice.png" width="480">
+  <img src="../src/data/figures/microscopy_6_mice.png" width="480">
   <br><em>*Figure 1. Morphology images of Wt and transgenic mice across ages.*</em>
 </p>
 
@@ -107,7 +107,7 @@ Next, plaque coordinates were transformed from IF-image space to morphology-imag
 After alignment, we performed plaque post-processing to improve biological plausibility and robustness: we merged intersecting plaques, removed plaques outside the brain boundary, and filtered plaques below the 5th percentile in area. This produced **1,736 Aβ plaques**, visualized below.
 
 <p align="center">
-  <img src="src/data/figures/plaque_geometries.png" width="480">
+  <img src="../src/data/figures/plaque_geometries.png" width="480">
   <br><em>*Figure 2. Final plaque set after alignment and QC, shown as plaque geometries overlaid in morphology-image coordinates.*</em>
 </p>
 
@@ -119,7 +119,7 @@ For each cell, we computed distance to the nearest plaque as the **Euclidean dis
 To build intuition, we overlay plaque polygons onto the morphology image and color tissue by distance to the nearest plaque, highlighting regions that are consistently near plaques versus regions that are relatively plaque-free.
 
 <p align="center">
-  <img src="src/data/figures/cell_to_plaque_distance.png" width="480">
+  <img src="../src/data/figures/cell_to_plaque_distance.png" width="480">
   <br><em>*Figure 3. Tissue-wide plaque proximity map: plaque geometries overlaid on morphology image, with tissue colored by distance to the nearest plaque boundary (cool colors indicate smaller distances).*</em>
 </p>
 
@@ -132,7 +132,7 @@ Distances are spatially heterogeneous but concentrated near plaques:
 - Distribution is **right-skewed** with a long tail of cells far from plaques
 
 <p align="center">
-  <img src="src/data/figures/cell_distance_distribution.png" width="480">
+  <img src="../src/data/figures/cell_distance_distribution.png" width="480">
   <br><em>*Figure 4. Distribution of distances from each cell centroid to the nearest plaque boundary, showing strong right skew and a long tail of plaque-distant cells.*</em>
 </p>
 
@@ -148,7 +148,7 @@ The gene panel includes:
 - **16** plaque-induced genes (PIGs) curated from primary literature
 
 <p align="center">
-  <img src="src/data/figures/microscopy_cells_unified.png" width="480">
+  <img src="../src/data/figures/microscopy_cells_unified.png" width="480">
   <br><em>*Figure 5. Spatial distribution of individual cells across all mice.*</em>
 </p>
 
@@ -157,7 +157,7 @@ The gene panel includes:
 We next compare the distribution of **log1p-transformed** transcript counts for the **16 PIGs** against the typical distribution across all 347 genes, focusing on the **17.9-month transgenic mouse** to study advanced pathology. We plot histograms (B = 50 bins) and (for PIGs) Gaussian KDE curves.
 
 <p align="center">
-  <img src="src/data/figures/Expression_Distribution.png" width="480">
+  <img src="../src/data/figures/Expression_Distribution.png" width="480">
   <br><em>*Figure 6. Distributions of log1p-transformed transcript counts for each PIG, compared to the broader gene panel, highlighting sparsity and heavy tails.*</em>
 </p>
 
@@ -186,14 +186,14 @@ To characterize cell types and anatomical structure, we cluster cells using thei
 4. 2D embedding via **UMAP** for visualization
 
 <p align="center">
-  <img src="src/data/figures/joint_clustering_umap.png" width="480">
+  <img src="../src/data/figures/joint_clustering_umap.png" width="480">
   <br><em>*Figure 7. UMAP projection of the joint Leiden clustering (K = 19) derived from PCA-reduced gene expression vectors.*</em>
 </p>
 
 Overlaying clusters on tissue reveals strong correspondence with brain morphology:
 
 <p align="center">
-  <img src="src/data/figures/joint_clustering_overlayed.png" width="480">
+  <img src="../src/data/figures/joint_clustering_overlayed.png" width="480">
   <br><em>*Figure 8. Spatial overlay of Leiden clusters on each brain section, showing tight alignment between gene-expression-derived clusters and anatomical structure.*</em>
 </p>
 
@@ -248,7 +248,7 @@ Key effects (selected):
 These coefficients are summarized visually below.
 
 <p align="center">
-  <img src="src/data/figures/slopes_types.png" width="480">
+  <img src="../src/data/figures/slopes_types.png" width="480">
   <br><em>*Figure 9. Logistic-regression slopes by cell type (Leiden cluster), summarizing how cluster frequency changes as a function of distance to the nearest plaque.*</em>
 </p>
 
@@ -265,7 +265,7 @@ We also observe a more surprising pattern: several neuronal clusters (e.g., intr
 To complement the regression summary, we examine frequency vs. distance using binned distance profiles.
 
 <p align="center">
-  <img src="src/data/figures/cluster_frequency_distance_to_plaque.png" width="480">
+  <img src="../src/data/figures/cluster_frequency_distance_to_plaque.png" width="480">
   <br><em>*Figure 10. Cluster frequency as a function of binned distance to the nearest plaque, highlighting nonlinear and threshold-like behaviors.*</em>
 </p>
 
@@ -289,7 +289,7 @@ Cluster-level marker enrichment shows that some clusters exhibit strong over- or
 This reinforces that anatomical/cell-type structure and gene expression patterns are tightly coupled and motivates a central question: **are plaque-associated PIG gradients direct effects, or are they mediated by cell-type composition shifts?**
 
 <p align="center">
-  <img src="src/data/figures/expression_per_cluster.png" width="480">
+  <img src="../src/data/figures/expression_per_cluster.png" width="480">
   <br><em>*Figure 11. Cluster-by-gene enrichment (z-score) heatmap illustrating marker structure and motivating composition–expression coupling analyses.*</em>
 </p>
 
@@ -303,7 +303,7 @@ We test whether distance-dependent PIG expression could be explained by changing
 - Perform significance testing with multiple-testing correction per gene–cell-type pair.
 
 <p align="center">
-  <img src="src/data/figures/PIG_type_spearman.png" width="480">
+  <img src="../src/data/figures/PIG_type_spearman.png" width="480">
   <br><em>*Figure 12. Spearman correlations between distance-binned cell-type proportions and distance-binned mean PIG expression, with significance testing across gene–cell-type pairs.*</em>
 </p>
 
@@ -368,7 +368,7 @@ This reinforces two earlier observations simultaneously:
 We also visualize mean Apoe expression by distance bin and cell type, with 95% confidence intervals based on SEM.
 
 <p align="center">
-  <img src="src/data/figures/PIG_expession_by_type.png" width="480">
+  <img src="../src/data/figures/PIG_expession_by_type.png" width="480">
   <br><em>*Figure 13. Mean Apoe expression across distance bins stratified by broad cell type, with 95% confidence intervals (SEM-based).*</em>
 </p>
 
@@ -387,7 +387,7 @@ We group cells into **5 equal-count distance bins** and compute, for each PIG:
 An ANOVA confirms that **all 16 PIGs** have significant differences in mean expression across distance bins at **Bonferroni-corrected FDR = 0.01**.
 
 <p align="center">
-  <img src="src/data/figures/PIG_expression_vs_distance.png" width="480">
+  <img src="../src/data/figures/PIG_expression_vs_distance.png" width="480">
   <br><em>*Figure 14. Distance-binned mean expression of all 16 PIGs with 95% confidence intervals, showing consistent plaque-proximal elevation for glial/immune markers.*</em>
 </p>
 
@@ -414,7 +414,7 @@ Results:
 Given the mouse brain diameter (~6,000 µm), Cxcl10’s gradient is effectively flat, consistent with its extreme zero inflation (low absolute expression variation across distance).
 
 <p align="center">
-  <img src="src/data/figures/distances_to_halve_expression.png" width="480">
+  <img src="../src/data/figures/distances_to_halve_expression.png" width="480">
   <br><em>*Figure 15. Distance required (µm) to reduce predicted expression by half for each PIG, derived from per-gene distance regressions.*</em>
 </p>
 
@@ -428,7 +428,7 @@ To increase explanatory power (R²), reduce heteroscedasticity, and test whether
 
 <p align="center">
   <!-- This was obtained with plot_boxgrid; usage in results.ipynb -->
-  <img src="src/data/figures/geometric_characteristics_of_plaque.png" width="480">
+  <img src="../src/data/figures/geometric_characteristics_of_plaque.png" width="480">
   <br><em>*Figure 16. Distributions of nearest-plaque geometry features (area, perimeter, major axis, orientation) summarized via box plots.*</em>
 </p>
 
@@ -440,7 +440,7 @@ To validate that R is informative, we check the Count distribution and CDF. The 
 
 <p align="center">
   <!-- This was obtained with plot_multi_plaque_proximity; usage in results.ipynb -->
-  <img src="src/data/figures/multi_plaque_proximity.png" width="480">
+  <img src="../src/data/figures/multi_plaque_proximity.png" width="480">
   <br><em>*Figure 17. Histogram and CDF of local plaque density (Count within R = 61 µm), validating that multi-plaque proximity provides informative variation beyond nearest-plaque distance.*</em>
 </p>
 
@@ -455,7 +455,7 @@ We then compute Pearson correlations between each target PIG and the neighborhoo
 
 <p align="center">
   <!-- This was obtained with plot_corr_matrix; usage in results.ipynb -->
-  <img src="src/data/figures/pigs_coexpression.png" width="480">
+  <img src="../src/data/figures/pigs_coexpression.png" width="480">
   <br><em>*Figure 18. Pearson correlations between each target PIG and the neighborhood mean expression of other PIGs (100-NN), highlighting non-symmetric target–neighbor relationships.*</em>
 </p>
 
@@ -484,7 +484,7 @@ We compare successive models using nested F-tests (α = 0.01) and apply BH-FDR c
 
 <p align="center">
   <!-- This was obtained with plot_nested_regression_adj_r2; usage in results.ipynb -->
-  <img src="src/data/figures/pig_trajectories.png" width="480">
+  <img src="../src/data/figures/pig_trajectories.png" width="480">
   <br><em>*Figure 19. Mean adjusted R² across PIGs for each nested model, including min/max ranges, showing which feature groups add meaningful predictive value.*</em>
 </p>
 
@@ -525,14 +525,14 @@ XGBoost achieves the best test R² but also the largest train–test gap, indica
 Residual plot for XGBoost shows heteroscedasticity. In the viscinity of plaques the model over-predicts, while far from plaques it tends to under-predict.
 
 <p align="center">
-  <img src="src/data/figures/residuals_diagnostics.png" width="480">
+  <img src="../src/data/figures/residuals_diagnostics.png" width="480">
   <br><em>*Figure 20. Residual diagnostics for the XGBoost.*</em>
 </p>
 
 The prediction distribution is highly concentrated in the 0–100 µm range. This implies that XGBoost only learned to model a narrow band of distances.
 
 <p align="center">
-  <img src="src/data/figures/true_vs_predicted.png" width="480">
+  <img src="../src/data/figures/true_vs_predicted.png" width="480">
   <br><em>*Figure 21. True vs predicted plaque distance distribution.*</em>
 </p>
 
@@ -544,7 +544,7 @@ Looking at XGBoost residuals, we can identify 3 main types:
 Overlaying residuals on top of the brain image reveals a strong association with plaque centroids (red stars). This is once again due to the narrow range of predictions: XGBoost tends to be dominated by the average distance to plaque, meaning that it cannot model the full range of cell-to-plaque distance.
 
 <p align="center">
-  <img src="src/data/figures/residuals_vs_distance.png" width="480">
+  <img src="../src/data/figures/residuals_vs_distance.png" width="480">
   <br><em>*Figure 22. Spatial error map shows alignment with plaque locations.*</em>
 </p>
 
@@ -598,7 +598,7 @@ To test whether the PLS signature reflects biologically meaningful plaque-induce
 
 <p align="center">
   <!-- This was obtained with plot_overlay; usage in results.ipynb -->
-  <img src="src/data/figures/tg17_wt13_alignment.png" width="480">
+  <img src="../src/data/figures/tg17_wt13_alignment.png" width="480">
   <br><em>*Figure 23. Alignment between Tg17 and Wt13 brain morphology images.*</em>
 </p>
 
@@ -613,12 +613,12 @@ To illustrate our findings, we will focus on a specific plaque (ID=1794) which h
 
 <div style="display:flex; justify-content:center; gap:24px; align-items:flex-start; flex-wrap:wrap;">
   <div style="text-align:center;">
-    <img src="src/data/figures/signature_decay_plaque_1794.png" width="240" />
+    <img src="../src/data/figures/signature_decay_plaque_1794.png" width="240" />
     <br /><em>*Figure 24. Continuous PLS signature values vs distance for plaque 1794.*</em>
   </div>
 
   <div style="text-align:center;">
-    <img src="src/data/figures/binned_signature_decay_plaque_1794.png" width="240" />
+    <img src="../src/data/figures/binned_signature_decay_plaque_1794.png" width="240" />
     <br /><em>*Figure 25. Binned signature decay vs distance for plaque 1794.*</em>
   </div>
 </div>
@@ -635,12 +635,12 @@ Next, we compare linear models (Ridge/Lasso/PLS) to nonlinear tree-based models 
 
 <p align="center">
   <!-- This was obtained with plot_ablation_heatmap; usage in results.ipynb -->
-  <img src="src/data/figures/modality_ablation.png" width="480">
+  <img src="../src/data/figures/modality_ablation.png" width="480">
   <br><em>*Figure 26. Modality ablation performance across model classes.*</em>
 </p>
 <p align="center">
   <!-- This was obtained with plot_best_model_per_modality; usage in results.ipynb -->
-  <img src="src/data/figures/best_model_per_modality.png" width="480">
+  <img src="../src/data/figures/best_model_per_modality.png" width="480">
   <br><em>*Figure 27. Best model class per modality combination.*</em>
 </p>
 
@@ -650,13 +650,13 @@ To test whether spatial-only predictions are generalizable, we will evaluate the
 
 <p align="center">
   <!-- This was obtained with plot_spatial_compare; usage in results.ipynb -->
-  <img src="src/data/figures/predicted_plaque_distance.png" width="480">
+  <img src="../src/data/figures/predicted_plaque_distance.png" width="480">
   <br><em>*Figure 28. Spatial-only prediction comparison across mice.*</em>
 </p>
 
 <p align="center">
   <!-- This was obtained with plot_hist_comparison; usage in results.ipynb -->
-  <img src="src/data/figures/distribution_across_mice.png" width="480">
+  <img src="../src/data/figures/distribution_across_mice.png" width="480">
   <br><em>*Figure 29. Predicted plaque-distance score distributions across all mice (spatial-only model).*</em>
 </p>
 
@@ -668,7 +668,7 @@ To approach this more formally, we will quantify distributional similarity using
 
 <p align="center">
   <!-- This was obtained with plot_jsd_heatmap; usage in results.ipynb -->
-  <img src="src/data/figures/JS_Divergence.png" width="480">
+  <img src="../src/data/figures/JS_Divergence.png" width="480">
   <br><em>*Figure 30. Jensen–Shannon divergence matrix between spatial-only prediction distributions across mice.*</em>
 </p>
 
@@ -688,7 +688,7 @@ When comparing the inferred decision surface to the ground-truth plaque-distance
 
 <p align="center">
   <!-- This was obtained with plot_true_vs_pred_heatmaps in results.ipynb -->
-  <img src="src/data/figures/decision_tree_coarse.png" width="480">
+  <img src="../src/data/figures/decision_tree_coarse.png" width="480">
   <br><em>Figure 31. Ground-truth plaque-distance map and decision-tree reconstruction on a 200×200 grid.</em>
 </p>
 
@@ -700,7 +700,7 @@ This is a substantially more strict scenario than holding out 20% of cells at ra
 
 <p align="center">
   <!-- This was obtained with plot_spatial_block_split in results.ipynb -->
-  <img src="src/data/figures/spatial_tiles.png" width="480">
+  <img src="../src/data/figures/spatial_tiles.png" width="480">
   <br><em>Figure 32. Random tile-based train/test split (391 tiles; 78 test, 313 train).</em>
 </p>
 
@@ -712,7 +712,7 @@ Further, this R^2 inflation is not uniform across genes. Some genes show extreme
 
 <p align="center">
   <!-- This was obtained with plot_mean_r2_with_extremes in results.ipynb -->
-  <img src="src/data/figures/variance_spatial.png" width="480">
+  <img src="../src/data/figures/variance_spatial.png" width="480">
   <br><em>Figure 33. Mean OOF R² under random vs spatial block cross-validation across feature sets.</em>
 </p>
 
@@ -720,7 +720,7 @@ In the next figure, we demonstrate the average relative coordinate leakage gap (
 
 <p align="center">
   <!-- This was obtained with plot_mean_relative_gap_with_extremes in results.ipynb -->
-  <img src="src/data/figures/relative_variance_gap.png" width="480">
+  <img src="../src/data/figures/relative_variance_gap.png" width="480">
   <br><em>Figure 34. Mean relative leakage gap (%) between random and spatial block cross-validation (log-scaled).</em>
 </p>
 
@@ -732,7 +732,7 @@ Overall, the per-gene distance–signature interaction maps reveal smoothly vary
 
 <p align="center">
   <!-- This was obtained with plot_dist_signature_heatmaps_grid in results.ipynb -->
-  <img src="src/data/figures/interaction_model.png" width="480">
+  <img src="../src/data/figures/interaction_model.png" width="480">
   <br><em>Figure 35. Distance–signature interaction patterns across D1–D5 and S1–S5 bins.</em>
 </p>
 
@@ -742,7 +742,7 @@ On average, the interaction model performs best, but the improvement over the si
 
 <p align="center">
   <!-- This was obtained with plot_model_comparison_with_extremes in results.ipynb -->
-  <img src="src/data/figures/interaction_model_performance.png" width="480">
+  <img src="../src/data/figures/interaction_model_performance.png" width="480">
   <br><em>Figure 36. Spatial-block OOF R² for distance-only, signature-only, and interaction models.</em>
 </p>
 
@@ -754,19 +754,19 @@ Plotting the residuals after the perturbation reveals that the average absolute 
 
 <p align="center">
   <!-- This was obtained with plot_permutation_effect_across_genes in results.ipynb -->
-  <img src="src/data/figures/full_model_neighbor_permute.png" width="480">
+  <img src="../src/data/figures/full_model_neighbor_permute.png" width="480">
   <br><em>Figure 37. Effect of within-tile permutation on spatial-block OOF R² (62.9% average drop).</em>
 </p>
 
 <p align="center">
   <!-- This was obtained with plot_spatial_scatter in results.ipynb -->
-  <img src="src/data/figures/permuted_neighbors_spatial.png" width="480">
+  <img src="../src/data/figures/permuted_neighbors_spatial.png" width="480">
   <br><em>Figure 38. Tissue-wide map of permutation-induced residual changes.</em>
 </p>
 
 <p align="center">
   <!-- This was obtained with plot_tile_heatmap in results.ipynb -->
-  <img src="src/data/figures/perm_vs_true_tiles.png" width="480">
+  <img src="../src/data/figures/perm_vs_true_tiles.png" width="480">
   <br><em>Figure 39. Tile-level summary of permutation-induced residual changes.</em>
 </p>
 
@@ -778,19 +778,19 @@ Despite the large differences in predictive strength, the residuals in the origi
 
 <p align="center">
   <!-- This was obtained with plot_true_vs_fake_far_neighbors_across_genes in results.ipynb -->
-  <img src="src/data/figures/fake_neighbors.png" width="480">
+  <img src="../src/data/figures/fake_neighbors.png" width="480">
   <br><em>Figure 40. Closest-neighbor vs farthest-neighbor features under spatial-block CV (86.4% average drop).</em>
 </p>
 
 <p align="center">
   <!-- This was obtained with plot_pred_vs_obs_combined in results.ipynb -->
-  <img src="src/data/figures/true_permitted_fake_pred_vs_obs.png" width="480">
+  <img src="../src/data/figures/true_permitted_fake_pred_vs_obs.png" width="480">
   <br><em>Figure 41. Predicted vs observed expression (main model and ablations).</em>
 </p>
 
 <p align="center">
   <!-- This was obtained with plot_resid_vs_distance_combined in results.ipynb -->
-  <img src="src/data/figures/residual_v_dist_true_perm_fake.png" width="480">
+  <img src="../src/data/figures/residual_v_dist_true_perm_fake.png" width="480">
   <br><em>Figure 42. Residuals vs plaque distance (main model and ablations).</em>
 </p>
 
@@ -813,7 +813,7 @@ To examine the per-mouse variation in gene expression, we compute a z-normalized
 
 <p align="center">
   <!-- This was obtained with plot_pig_z_scores_per_cluster_per_mouse; usage in results.ipynb -->
-  <img src="src/data/figures/mean_PIG_per_mouse.png" width="480">
+  <img src="../src/data/figures/mean_PIG_per_mouse.png" width="480">
   <br><em>*Figure 43. Within gene z-normalized average PIG expression per mouse per cell type.*</em>
 </p>
 
@@ -822,7 +822,7 @@ To this end, we will compute the difference in signatures between age-matched Tg
 
 <p align="center">
   <!-- This was obtained with plot_volcano; usage in results.ipynb -->
-  <img src="src/data/figures/disease_effect_age_progression.png" width="480">
+  <img src="../src/data/figures/disease_effect_age_progression.png" width="480">
   <br><em>*Figure 44. Cluster-level summary of disease specificity (Tg − WT) alongside age progression, used to rank which cell types show the strongest plaque-linked transcriptional activation.*</em>
 </p>
 
@@ -830,7 +830,7 @@ The same pattern can be seen in the next line plot where, in Tg mice, cluster 6 
 
 <p align="center">
   <!-- This was obtained with plot_age_progression; usage in results.ipynb -->
-  <img src="src/data/figures/age_progression.png" width="480">
+  <img src="../src/data/figures/age_progression.png" width="480">
   <br><em>*Figure 45. Per-cluster changes in gene expression signature with age.*</em>
 </p>
 
@@ -838,7 +838,7 @@ Next, we will look at the PCA-based vizualisation of each cell type. We can see 
 
 <p align="center">
   <!-- This was obtained with plot_cluster_pcas; usage in results.ipynb -->
-  <img src="src/data/figures/PCA_clusters.png" width="480">
+  <img src="../src/data/figures/PCA_clusters.png" width="480">
   <br><em>*Figure 46. PCA-based visualization Tg/Wt differences in each cell type.*</em>
 </p>
 
@@ -848,7 +848,7 @@ We will now review the age trajectories in both mouse types. The following figur
 
 <p align="center">
   <!-- This was obtained with plot_age_curves_by_cluster; usage in results.ipynb -->
-  <img src="src/data/figures/age_progression_wt_tg.png" width="480">
+  <img src="../src/data/figures/age_progression_wt_tg.png" width="480">
   <br><em>*Figure 48. Age progression trajectories of cluster-level activation for WT vs Tg, showing AD-specific, age-progressive glial activation in Tg animals.*</em>
 </p>
 
@@ -856,7 +856,7 @@ Examining the heatmap of AD-specific genes, we can see that **Cluster 15 (Hypoth
 
 <p align="center">
   <!-- This was obtained with plot_ad_specific_heatmap; usage in results.ipynb -->
-  <img src="src/data/figures/ad_specific_genes.png" width="480">
+  <img src="../src/data/figures/ad_specific_genes.png" width="480">
   <br><em>*Figure 47. Heatmap of AD-specific genes (high in Tg, low in WT).*</em>
 </p>
 
@@ -864,7 +864,7 @@ Shifting our focus to glial cells, we can see that the genes C3, Nme8, and Lyz2 
 
 <p align="center">
   <!-- This was obtained with plot_top_de_heatmap; usage in results.ipynb -->
-  <img src="src/data/figures/top_genes_per_glial.png" width="480">
+  <img src="../src/data/figures/top_genes_per_glial.png" width="480">
   <br><em>*Figure 36. Top differential genes per glial cluster.*</em>
 </p>
 
