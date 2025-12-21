@@ -1,4 +1,7 @@
 import { Activity } from "lucide-react";
+import PlotFrame from "@/components/PlotFrame";
+const base = import.meta.env.BASE_URL;
+
 
 
 const NEG_ROWS = [
