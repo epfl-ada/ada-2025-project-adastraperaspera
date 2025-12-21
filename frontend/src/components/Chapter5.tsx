@@ -1,4 +1,4 @@
-import { Activity } from "lucide-react";
+import { Activity, CircleChevronRight } from "lucide-react";
 import PlotFrame from "@/components/PlotFrame";
 const base = import.meta.env.BASE_URL;
 
