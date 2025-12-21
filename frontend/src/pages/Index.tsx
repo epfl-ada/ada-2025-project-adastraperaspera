@@ -1,5 +1,6 @@
 import HeroSection from "@/components/HeroSection";
 import IntroductionSection from "@/components/IntroductionSection";
+import IntroductionSection2 from "@/components/IntroductionSection2";
 import MetricsSection from "@/components/MetricsSection";
 import GeneExpressionChart from "@/components/GeneExpressionChart";
 import GeneExpressionSection2 from "@/components/GeneExpressionChart2";
@@ -19,6 +20,12 @@ import RQ4Section from "@/components/RQ4Section";
 import RQ5Section from "@/components/RQ5Section";
 import DiscussionSection from "@/components/DiscussionSection";
 import DiscussionSection2 from "@/components/DiscussionSection2";
+import Chapter1 from "@/components/Chapter1";
+import Chapter2 from "@/components/Chapter2";
+import Chapter3 from "@/components/Chapter3";
+import Chapter4 from "@/components/Chapter4";
+import Chapter5 from "@/components/Chapter5";
+import Chapter6 from "@/components/Chapter6";
 
 const Index = () => {
   return (
@@ -42,6 +49,13 @@ const Index = () => {
       <ConclusionSection />*/}
       {/*<DiscussionSection */}
       <DiscussionSection2/>
+      <IntroductionSection2/>
+      <Chapter1 />
+      <Chapter2 />
+      <Chapter3 />
+      <Chapter4 />
+      <Chapter5 />
+      <Chapter6 />
       <Footer />
     </main>
   );
