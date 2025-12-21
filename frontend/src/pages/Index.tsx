@@ -1,5 +1,6 @@
 import HeroSection from "@/components/HeroSection";
 import IntroductionSection from "@/components/IntroductionSection";
+import IntroductionSection2 from "@/components/IntroductionSection2";
 import MetricsSection from "@/components/MetricsSection";
 import GeneExpressionChart from "@/components/GeneExpressionChart";
 import GeneExpressionSection2 from "@/components/GeneExpressionChart2";
@@ -42,6 +43,7 @@ const Index = () => {
       <ConclusionSection />*/}
       {/*<DiscussionSection */}
       <DiscussionSection2/>
+      <IntroductionSection2/>
       <Footer />
     </main>
   );

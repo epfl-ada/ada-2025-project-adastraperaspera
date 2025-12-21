@@ -148,6 +148,7 @@ const PreprocessingSection = () => {
                     </ul>
                     </div>
                 </div>
+              {/*
               <p className="text-lg text-muted-foreground leading-relaxed">
                 The data comes from sagittal brain slices of 6 mice stained with DAPI, a fluorescent DNA-binding nucleus dye. Three mice are healthy controls (wild type or Wt) at <span className="font-medium text-foreground">2.5, 5.7, and 13.4 months</span>. The remaining three are transgenic (Tg) at <span className="font-medium text-foreground">2.5, 5.7, and 17.9 months</span>.
                 The remaining three are transgenic (Tg) at <span className="font-medium text-foreground">2.5, 5.7, and 17.9 months</span>.
@@ -167,6 +168,11 @@ const PreprocessingSection = () => {
                     Morphology images of Wt and transgenic mice across ages
                   </figcaption>
                 </figure>*/}
+
+
+                <p className="text-lg text-muted-foreground leading-relaxed">
+                  Brain <span className="font-medium text-foreground">slices</span> from six mice were analyzed. Three are healthy controls, and three are transgenic mice that overproduce amyloid precursor protein, leading to early amyloid-β plaque formation. Plaques are visible in red in the oldest transgenic mouse (17.9 months).
+                </p>
                 <ImageGridPlot
                   files={{
                     "wt-2": `${base}images_grid_bw/full/wt-2.webp`,
