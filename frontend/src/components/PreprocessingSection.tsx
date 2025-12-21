@@ -135,17 +135,22 @@ const PreprocessingSection = () => {
               </p>
               <p className="text-lg text-muted-foreground leading-relaxed">
                 After alignment, we performed plaque post-processing to improve biological plausibility and robustness: we merged intersecting plaques, removed plaques outside the brain boundary, and filtered plaques below the 5th percentile in area. This produced <span className="font-medium text-foreground">1,736 Aβ plaques</span>, visualized below.
-              </p>*/}
+              </p>
 
-              <p className="text-lg text-muted-foreground leading-relaxed">
-                Plaques were detected from immunofluorescence images, aligned to morphology images, and post-processed for biological plausibility. After merging overlaps, removing artifacts, and filtering small fragments, we obtained <span className="font-medium text-foreground">1,736 plaques</span>.
+              <p className="text-lg text-muted-foreground leading-relaxed">In the oldest Tg mouse (17.9 months), plaques are directly visible via immunofluorescence staining. We treat plaques as spatial objects rather than vague regions. We annotate plaque and plaque-free areas, train a classifier to segment plaques, and then refine the plaque set to improve robustness and biological plausibility (merging overlaps, removing outside-brain detections, filtering very small plaques)  Plaques were detected from immunofluorescence images, aligned to morphology images, and post-processed for biological plausibility. After merging overlaps, removing artifacts, and filtering small fragments, we obtained <span className="font-medium text-foreground">1,736 plaques</span>.
               </p>
               <p className="text-lg text-muted-foreground leading-relaxed">
               Alignment accuracy was high (<span className="font-medium text-foreground">RMSE = 3.2 µm</span>), small relative to the <span className="font-medium text-foreground">median cell–plaque distance (61 µm)</span>, supporting reliable distance-based analysis.              
+              </p>*/}
+
+              <p className="text-lg text-muted-foreground leading-relaxed">
+                In the oldest Tg mouse (17.9 months), plaques are directly visible via immunofluorescence staining. We treat plaques as spatial objects rather than vague regions. We annotate plaque and plaque-free areas, train a classifier to segment plaques, and then refine the plaque set to improve robustness and biological plausibility (merging overlaps, removing outside-brain detections, filtering very small plaques)
               </p>
 
+              <p className="text-lg text-muted-foreground leading-relaxed">
+                This yields a final set of <span className="font-medium text-foreground">1,736</span> plaques that define the “lesion map” of the sick brain.
+              </p>
 
-              
               <PlotFrame
                     src={`${base}plots/plaque_geometries.html`}
                     title="Detected Aβ plaques after transformation"
@@ -158,25 +163,33 @@ const PreprocessingSection = () => {
             <div id="plaque-dist" className="space-y-4">
               <h3 className="text-xl font-semibold text-foreground">Distance to plaque</h3>
 
-              <p className="text-lg text-muted-foreground leading-relaxed">
+              {/*<p className="text-lg text-muted-foreground leading-relaxed">
                 For each cell, we computed distance to the nearest plaque as the <span className="font-medium text-foreground">Euclidean distance between the cell centroid and the nearest plaque boundary</span> (not the plaque centroid). This yields a direct geometric measure of proximity to plaque surfaces.
+              </p>*/}
+
+              <p className="text-lg text-muted-foreground leading-relaxed">
+                Plaque pathology is expected to be strongest close to plaques, so the key variable is distance to plaque. For each cell, we compute distance to the nearest plaque boundary (not the plaque centroid). This makes proximity a direct geometric measure of the cell’s relationship to the plaque surfac
               </p>
               
-
-        
               <PlotFrame
                       src={`${base}plots/cell_to_plaque_distance_map.html`}
                       title="Brain regions by distance to nearest plaque"
                       size="md"
                     />
+                
+                <p className="text-lg text-muted-foreground leading-relaxed">
+                  A critical technical step is coordinate alignment. Plaque coordinates are transformed from IF space to morphology space using a RANSAC-based transformation trained on <span className="font-medium text-foreground">26 landmarks</span>, achieving <span className="font-medium text-foreground">RMSE = 3.2 µm</span>. This is small relative to the <span className="font-medium text-foreground">median cell–plaque distance (61 µm)</span>, supporting that distance-based trends reflect biology rather than misregistration.
+                </p>
 
                 {/*<div className="rounded-2xl border border-border bg-card p-6">*/}
                     <p className="text-lg text-muted-foreground leading-relaxed">
-                    Distances are spatially heterogeneous but concentrated near plaques:
+                    We then visualize plaque proximity as a tissue-wide field and summarize the distribution of distances:
                     </p>
                     <ul className="space-y-3 text-muted-foreground">
-                        <li className="flex items-start gap-2"><CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" /> <span className="font-medium text-foreground">99%</span> of cells lie within <span className="font-medium text-foreground">200 µm</span> of a plaque </li>
-                        <li className="flex items-start gap-2"><CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" /> Distances are right-skewed, with a long tail of plaque-distant cells</li>
+                      <li className="flex items-start gap-2"><CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" /> Maximum distances: <span className="font-medium text-foreground">457 µm</span></li>
+                      <li className="flex items-start gap-2"><CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" /> <span className="font-medium text-foreground">99%</span> of cells lie within <span className="font-medium text-foreground">200 µm</span> of a plaque </li>
+                        <li className="flex items-start gap-2"><CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" /> Median:  <span className="font-medium text-foreground">61 µm</span> , SD: <span className="font-medium text-foreground">44.4 µm</span> </li>
+                        <li className="flex items-start gap-2"><CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" /> Right-skew with a long tail</li>
                     </ul>
                 {/*</div>*/}
 
@@ -196,14 +209,14 @@ const PreprocessingSection = () => {
             <div id="gene-comp" className="space-y-4">
               <h3 className="text-xl font-semibold text-foreground">Gene panel composition and sparsity</h3>
 
-              <p className="text-lg text-muted-foreground leading-relaxed">
+              {/*<p className="text-lg text-muted-foreground leading-relaxed">
                 The Xenium panel contains <span className="font-medium text-foreground">347 genes</span>, but expression is sparse. In the most advanced transgenic mouse:
               </p>
                     <ul className="space-y-3 text-muted-foreground">
                         <li className="flex items-start gap-2"><CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" /> <span className="font-medium text-foreground">302/347 genes</span> have zero median expression  </li>
                         <li className="flex items-start gap-2"><CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" /> Many plaque-induced genes (PIGs) show extreme zero inflation </li>
                     </ul>
-                {/*</div>*/}
+                </div>*/}
 
               {/*<figure className="space-y-2">
                   <img
@@ -215,6 +228,14 @@ const PreprocessingSection = () => {
                     Spatial distribution of individual cells (points) across all mice, colored by a clustering-derived component to illustrate spatial organization and local heterogeneity.
                   </figcaption>
                 </figure>*/}
+
+                <p className="text-lg text-muted-foreground leading-relaxed">
+                  The Xenium panel measures <span className="font-medium text-foreground">347 genes</span>, but expression is sparse. In the most AD-advanced sample (Tg 17.9 months), 
+                  <span className="font-medium text-foreground">302/347 genes have zero median transcript count</span>. 
+                  Across genes, transcript counts are right-skewed and the fraction of nonzero cells varies widely. 
+                  This means signal exists, but it is unevenly detectable and often concentrated in subsets of cells.
+                </p>
+
                 <ImageGridPlot
                   files={{
                     "wt-2": `${base}images_grid_gold/full/wt-2.webp`,
@@ -238,8 +259,12 @@ const PreprocessingSection = () => {
                   cellSize={180}
                 />
             
-                <p className="text-lg text-muted-foreground leading-relaxed">
+                {/*<p className="text-lg text-muted-foreground leading-relaxed">
                     We next compare the distribution of <span className="font-medium text-foreground">log1p-transformed</span> transcript counts for the <span className="font-medium text-foreground">16 PIGs</span> against the typical distribution across all 347 genes, focusing on the <span className="font-medium text-foreground">17.9-month transgenic mouse</span> to study advanced pathology. We plot histograms (B = 50 bins) and (for PIGs) Gaussian KDE curves.
+                </p>*/}
+
+                <p className="text-lg text-muted-foreground leading-relaxed">
+                  We focus on <span className="font-medium text-foreground">16 plaque-induced genes (PIGs)</span> curated from prior literature. Their expression distributions show a consistent pattern: <span className="font-medium text-foreground">13/16 PIGs have a mode at zero</span>, followed by long tails at higher expression. This indicates plaque-linked activation is strong in some microenvironments but absent in most cells.
                 </p>
 
                 <PlotFrame
@@ -249,11 +274,11 @@ const PreprocessingSection = () => {
                     fit="contain"
                 />
 
-                <p className="text-lg text-muted-foreground leading-relaxed">
+               {/* <p className="text-lg text-muted-foreground leading-relaxed">
                     Among the <span className="font-medium text-foreground">16 PIGs</span>, <span className="font-medium text-foreground">13 have a mode at zero</span>, indicating activation in restricted subsets of cells or neighborhoods.
                 </p>
                 
-                {/*<p className="text-lg text-muted-foreground leading-relaxed">
+                <p className="text-lg text-muted-foreground leading-relaxed">
                     A consistent pattern emerges: for <span className="font-medium text-foreground">13/16 PIGs</span>, the distribution has a <span className="font-medium text-foreground">mode at zero</span>, followed by gradual density decay at higher counts. Different PIGs decay at different rates, indicating heterogeneous activation intensity and/or cell-state specificity.
                 </p>
                 <p className="text-lg text-muted-foreground leading-relaxed">
@@ -262,6 +287,10 @@ const PreprocessingSection = () => {
                 into a composite <span className="font-medium text-foreground">weirdness score</span>. Among PIGs,
                 <span className="font-medium text-foreground"> 13/16 </span> show strong zero inflation. The five most unusual PIGs are:
                 </p>*/}
+
+                <p className="text-lg text-muted-foreground leading-relaxed">
+                  To formalize which genes are most challenging, we compute a composite “weirdness score” combining zero inflation and distributional features.
+                </p>
 
 
                 <GeneWeirdnessTable title="Weird genes (QC)" />

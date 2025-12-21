@@ -84,7 +84,7 @@ const RQ1Section = () => {
               <h3 className="text-2xl font-bold text-foreground">RQ1 : How does cell type composition change in plaque proximity?</h3>
               <h4 className="text-xl font-semibold text-foreground">Depletion & enrichment by cluster</h4>
               <p className="text-lg text-muted-foreground leading-relaxed">
-                We model the relationship between <span className="font-medium text-foreground">cluster membership</span> and <span className="font-medium text-foreground">distance to the nearest plaque</span> using logistic regression. After fitting, we find statistically significant coefficients for <span className="font-medium text-foreground">14 of 19 clusters</span>, using a <span className="font-medium text-foreground">Bonferroni-adjusted p-value threshold of 0.01</span>.
+                We modeled cluster frequency as a function of plaque distance using logistic regression, with multiple-testing correction. After fitting, we find statistically significant coefficients for <span className="font-medium text-foreground">14 of 19 clusters</span>, using a <span className="font-medium text-foreground">Bonferroni-adjusted p-value threshold of 0.01</span>.
               </p>
             </div>
             
