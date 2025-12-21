@@ -22,6 +22,7 @@ import DiscussionSection from "@/components/DiscussionSection";
 import DiscussionSection2 from "@/components/DiscussionSection2";
 import Chapter1 from "@/components/Chapter1";
 import Chapter2 from "@/components/Chapter2";
+import Chapter3 from "@/components/Chapter3";
 
 const Index = () => {
   return (
@@ -48,6 +49,7 @@ const Index = () => {
       <IntroductionSection2/>
       <Chapter1 />
       <Chapter2 />
+      <Chapter3 />
       <Footer />
     </main>
   );
