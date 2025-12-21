@@ -20,7 +20,7 @@ const AppendixSection = () => {
               </div>
               <div>
                 <div className="text-sm font-semibold text-foreground">
-                  7.a Multiple testing correction
+                  Multiple testing correction
                 </div>
                 <div className="text-xs text-muted-foreground">
                   Controlling false positives across many tests
@@ -49,7 +49,7 @@ const AppendixSection = () => {
               </div>
               <div>
                 <div className="text-sm font-semibold text-foreground">
-                  7.b Feature engineering
+                  Feature engineering
                 </div>
                 <div className="text-xs text-muted-foreground">
                   Definitions used in regression models
