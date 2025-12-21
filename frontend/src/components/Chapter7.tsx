@@ -1,4 +1,7 @@
 import { Flame, CircleChevronRight } from "lucide-react";
+import PlotFrame from "@/components/PlotFrame";
+const base = import.meta.env.BASE_URL;
+
 
 const Chapter7 = () => {
   return (
@@ -68,6 +71,47 @@ const Chapter7 = () => {
               </p>
             </div>
 
+            <ul className="space-y-3 text-muted-foreground">
+                <li>
+                  <p className="text-lg text-muted-foreground leading-relaxed">
+                    We group cells into{" "}
+                    <span className="font-medium text-foreground">
+                      5 equal-count distance bins
+                    </span>{" "}
+                    and compute, for each PIG:
+                  </p>
+                </li>
+
+                <li className="flex items-start gap-2">
+                  <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
+                  mean{" "}
+                  <span className="font-medium text-foreground">log1p-normalized</span>{" "}
+                  transcript count per bin
+                </li>
+
+                <li className="flex items-start gap-2">
+                  <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
+                  95% confidence interval (SEM-based)
+                </li>
+              </ul>
+
+              <p className="text-lg text-muted-foreground leading-relaxed">
+                An ANOVA confirms that{" "}
+                <span className="font-medium text-foreground">all 16 PIGs</span> have
+                significant differences in mean expression across distance bins at{" "}
+                <span className="font-medium text-foreground">
+                  Bonferroni-corrected FDR = 0.01
+                </span>
+                .
+              </p>
+
+              <PlotFrame
+                src={`${base}plots/PIG_expression_vs_distance.html`}
+                title="Expression of PIGs vs. distance to plaque"
+                size="xl"
+                caption="Distance-binned mean expression of all 16 PIGs with 95% C, showing consistent plaque-proximal elevation for glial/immune markers.."
+              />
+
             <div id="ch-7-gradients" className="space-y-4">
               <p className="text-lg text-muted-foreground leading-relaxed">
                 Across distance bins, every PIG changes significantly with
@@ -81,7 +125,7 @@ const Chapter7 = () => {
 
             <div id="ch-7-heterogeneity" className="space-y-4">
               <p className="text-lg text-muted-foreground leading-relaxed">
-                But not all PIGs behave equally. Your{" "}
+                But not all PIGs behave equally. Our{" "}
                 <span className="font-semibold text-foreground">
                   distance to half expression
                 </span>{" "}
@@ -91,6 +135,13 @@ const Chapter7 = () => {
                 almost flat, not because biology is absent, but because the gene
                 is nearly always zero in this panel.
               </p>
+
+              <PlotFrame
+                src={`${base}plots/distances_to_halve_expression.html`}
+                title="Distances to halve expression for the 16 PIGs"
+                size="md"
+                caption="Interactive: d₁/₂ per PIG computed from regression slopes."
+              />
 
               <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
                 <div className="text-sm font-semibold text-foreground mb-3">

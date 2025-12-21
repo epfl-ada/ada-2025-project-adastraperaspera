@@ -320,6 +320,11 @@ const Chapter6 = () => {
                                 </li>
                               </ul>
                         
+              
+                <div className="space-y-6">
+                    <CorrTable />
+                    <DirectionTable />
+                </div>
 
 
               <p className="text-lg text-muted-foreground leading-relaxed">
@@ -332,6 +337,13 @@ const Chapter6 = () => {
                 <span className="italic text-foreground">Apoe</span>. So the mouse
                 is telling us two things at once:
               </p>
+
+              <PlotFrame
+                src={`${base}plots/interactive_PIG_by_broad_type.html`}
+                title="PIG expression by type"
+                size="xl"
+                caption="Mean Apoe expression across distance bins stratified by broad cell type, with 95% confidence intervals (SEM-based)."
+              />
 
               <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
                 <ol className="space-y-3 text-muted-foreground">
@@ -350,12 +362,7 @@ const Chapter6 = () => {
                 </ol>
               </div>
 
-              <div className="space-y-6">
-                    <CorrTable />
-                    <DirectionTable />
-                </div>
-
-
+              
             </div>
           </div>
 
@@ -397,4 +404,3 @@ const Chapter6 = () => {
 };
 
 export default Chapter6;
-```
