@@ -373,30 +373,48 @@ const PreprocessingSection = () => {
                 Representative cluster interpretations include:
                 </p>
                     <ul className="space-y-3 text-muted-foreground">
-                        <li className="flex items-start gap-2">
-                        <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" /> <span className="font-medium text-foreground">Cluster 6 (vascular cells)</span>is concentrated near the outer rim, consistent with epidural space localization.
-                        </li>
+                      <li className="flex items-start gap-2">
+                        <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
+                        <span>
+                          <span className="font-medium text-foreground">Cluster 6 (vascular cells)</span>{" "}
+                          is concentrated near the outer rim, consistent with epidural space localization.
+                        </span>
+                      </li>
 
-                        <li className="flex items-start gap-2">
-                        <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" /> <span className="font-medium text-foreground">Cluster 14</span>{""}
-                        traces hippocampal formation and follows the dentate gyrus shape; inferred as <span className="font-medium text-foreground">dentate gyrus immature glutamatergic neurons</span>.
-                        
-                            
-                        
-                        </li>
+                      <li className="flex items-start gap-2">
+                        <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
+                        <span>
+                          <span className="font-medium text-foreground">Cluster 14</span>{" "}
+                          traces hippocampal formation and follows the dentate gyrus shape; inferred as{" "}
+                          <span className="font-medium text-foreground">
+                            dentate gyrus immature glutamatergic neurons
+                          </span>.
+                        </span>
+                      </li>
 
-                        <li className="flex items-start gap-2">
-                        <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" /> <span className="font-medium text-foreground">Cluster 10</span>{""}
-                        dominates the amygdala/hypothalamus region; inferred as <span className="font-medium text-foreground">hypothalamic medial mammillary glutamatergic neurons</span>.
-                        </li>
+                      <li className="flex items-start gap-2">
+                        <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
+                        <span>
+                          <span className="font-medium text-foreground">Cluster 10</span>{" "}
+                          dominates the amygdala/hypothalamus region; inferred as{" "}
+                          <span className="font-medium text-foreground">
+                            hypothalamic medial mammillary glutamatergic neurons
+                          </span>.
+                        </span>
+                      </li>
 
-                        <li className="flex items-start gap-2">
-                        <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" /> Ventricular cavities show a distinct lining cluster{""}
-                        (<span className="font-medium text-foreground">cluster 15</span>), inferred as<span className="font-medium text-foreground">hypothalamic GnRH1-expressing glutamatergic neurons</span>,
-                        consistent with hypothalamic contributions to the third ventricle walls.
-                        </li>
-
+                      <li className="flex items-start gap-2">
+                        <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
+                        <span>
+                          Ventricular cavities show a distinct lining cluster{" "}
+                          (<span className="font-medium text-foreground">cluster 15</span>), inferred as{" "}
+                          <span className="font-medium text-foreground">
+                            hypothalamic GnRH1-expressing glutamatergic neurons
+                          </span>, consistent with hypothalamic contributions to the third ventricle walls.
+                        </span>
+                      </li>
                     </ul>
+
                 {/*</div>*/}
                 
                 <p className="text-lg text-muted-foreground leading-relaxed">

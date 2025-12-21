@@ -705,7 +705,7 @@ const RQ4Section = () => {
               </ul>
             </div>
 
-            <div id="rq4-regression" className="space-y-6">
+          <div id="rq4-regression" className="space-y-6">
             <h4 className="text-base font-semibold text-foreground mb-4">
               Deep dive into the regression models
             </h4>
@@ -747,7 +747,7 @@ const RQ4Section = () => {
                 Importantly, the assignment is random at the tile level (not the cell level), so the model is prevented from “seeing” large chunks of brain tissue. This is a substantially more stringent scenario than holding out 20% of cells at random, because random cell-level splits still expose the model to the full spatial extent of the brain and can therefore inflate performance via spatial leakage.
                 </p>
 
-            <PlotFrame
+              <PlotFrame
                 src={`${base}plots/spatial_tiles.html`}
                 title=""
                 size="md"
@@ -804,7 +804,6 @@ const RQ4Section = () => {
                 This motivates an interaction-aware formulation: by inspecting per-gene distance–signature interaction maps (log1p-transformed and normalized per gene), we can distinguish smoothly varying gradients (consistent with gradual spatial structure) from localized peaks (suggesting gene-specific regimes in which neighborhood composition modulates distance-dependent effects).
               </p>
               
-              </p>
                <PlotFrame
                 src={`${base}plots/interaction_model.html`}
                 title=""
