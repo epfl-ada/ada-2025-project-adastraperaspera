@@ -1,5 +1,73 @@
 import { Activity } from "lucide-react";
 
+
+const NEG_ROWS = [
+  { cluster: "Immune", slope: "−0.01427", p0: "0.159", p100: "0.043", change: "−72.7%" },
+  { cluster: "Vascular", slope: "−0.01116", p0: "0.100", p100: "0.035", change: "−64.9%" },
+  { cluster: "Pons, Gluta", slope: "−0.00772", p0: "0.015", p100: "0.007", change: "−53.4%" },
+  {
+    cluster: "Intra/Extratelencephalic, Gluta",
+    slope: "−0.00361",
+    p0: "0.075",
+    p100: "0.054",
+    change: "−28.7%",
+  },
+  { cluster: "Cortex medial, GABA", slope: "−0.00282", p0: "0.041", p100: "0.031", change: "−23.8%" },
+  { cluster: "Astrocyte", slope: "−0.00114", p0: "0.136", p100: "0.123", change: "−9.5%" },
+];
+
+const POS_ROWS = [
+  { cluster: "Hypothalamic Gnrh1, Gluta", slope: "+0.02346", p0: "0.002", p100: "0.019", change: "+927.0%" },
+  { cluster: "Medulla, GABA", slope: "+0.01815", p0: "0.002", p100: "0.012", change: "+508.2%" },
+  { cluster: "Cerebral LGE, GABA", slope: "+0.00781", p0: "0.016", p100: "0.035", change: "+114.3%" },
+  { cluster: "Olfactory bulb, Gluta", slope: "+0.00678", p0: "0.011", p100: "0.021", change: "+94.9%" },
+  { cluster: "Dentate, Gluta", slope: "+0.00591", p0: "0.014", p100: "0.025", change: "+78.5%" },
+  { cluster: "Corticothalamic, Gluta", slope: "+0.00384", p0: "0.029", p100: "0.042", change: "+44.8%" },
+  { cluster: "Hypothalamic medial, Gluta", slope: "+0.00256", p0: "0.033", p100: "0.042", change: "+27.9%" },
+  { cluster: "Oligodendrocyte", slope: "+0.00208", p0: "0.161", p100: "0.191", change: "+18.7%" },
+];
+
+function StatTable({
+  title,
+  rows,
+}: {
+  title: string;
+  rows: { cluster: string; slope: string; p0: string; p100: string; change: string }[];
+}) {
+  return (
+    <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+      <div className="flex items-center justify-between gap-3 mb-4">
+        <h4 className="text-base font-semibold text-foreground">{title}</h4>
+      </div>
+
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-border text-muted-foreground">
+              <th className="py-2 pr-4 text-left font-medium">Cluster</th>
+              <th className="py-2 pr-4 text-right font-medium">Slope βₖ</th>
+              <th className="py-2 pr-4 text-right font-medium">p(0)</th>
+              <th className="py-2 pr-4 text-right font-medium">p(100)</th>
+              <th className="py-2 text-right font-medium">Relative change</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((r) => (
+              <tr key={r.cluster} className="border-b border-border/60 last:border-b-0">
+                <td className="py-2 pr-4 text-foreground">{r.cluster}</td>
+                <td className="py-2 pr-4 text-right tabular-nums">{r.slope}</td>
+                <td className="py-2 pr-4 text-right tabular-nums">{r.p0}</td>
+                <td className="py-2 pr-4 text-right tabular-nums">{r.p100}</td>
+                <td className="py-2 text-right tabular-nums">{r.change}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
 const Chapter5 = () => {
   return (
     <section id="ch-5" className="py-24 bg-background">
@@ -75,6 +143,11 @@ const Chapter5 = () => {
                   <span className="font-medium text-foreground">100 µm</span> away from the plaque
                 </li>
               </ul>
+
+              <div className="grid gap-6 lg:grid-cols-2">
+                <StatTable title="Clusters depleted with distance (negative slopes; enriched near plaques)" rows={NEG_ROWS} />
+                <StatTable title="Clusters enriched with distance (positive slopes; depleted near plaques)" rows={POS_ROWS} />
+              </div>
 
 
               <p className="text-lg text-muted-foreground leading-relaxed">
