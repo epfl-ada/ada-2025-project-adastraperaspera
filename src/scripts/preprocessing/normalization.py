@@ -151,7 +151,7 @@ def deseq2_normalize(adata: sc.AnnData, min_genes: int = 20) -> sc.AnnData:
     Returns:
         sc.AnnData: Normalized AnnData object with log1p-transformed counts.
     """
-    logger.info("🔄 Applying DESeq2-style median-of-ratios normalization...")
+    logger.info("Applying DESeq2-style median-of-ratios normalization...")
 
     adata_norm = adata.copy()
 
@@ -177,7 +177,7 @@ def deseq2_normalize(adata: sc.AnnData, min_genes: int = 20) -> sc.AnnData:
     logger.info("Applying log1p transformation...")
     sc.pp.log1p(adata_norm)
 
-    logger.info("✅ DESeq2 normalization complete")
+    logger.info(" DESeq2 normalization complete")
     return adata_norm
 
 
@@ -247,7 +247,7 @@ def pydeseq2_normalize_global(
             - Normalized AnnData object (log1p transformed if apply_log1p=True)
             - Size factors array for use in DE analysis
     """
-    logger.info("🔄 Applying PyDESeq2 median-of-ratios normalization...")
+    logger.info("Applying PyDESeq2 median-of-ratios normalization...")
 
     adata_norm = adata.copy()
 
@@ -278,7 +278,7 @@ def pydeseq2_normalize_global(
                 X_norm, index=adata_norm.obs_names, columns=adata_norm.var_names
             )
         else:
-            logger.info("✅ PyDESeq2 normalization completed successfully")
+            logger.info(" PyDESeq2 normalization completed successfully")
 
     except Exception as e:
         logger.warning(
@@ -300,7 +300,7 @@ def pydeseq2_normalize_global(
     if apply_log1p:
         logger.info("Applying log1p transformation for exploration...")
         sc.pp.log1p(adata_norm)
-        logger.info("✅ Log1p transformation applied")
+        logger.info(" Log1p transformation applied")
 
     sf = adata_norm.obs["size_factors"]
     logger.info(
@@ -308,7 +308,7 @@ def pydeseq2_normalize_global(
         f"range=[{sf.min():.3f}, {sf.max():.3f}]"
     )
 
-    logger.info("✅ PyDESeq2 normalization complete")
+    logger.info(" PyDESeq2 normalization complete")
     return adata_norm, size_factors
 
 
@@ -329,7 +329,7 @@ def apply_global_size_factors(
     Returns:
         sc.AnnData: Normalized AnnData object.
     """
-    logger.info("🔄 Applying global size factors...")
+    logger.info("Applying global size factors...")
 
     adata_norm = adata.copy()
 
@@ -346,7 +346,7 @@ def apply_global_size_factors(
         logger.info("Applying log1p transformation...")
         sc.pp.log1p(adata_norm)
 
-    logger.info("✅ Global size factors applied")
+    logger.info(" Global size factors applied")
     return adata_norm
 
 
@@ -364,7 +364,7 @@ def prepare_for_de_analysis(adata: sc.AnnData, size_factors: np.ndarray) -> sc.A
     Returns:
         sc.AnnData: AnnData object with raw counts and size factors for DE.
     """
-    logger.info("🔄 Preparing data for DE analysis...")
+    logger.info("Preparing data for DE analysis...")
 
     adata_de = adata.copy()
 
@@ -377,5 +377,5 @@ def prepare_for_de_analysis(adata: sc.AnnData, size_factors: np.ndarray) -> sc.A
         f"Size factors range: [{size_factors.min():.3f}, {size_factors.max():.3f}]"
     )
 
-    logger.info("✅ Data prepared for DE analysis")
+    logger.info(" Data prepared for DE analysis")
     return adata_de

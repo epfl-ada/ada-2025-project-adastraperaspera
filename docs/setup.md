@@ -8,7 +8,7 @@ cd ada-2025-project-adastraperaspera
 # Create a venv and activate it
 python3.11 -m venv ada-venv
 source ada-venv/bin/activate
-export PATH="/my/path/to/ada-venv/bin:$PATH" # <- modify this to your venv path
+export PATH="/my/path/to/ada-venv/bin:$PATH" # <- set this to the venv bin path
 
 # install dependencies (includes Ruff and pre-commit)
 pip install -r pip_requirements.txt
@@ -29,7 +29,7 @@ pre-commit run --all-files
 
 Example of an environment variable file:
 ```
-BASE_XENIUM_DIR=your/path/to/xenium/data
+BASE_XENIUM_DIR=/path/to/xenium/data
 ```
 
 
@@ -62,7 +62,7 @@ Notes:
 │   ├── data
 │   │   └── Xenium_V1_FFPE_TgCRND8_17_9_months
 │   │       ├── Xenium_V1_FFPE_TgCRND8_17_9_months_if_image.qpdata   # QuPath project: 11 negative rects + 9 positive polygons + classifier outputs (IF space).
-│   │       ├── image_keypoints.csv                # 26 matched control points (morphology↔IF).
+│   │       ├── image_keypoints.csv                # 26 matched control points (morphology<->IF).
 │   │       ├── plaque_polygons.csv                # 1,938 plaque polygons transformed into morphology coords (post-alignment).
 │   │       ├── brain_polygon.csv                  # The coordinates delimiting the brain region.
 │   │       └── qupath_plaque_polygons.geojson     # Predicted plaque polygons exported from QuPath in IF-image coords (pre-alignment).

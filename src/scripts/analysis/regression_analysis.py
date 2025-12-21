@@ -784,7 +784,7 @@ def regress_expression_with_spatial_features(
 
     if not results_df.empty:
         logger.info(
-            f"✅ Completed nested regression analysis. "
+            f" Completed nested regression analysis. "
             f"Fitted models for {results_df['gene'].nunique()} genes, "
             f"total {len(results_df)} model fits."
         )
@@ -952,7 +952,7 @@ def separate_nested_regression_results(
         )
 
     logger.info(
-        f"✅ Separated results: {len(model_summaries)} model summaries, "
+        f" Separated results: {len(model_summaries)} model summaries, "
         f"{len(nested_comparisons)} nested comparisons"
     )
 
@@ -1004,7 +1004,7 @@ def apply_fdr_correction_to_comparisons(
     n_sig_after = (comparisons_adj["f_test_pval_adj"] < alpha).sum()
 
     logger.info(
-        f"✅ Applied FDR correction. "
+        f" Applied FDR correction. "
         f"Significant before: {n_sig_before}, after: {n_sig_after} "
         f"(alpha = {alpha})"
     )
@@ -1094,7 +1094,7 @@ def create_feature_block_importance_table(
     summary_df = pd.DataFrame(summary_rows)
 
     logger.info(
-        f"✅ Created feature block importance table with {len(summary_df)} comparison types"
+        f" Created feature block importance table with {len(summary_df)} comparison types"
     )
 
     return summary_df

@@ -1,158 +1,245 @@
-# Team ADAstraPerAspera: Milestone P2
-## Spatial Analysis in Alzheimer's Disease: Modeling Gene Expression and Morphology Around Amyloid-β Plaques
+# [Quantifying How Amyloid-beta Plaques Reshape the Tissue Microenvironment](https://epfl-ada.github.io/ada-2025-project-adastraperaspera/)
 
 ## Abstract
-This project investigates how Aβ plaques impact the surrounding microenvironment. We aim to develop a quantitative model to precisely describe the influence of the plaques on the surrounding tissue. Knowing which genes and cells are impacted at different plaque distances can refine our understanding of Alzheimer's development. Further, the developers of new drugs can use our model to select realistic targets within the plaque regions accessible from the vasculature.
 
-Our story explores how plaque proximity impacts the cellular, molecular, and tissue environments. We aim to analyze the cell-to-plaque distances and apply rigorous statistical tests to describe the spatial trends in gene expression and cell composition. Further, we look at the interplay between gene expression and cell composition, asking ourselves which of the two phenomena is the underlying cause. Finally, we flip the perspective and benchmark predictive models to infer plaque distance from multigene expression.
+Amyloid beta plaques (Aβ) are a known hallmark of Alzheimer's disease (AD) with known effects including changes in gene expression, glial activation and neuronal death. However, the bulk of the existing research only examines this influence across rough distance bins.  Building a finer model of plaque-induced microenvironment has important downstream applications. With the knowledge of *which* cells and *which* genes respond *where* around the plaques, drug developers can pre-filter therapeutic targets accessible from the vasculature.
 
-## Research Questions and Key Findings
+In this project, we utilize Xenium murine transcriptomics dataset to develop and interpret quantitative models. We investigate (1) temporal and spatial trends in gene expression, and (2) time and distance-dependent changes in cell composition. We describe the interplay between the two and provide a plausible causal relationship. Finally, we flip the direction and benchmark predictive models to infer plaque distance from multiple modalities. 
 
-### **RQ1 — How does gene expression change with distance from plaques?**
-Expression of 16 Plaque-Induced Genes (PIGs) was regressed on plaque distance and compared across bins.
-Most PIGs (*Gfap, Cst3, Apoe, B2m, Hexb*) show significantly negative slopes (FDR < 0.01), confirming decreasing expression with distance.
-*Gfap* decays fastest (half-distance ≈ 130 µm). Sparse genes (*Cxcl10, Ifit3, Nrep*) show weaker trends.
+## Full Analysis
 
-<p align="center">
-  <img src="src/data/figures/rq1_expr_by_dist_bin.png" width="480">
-  <br><em>Expression by distance bin</em>
-</p>
+The full report with interactive visuals is available on [our website](https://epfl-ada.github.io/ada-2025-project-adastraperaspera/). Derivations and supplementary analysis can be found in [`results.ipynb`](https://github.com/epfl-ada/ada-2025-project-adastraperaspera/blob/main/results.ipynb).
 
-### **RQ2 — How do cell-type frequencies vary with distance?**
-Leiden clustering on **347 genes (~54 k cells)** identified 22 clusters mapped to canonical cell types (*Apoe, Gfap, Mbp, Nrep* markers).
+## Research Questions
 
-<p align="center">
-  <table>
-    <tr>
-      <td align="center" style="border: none;">
-        <img src="src/data/figures/rq2_clusters.png" width="300"><br>
-        <em>Leiden clusters</em>
-      </td>
-      <td align="center" style="border: none;">
-        <img src="src/data/figures/cell_type_v_distance.png" width="300"><br>
-        <em>Cell-type composition by distance to plaque</em>
-      </td>
-    </tr>
-  </table>
-</p>
+In this project, we explore the following research questions (RQs).
 
-- Microglia, reactive astrocytes, and immune cells are enriched within < 30 µm.
-- Neurons and oligodendrocytes decline near plaques.
+#### **How does cell-type composition change with plaque proximity?**
 
-### **RQ3 — How do gene-expression gradients relate to cell-composition shifts?**
-Integrating cell-type annotations with plaque distances shows that mean PIG expression and cell type proportions co-vary strongly, and *Cd63* remains distance-dependent after controlling for composition.
-Thus, plaque effects reflect both **cell-type redistribution** and **intrinsic transcriptional activation**, a dual mechanism of spatial gliosis.
+- What clusters are under- and over-represented near plaques?
+- How quickly does the cluster proportion change with distance?
 
-<p align="center">
-  <table>
-    <tr>
-      <td align="center" style="border: none;">
-        <img src="src/data/figures/Apoe_vs_dist.png" width="400"><br>
-        <em><em>Apoe</em> regression by distance and cell type</em>
-      </td>
-      <td align="center" style="border: none;">
-        <img src="src/data/figures/pig_type_correlation.png" width="400"><br>
-        <em>Spearman correlation between PIGs and cell types</em>
-      </td>
-    </tr>
-  </table>
-</p>
+#### **How are cell-type composition, PIG expression, and plaque distance related?**
 
-### **RQ4 — Which genes predict a cell’s plaque proximity?**
-We modeled plaque distance from **347-gene** expression using **LASSO, Elastic Net, Random Forest, and XGBoost**.
-**Best model:** XGBoost (Test R² ≈ 0.25).
-**Top predictors:** *Gfap, Lyz2, Apoe, Spag16, Igf2*.
-Oligodendrocyte genes (*Mbp, Plp1*) show weak coupling.
+- Are the changes in Plaque-Induced Genes (PIGs) mostly due to the cell-type composition changes?
+- Does distance to plaque still have an effect after fixing the cell type?
 
-<p align="center">
-  <img src="src/data/figures/results_q4.png" width="600">
-  <br><em>Residual structure and cell-type bias</em>
-</p>
+#### **How does the Plaque Induced Gene (PIG) expression change in plaque proximity?**
 
-**Next steps**
-1) Add plaque area, orientation, multi-plaque proximity, and neighborhood gene expression.
-2) Restrict to one brain region (e.g., amygdala).
-These additions should raise explanatory power, reduce heteroscedasticity, and increase biological specificity in P3.
+- Which PIGs have the highest differential expression around the plaques?
+- How quickly does the PIG expression decrease with distance?
 
-## Dataset Description and Feasibility
+#### **When modeling plaque distance, which feature modalities are most important?**
 
-| **Aspect**              | **Procedure**                          | **Outcome**                    |
-|------------------------:|----------------------------------------|--------------------------------|
-| **Source**              | Xenium V1 FFPE TgCRND8 (17.9 m)        | Public 10x Genomics dataset    |
-| **Size**                | ~**54 k cells × 347 genes**            | < 16 GB RAM                    |
-| **QC**                  | Remove bottom 5% by transcripts/area   | ~89% retained                  |
-| **Plaque Alignment**    | 26 control points + RANSAC             | 3 µm RMS error                 |
-| **Distance Computation**| Shapely STRtree nearest boundary       | < 1 min                        |
-| **Integration**         | Merge expression + morphology + distance| Unified ~**54 k × 370** frame  |
+- When comparing morphology, spatial coordinates, and cell type, which has the strongest predictive power?
+- Do the predictive models generalize in a spatial cross-validation setup?
 
-Feasible on MacBook Pro (M4, 16 GB); full pipeline < 10 min.
+#### **How does the gene expression change with age for each cell type and mouse group?**
+
+- Which cell types show the largest differences in gene expression between transgenic (Tg) and wild type (Wt) mice?
+- What are the age-specific changes in gene expression in Tg mice?
+
+## Datasets
+
+- [**10X Genomics Xenium AD mouse brain dataset**](https://www.10xgenomics.com/datasets/xenium-in-situ-analysis-of-alzheimers-disease-mouse-model-brain-coronal-sections-from-one-hemisphere-over-a-time-course-1-standard)
+  - 6 mice (Wt at 2.5, 5.7, 13.4 months; Tg at 2.5, 5.7, 17.9 months)
+  - 347 genes, 351,714 cells, 78,885,074 transcripts
+  - 6 morphology images and 1 immunofluorescence (IF) image
+  - 1,736 Aβ plaques after quality control
+- **Plaque annotations and alignment**
+  - A [QuPath](https://qupath.github.io/)-based annotation file with labeled plaque and plaque-free regions
+  - Landmark pairs of points for morphology/IF image alignment
+  - Plaque polygons after alignment, convexity-enforcement, and quality control
 
 ## Methods
 
-**Preprocessing:** Automatic download → QC filtering → log₁₊ normalization → plaque alignment → distance computation → merged dataset.
+### Preprocessing and spatial features
 
-**Analyses include:**
-- Gene-wise stats (mean, var, skew, zero/NaN fractions)
-- “Weirdness” score (dispersion + shape metrics)
-- Quantile-binned spatial trends (5 bins ± 1.96×SEM)
-- Spearman ρ, OLS slopes (BH-FDR correction)
-- Leiden clustering → cell-type enrichment by distance
-- Predictive models (R², feature importance)
+- **Plaque detection**: random forest-based segmentation trained on 20 hand-labeled polygons (11 plaque-free regions and 9 plaques).
+- **Coordinate alignment**: RANSAC-based transformation from IF coordinate space to morphology coordinate space using 26 hand-labeledlandmark pairs. Resulted in the alignment RMSE of 3.2 µm.
+- **Cell-to-plaque distance**: Euclidean distance from Xenium-provided cell centroid to the nearest boundary of plaque polygon.
+- **Extra features**
+  - Plaque geometry: area, perimeter, major axis length, orientation.
+  - Multi-plaque proximity within $R = 61$ µm: plaque count and average distance.
+  - Neighborhood expression: mean expression of 15 other PIGs in $100$ nearest neighbors.
 
-All core logic modularized under `src/scripts/` and executed via a single Jupyter notebook.
+### Statistics and modeling
 
-## Data Understanding
+- **Joint clustering**: Dimensionality reduction with PCA -> k-Nearest Neighbors graph (k = 15) -> Leiden clustering -> UMAP for visualization.
+- **Cell type composition vs distance**: logistic regression per Leiden cluster with multiple testing correction.
+- **PIG spatial pattern analysis**: distance binning, Analysis of Variance (ANOVA) across bins, and per-gene regressions with the Benjamini-Hochberg FDR correction.
+- **Distance prediction**: LASSO, ElasticNet, Random Forest, XGBoost, Partial Least Squares (PLS), and a linear regression on gene expression. Ablation analysis on additional features includingmorphology, spatial coordinates, and cluster labels.
+- **Spatial cross-validation**: rectangular tile-based segmentation for generalizability analysis. Regression model ablations (within-tile cell permutation, replacement of nearest neighbors with farthest neighbors) to probe the impact of local environment.
 
-| Category       | Description                                                                 |
-|----------------|-----------------------------------------------------------------------------|
-| Morphological  | Cell area, nucleus area                          |
-| Spatial        | (x, y) centroid                    |
-| Molecular      | **347 genes** (incl. 16 PIGs)                                               |
-| Derived        | Cluster ID, cell-type, distance bin, distance to plaque, nearest plaque area                                         |
+## Timeline and contributions
 
-Distributions: median cell area 120 µm²; distances 0–350 µm (median ≈ 95 µm); PIG ρ ≈ −0.3 with distance.
-Visual overlays confirm correct alignment and anatomical structure.
+```
+Milestone P3 — Analyses, Ownership, and Due-Point 2025 Timeline 
+  [P2]                                           [P3]
+    │                                              │
+  ├─────────┬─────────┬─────────┬─────────┬─────────┤►
+  Nov10   Nov18     Nov26     Dec4      Dec12     Dec20
+  start    ▲1        ▲2        ▲3        ▲4        ▲5
+           
+  Nov18: Preprocessing + clustering                        [Alexander]          ━━━━━━━━━                                          Progress: [██░░░░░░░░]
+  Nov26: Multi-mouse analysis + individualized modeling    [Sogand]             ━━━━━━━━━┆━━━━━━━━━                                Progress: [████░░░░░░]
+  Dec4: Feature engineering + regression modeling          [Zayed]              ━━━━━━━━━┆━━━━━━━━━┆━━━━━━━━━                      Progress: [██████░░░░]
+  Dec12: Spatial cross-validation setup + ablations        [Walid]              ━━━━━━━━━┆━━━━━━━━━┆━━━━━━━━━┆━━━━━━━━━            Progress: [████████░░]
+  Dec20: Frontend development + CI/CD                      [Rosa]               ━━━━━━━━━┆━━━━━━━━━┆━━━━━━━━━┆━━━━━━━━━┆━━━━━━━━━  Progress: [██████████]
 
-<div align="center">
-  <img src="src/data/figures/cell-plaque-dist.png" width="360">
-  <br>
-  <em>Brain regions colored by plaque proximity (cool = near plaque)</em>
-</div>
+  Key:
+    ▲1..▲5  deliverable due-points
+    Progress blocks: ░ not started | █ done
+```
 
-## Initial Analyses Completed
-- QC and filtering
-- Plaque geometry cleanup and alignment
-- Nearest-plaque distance computation for all cells
-- PIG spatial gradients and heatmaps (proximal glial activation)
-- Cell-type composition vs distance (microglia ↑, neurons ↓)
-- Predictive modeling (XGB test R² ≈ 0.25)
+- **Alexander**: 
+  - Transcriptomics data acquisition and preprocessing; 
+  - Plaque classification, keypoint labelling and alignment, quality control; 
+  - Joint cell clustering and cell type annotation;
+  - Results interpretation, repository linting, and reproducibility setup.
+- **Sogand**: 
+  - Independent cell clustering;
+  - Distance to plaque inference with regression and tree-based models;
+  - Generalization capability analysis of regression and tree-based models; 
+  - Model extension to multiple mice (WT and Tg, 2.5 to 17.9 months) with subject-specific pattern detection.
+- **Rosa**: 
+  - Writing and editing the report;
+  - Interactive plot development;
+  - Frontend development;
+  - GitHub Pages CI/CD.
+- **Zayed**:
+  - Distributional modeling, normalization,and anomaly detection;
+  - Feature engineering (plaque geometry, multi-plaque proximity, neighborhood gene expression);
+  - Nested regression modeling;
+  - False Discovery Rate (FDR) corrections.
+- **Walid**: 
+  - Decision tree interpretation;
+  - Regression model diagnostics and ablations;
+  - Spatial cross-validation setup;
+  - Code testing.
 
-## Proposed Additional Datasets (if any)
-- **P2:** None.
-- **P3 (planned):** Additional mice (WT + Tg, 2.5–17.9 m) to enable subject-specific analyses and generalization tests, pending feasibility checks.
+## Environment Setup
 
-## Planned Analyses and Proposed Timeline for Milestone 3
-1. **Enhanced Regression Features** *(due Nov 13, 2025)*
-   Add plaque area, orientation, multi-plaque proximity, and neighborhood gene expression; restrict to amygdala; quantify gains via ΔR² and cross-validation.
-2. **Personalized Detection of Subject-Specific Signatures** *(due Nov 20, 2025)*
-   Extend to multiple mice (WT + Tg, 2.5–17.9 m); train pooled models → fine-tune per-mouse; identify biomarkers deviating from baseline; assess generalization and within-subject consistency.
-3. **Multimodal Embeddings (Expression + Morphology + Spatial)** *(due Nov 27, 2025)*
-   Learn joint representations with interpretable autoencoders/contrastive models; evaluate latent structure via UMAP and marker coherence.
-4. **Morphology-Encoded Expression Prediction** *(due Dec 4, 2025)*
-   Regress gene expression on morphological + neighbor features; rank genes by predictability; assess Moran’s I; test contextual feature gains in explained variance.
+Follow the commands below for a quick start:
 
-## Team Organization (Milestone 2)
+```shell
+# Clone the repository
+git clone git@github.com:epfl-ada/ada-2025-project-adastraperaspera.git
+cd ada-2025-project-adastraperaspera
 
-| **Role**           | **Member(s)**                        | **Responsibilities**                                                        |
-|--------------------|--------------------------------------|------------------------------------------------------------------------------|
-| Preprocessing      | Alexander, Sogand, Zayed, Walid      | Data acquisition, QC, plaque alignment, distance computation, integration    |
-| Modeling           | Sogand, Rosa                          | Statistical regressions, clustering, predictive models, feature enrichment   |
-| Visualization      | Rosa, Sogand                          | Heatmaps, regression trends, interactive figures, readability                |
-| Documentation      | Alexander, Sogand, Rosa               | Code organization, repo structure, README, clean scripts                     |
+# Create and activate a Python 3.11 virtual environment
+python3.11 -m venv ada-venv
+source ada-venv/bin/activate
 
-**Timeline:**
-For Milestone P3, team members will work in parallel on complementary directions:
-- **Walid & Zayed** → Regression enrichment, regional modeling
-- **Sogand** → Subject-specific detection and fine-tuning
-- **Alexander** → Multimodal embeddings
-- **Rosa + team** → Morphology-encoded prediction & GitHub Pages site
+# Ensure the venv bin is on PATH
+export PATH="$PWD/ada-venv/bin:$PATH"
+
+# Install Python dependencies
+pip install -r pip_requirements.txt
+
+# Enable Jupyter Table of Contents (TOC)
+jupyter contrib nbextension install --sys-prefix
+jupyter nbextensions_configurator enable --sys-prefix
+jupyter nbextension enable toc2/main --sys-prefix
+
+# Set common environment variables
+source activate_env.sh
+
+# Install pre-commit hooks
+pre-commit install
+
+# Run hooks once on all files
+pre-commit run --all-files
+```
+
+### Environment variables
+
+Set the Xenium data path:
+
+```shell
+export BASE_XENIUM_DIR=/path/to/xenium/data
+```
+
+### Reproducibility
+
+To reproduce our results, follow the steps in [`results.ipynb`](https://github.com/epfl-ada/ada-2025-project-adastraperaspera/blob/main/results.ipynb).
+
+## Frontend setup
+
+```shell
+cd frontend
+npm ci
+npm run build
+```
+
+### View the website locally
+
+Set up the development server:
+
+```shell
+cd frontend
+npm run dev
+```
+
+Open the local URL available from terminal (usually `http://localhost:5173`).
+
+
+## Testing
+
+```shell
+export PYTHONPATH="$PWD/src"
+pytest -q
+
+# With coverage report
+pytest --cov=src --cov-report=term-missing
+```
+
+Notes:
+
+- Tests automatically add `src` to `PYTHONPATH` via `tests/conftest.py`.
+- GeoJSON I/O uses the `pyogrio` engine by default via GeoPandas.
+- Ensure dependencies from `pip_requirements.txt` are installed (includes PyYAML for config parsing).
+
+## Repository structure 
+
+```shell
+.
+├── .github/
+│   └── workflows/
+│       └── static.yml                 # Deploy frontend to GitHub Pages
+├── frontend/                          # Vite + React frontend
+│   ├── src/                           # Frontend source code
+│   └── public/
+│       └── plots/                     # Pre-rendered interactive HTML plots
+├── configs/                           # YAML configs
+│   ├── column_annotations.yaml
+│   ├── plaque_alignment.yaml
+│   ├── plaque_preprocessing.yaml
+│   └── statistical_constants.yaml
+├── src/                               # Python code
+│   ├── data/                          # Data tables, figures, and raw microscopyimages
+│   │   ├── download.py
+│   │   ├── Alzeimer_xenium_predicted_cell_types_with_ids.csv
+│   │   ├── Cell_label_reference.xlsx
+│   │   ├── pig_by_distance_interactive.html
+│   │   ├── raw_images/
+│   │   └── figures/
+│   ├── scripts/
+│   │   ├── analysis/
+│   │   ├── preprocessing/
+│   │   ├── plaque_alignment/
+│   │   ├── plaque_signature/
+│   │   ├── research_questions/
+│   │   └── visualization/
+│   └── utils/
+│       └── logging_utils.py
+├── tests/                             # Unit and integration tests
+├── docs/                              # Setup notes and developer tutorial
+├── results.ipynb                      # Main notebook
+├── activate_env.sh                    # Virtual environment activation
+├── pip_requirements.txt               # Python dependencies
+├── ruff.toml                          # Ruff linter configuration
+├── .pre-commit-config.yaml            # Pre-commit hooks (code styling, and linting)
+├── .gitignore
+└── README.md
+```

@@ -100,7 +100,7 @@ def normalize_expression(adata: sc.AnnData) -> sc.AnnData:
     Returns:
         sc.AnnData: Normalized AnnData object.
     """
-    logger.info("⚙️ Normalizing expression matrix (target_sum=1e4)...")
+    logger.info("Normalizing expression matrix (target_sum=1e4)...")
     adata = adata.copy()
     sc.pp.normalize_total(adata, target_sum=1e4)
     sc.pp.log1p(adata)

@@ -1479,7 +1479,7 @@ def plot_residual_figure(
             if logger is not None:
                 logger.warning(f"Plaque overlay skipped: {e}")
             else:
-                print(f"⚠️ Plaque overlay skipped: {e}")
+                print(f"Plaque overlay skipped: {e}")
 
     marker_genes = {
         "Astrocyte (Gfap)": "Gfap",
@@ -2105,7 +2105,7 @@ def plot_pig_comp_heatmap(pig_mat, prop_mat, pig_cols):
         fmt=".2f",
         cbar_kws={"label": "Spearman ρ"},
     )
-    plt.title("PIG correlation ↔ cellular type proportion (per bins distance)")
+    plt.title("PIG correlation <-> cellular type proportion (per bins distance)")
     plt.xlabel("Cellular type")
     plt.ylabel("PIG Gene")
     plt.tight_layout()
