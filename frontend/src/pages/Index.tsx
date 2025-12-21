@@ -51,7 +51,7 @@ const Index = () => {
       <ConclusionSection />*/}
       {/*<DiscussionSection */}
       <DiscussionSection2/>
-      <IntroductionSection2/>
+      {/*<IntroductionSection2/>
       <Chapter1 />
       <Chapter2 />
       <Chapter3 />
@@ -59,7 +59,7 @@ const Index = () => {
       <Chapter5 />
       <Chapter6 />
       <Chapter7 />
-      <Chapter8 />
+      <Chapter8 />/*}
       <Footer />
     </main>
   );
