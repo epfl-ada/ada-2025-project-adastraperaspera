@@ -1,4 +1,6 @@
 import { Brain } from "lucide-react";
+import ImageGridPlot from "./ImageGridFrame";
+const base = import.meta.env.BASE_URL;
 
 const RQ_LINK_CLASS =
   "block rounded-xl px-3 py-2 text-muted-foreground hover:text-foreground hover:bg-muted/50 transition";
@@ -41,6 +43,31 @@ const IntroductionSection = () => {
               analyze how plaque proximity relates to cell-type composition, gene
               expression, neighborhood context, predictive modeling, and age- and
               genotype-specific signatures.
+            </p>
+            <ImageGridPlot
+                              files={{
+                                "wt-2": `${base}images_grid_bw/full/wt-2.webp`,
+                                "wt-5": `${base}images_grid_bw/full/wt-5.webp`,
+                                "wt-13": `${base}images_grid_bw/full/wt-13.webp`,
+                                "tg-2": `${base}images_grid_bw/full/tg-2.webp`,
+                                "tg-5": `${base}images_grid_bw/full/tg-5.webp`,
+                                "tg-17": `${base}images_grid_bw/full/tg-17.webp`,
+                              }}
+                              keyToPos={{
+                                "wt-2": [0, 0],
+                                "wt-5":  [0, 1],
+                                "wt-13": [0, 2],
+                                "tg-2": [1, 0],
+                                "tg-5": [1, 1],
+                                "tg-17": [1, 2],
+                              }}
+                              colTicks={["2", "5.7", "13+"]}
+                              rowTicks={["Wild Type", "Transgenic"]}
+                              caption="Morphology images of Wt and transgenic mice across ages."
+                              cellSize={180}
+                            />
+            <p className="text-lg text-muted-foreground leading-relaxed">
+                              Brain <span className="font-medium text-foreground">slices</span> from six mice were analyzed. Three are healthy controls, and three are transgenic mice that overproduce amyloid precursor protein, leading to early amyloid-β plaque formation. Plaques are visible in red in the oldest transgenic mouse (17.9 months).
             </p>
           </div>
 
