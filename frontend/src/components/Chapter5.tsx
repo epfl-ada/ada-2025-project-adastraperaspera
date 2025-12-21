@@ -179,6 +179,13 @@ const Chapter5 = () => {
                 plaques is not the same tissue. It is a different ecosystem.
               </p>
 
+              <PlotFrame
+                src={`${base}plots/cluster_frequency_distance_to_plaque.html`}
+                title="Cluster frequency vs. distance to plaque"
+                size="lg"
+                caption="Distance to plaque vs % of cells in each bin (interactive)."
+              />
+
               <p className="text-lg text-muted-foreground leading-relaxed">
                 Some changes are gradual, others are sudden. Certain clusters
                 shift sharply only after specific distance thresholds.
