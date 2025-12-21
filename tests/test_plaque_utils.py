@@ -6,14 +6,14 @@ import numpy as np
 import pandas as pd
 import pytest
 
-pytest.importorskip("yaml")  # config/logging may import yaml transitively
+pytest.importorskip("yaml")
 skimage = pytest.importorskip("skimage")
 shapely = pytest.importorskip("shapely")
 
-from shapely.geometry import Polygon  # noqa: E402
-from skimage.transform import SimilarityTransform  # noqa: E402
+from shapely.geometry import Polygon
+from skimage.transform import SimilarityTransform
 
-from src.scripts.plaque_alignment import utils as plaque_utils  # noqa: E402
+from src.scripts.plaque_alignment import utils as plaque_utils
 
 
 def test_points_from_keypoints_df_ok() -> None:
@@ -57,7 +57,7 @@ def test_fit_transform_with_ransac_similarity_recovers_transform() -> None:
         max_trials=200,
     )
     assert inliers.sum() >= n * 0.8
-    # Check that model maps a sample point close to true
+
     test_pt = np.array([[10.0, -7.0]])
     pred = model(test_pt)
     true = true_tform(test_pt)
@@ -66,7 +66,7 @@ def test_fit_transform_with_ransac_similarity_recovers_transform() -> None:
 
 
 def test_build_shapely_xy_transform_applies_matrix() -> None:
-    # 2x scale and translation (tx, ty) = (1, -2)
+
     mat = np.array([[2.0, 0.0, 1.0], [0.0, 2.0, -2.0], [0.0, 0.0, 1.0]])
     f = plaque_utils.build_shapely_xy_transform(mat)
 
@@ -88,7 +88,7 @@ def test_unit_conversions() -> None:
 
 
 def test_load_and_write_selections_csv(tmp_path: Path) -> None:
-    # Build GeoJSON dict with two polygons of differing areas
+
     gj = {
         "type": "FeatureCollection",
         "features": [
@@ -119,8 +119,8 @@ def test_load_and_write_selections_csv(tmp_path: Path) -> None:
     plaque_utils.write_selections_csv(sels, out_csv, decimals=2, top_n=1)
 
     content = out_csv.read_text(encoding="utf-8").splitlines()
-    # Expect single selection header when top_n=1
+
     assert any(line.startswith("#Selection name:") for line in content)
     assert any(line == "Selection,X,Y" for line in content)
-    # Ensure selection names appear in rows
+
     assert any(line.startswith("Selection 1,") for line in content)

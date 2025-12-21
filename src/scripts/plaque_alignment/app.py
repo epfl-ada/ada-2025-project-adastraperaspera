@@ -72,7 +72,7 @@ def run_align_and_export(cfg: AppCfg) -> int:
         0 on success, non-zero on failure.
     """
     setup_logging(
-        cfg.paths,  # uses cfg.paths.logs_dir internally
+        cfg.paths,
         level_str=str(cfg.logging.get("level", "INFO")),
         tzname=str(cfg.logging.get("timezone", "Europe/Zurich")),
     )
@@ -83,11 +83,10 @@ def run_align_and_export(cfg: AppCfg) -> int:
         cfg.paths.plaque_geojson,
     )
     logger.info("Output (Selections CSV): %s", cfg.paths.out_xenium_format)
-    # 1) Read keypoints and fit transform IF→Morphology
+
     kp = pd.read_csv(cfg.paths.keypoints_csv)
     src_if_px, dst_morph_px = points_from_keypoints_df(kp)
 
-    # First try Similarity + RANSAC
     sim_model, sim_inliers, sim_rmse = fit_transform_with_ransac(
         src_if_px,
         dst_morph_px,
@@ -97,7 +96,6 @@ def run_align_and_export(cfg: AppCfg) -> int:
         max_trials=cfg.params.ransac.max_trials,
     )
 
-    # If residual too large, upgrade to Affine
     if sim_rmse > cfg.params.upgrade_to_affine_rmse_px:
         logger.warning(
             "Similarity RMSE (%.3f px) > threshold (%.3f px). Trying Affine.",
@@ -131,29 +129,28 @@ def run_align_and_export(cfg: AppCfg) -> int:
     )
     logger.debug("Transform matrix (3x3):\n%s", model.params)
 
-    # 2) Transform plaque polygons (IF pixels) → morphology pixels → microns
     gdf = gpd.read_file(cfg.paths.plaque_geojson)
     logger.info("Loaded %d plaque geometries from GeoJSON", len(gdf))
 
-    # (a) IF px → morphology px
     f_px_to_px = build_shapely_xy_transform(model.params)
     gdf_morph_px = gdf.copy()
     gdf_morph_px["geometry"] = gdf_morph_px["geometry"].apply(
         lambda geom: shp_transform(f_px_to_px, geom)
     )
 
-    # (b) morphology px → microns (Xenium units)
     def _px_to_um_geom(geom):
-        # Return arrays in the signature expected by shapely.ops.transform: (x', y')
+
         scale = cfg.params.xenium_pixel_size_um
         return shp_transform(lambda x, y, z=None: (x * scale, y * scale), geom)
 
     gdf_morph_um = gdf_morph_px.copy()
     gdf_morph_um["geometry"] = gdf_morph_um["geometry"].apply(_px_to_um_geom)
-    # Add metadata to properties
+
     gdf_morph_um["coord_units"] = "micron"
     gdf_morph_um["transform_model"] = model_name
-    filtered_selections_around_plaques = load_polygons_from_geojson(gdf_morph_um.__geo_interface__)
+    filtered_selections_around_plaques = load_polygons_from_geojson(
+        gdf_morph_um.__geo_interface__
+    )
     selections_cfg = cfg.params.selections
     write_selections_csv(
         selections=filtered_selections_around_plaques,

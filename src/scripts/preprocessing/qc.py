@@ -52,7 +52,9 @@ def filter_cells(
             "Required columns 'transcript_counts', 'cell_area' and 'nucleus_area' not found."
         )
     cells_df = cells_df.loc[
-        (cells_df["nucleus_area"] > 0) & (cells_df["cell_area"] > 0) & (cells_df["n_genes"] > 0)
+        (cells_df["nucleus_area"] > 0)
+        & (cells_df["cell_area"] > 0)
+        & (cells_df["n_genes"] > 0)
     ].copy()
 
     min_transcripts = cells_df["transcript_counts"].quantile(transcript_q)
@@ -153,18 +155,20 @@ def plot_qc_distributions(
 
     fig, axes = plt.subplots(1, 2, figsize=figsize)
 
-    # Transcript counts
     sns.histplot(cells_df["transcript_counts"], bins=100, ax=axes[0], color="lightgray")
-    axes[0].axvline(thr_trans, color="red", linestyle="--", label=f"{transcript_q*100:.0f}th pct")
+    axes[0].axvline(
+        thr_trans, color="red", linestyle="--", label=f"{transcript_q*100:.0f}th pct"
+    )
     axes[0].set_title("Transcript counts per cell")
     axes[0].set_xlabel("transcript_counts")
     axes[0].legend()
     axes[0].set_xscale("log")
     axes[1].set_xscale("log")
 
-    # Cell area
     sns.histplot(cells_df["cell_area"], bins=100, ax=axes[1], color="lightgray")
-    axes[1].axvline(thr_area, color="red", linestyle="--", label=f"{area_q*100:.0f}th pct")
+    axes[1].axvline(
+        thr_area, color="red", linestyle="--", label=f"{area_q*100:.0f}th pct"
+    )
     axes[1].set_title("Cell area distribution")
     axes[1].set_xlabel("cell_area")
     axes[1].legend()

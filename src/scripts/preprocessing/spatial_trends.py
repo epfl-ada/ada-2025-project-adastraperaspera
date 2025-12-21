@@ -32,8 +32,9 @@ def mean_expression_by_bin(df: pd.DataFrame, gene_cols: list[str]) -> pd.DataFra
     logger.info("Computing mean expression per bin")
 
     grouped = df.groupby("distance_bin", observed=False)[gene_cols].mean()
-    grouped = grouped.sort_index(key=lambda x: x.map(lambda i: i.mid))  # order by bin midpoint
+    grouped = grouped.sort_index(key=lambda x: x.map(lambda i: i.mid))
     return grouped
+
 
 def sem_expression_by_bin(df: pd.DataFrame, gene_cols: list[str]) -> pd.DataFrame:
     """
@@ -41,7 +42,7 @@ def sem_expression_by_bin(df: pd.DataFrame, gene_cols: list[str]) -> pd.DataFram
 
     Requires:
         - df['distance_bin'] created by assign_distance_bins
-        - gene_cols: list of gene columns (log1p-normalized if that's your convention)
+        - gene_cols: list of gene columns (log1p-normalized if that is the convention)
 
     Returns:
         DataFrame indexed by ordered distance_bin, columns = gene_cols, values = SEM.
@@ -51,9 +52,7 @@ def sem_expression_by_bin(df: pd.DataFrame, gene_cols: list[str]) -> pd.DataFram
 
     logger.info("Computing SEM per bin")
 
-    # pandas sem = std / sqrt(n) with ddof=1 by default; matches standard SEM
     grouped = df.groupby("distance_bin", observed=False)[gene_cols].sem()
-    # Order bins by their midpoint (same as in mean_expression_by_bin)
+
     grouped = grouped.sort_index(key=lambda x: x.map(lambda i: i.mid))
     return grouped
-

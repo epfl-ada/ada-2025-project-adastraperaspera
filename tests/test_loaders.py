@@ -41,7 +41,6 @@ def test_load_cells_table_raises_for_missing(tmp_path: Path) -> None:
 def test_load_expression_matrix_reads_h5(tmp_path: Path) -> None:
     """Ensure load_expression_matrix handles non-10x H5 files gracefully."""
 
-    # Create minimal synthetic AnnData and save as .h5ad (not a valid 10x-format file)
     adata = sc.AnnData(
         X=np.array([[1, 0], [0, 1]]),
         obs=pd.DataFrame(index=["cell1", "cell2"]),
@@ -50,7 +49,6 @@ def test_load_expression_matrix_reads_h5(tmp_path: Path) -> None:
     test_path = tmp_path / "matrix.h5ad"
     adata.write_h5ad(test_path)
 
-    # Expect a ValueError or OSError due to invalid 10x H5 structure
     with pytest.raises((ValueError, OSError)):
         _ = load_expression_matrix(str(test_path))
 
@@ -83,6 +81,6 @@ def test_merge_expression_with_cells_inner_join(tmp_path):
 
     merged = merge_expression_with_cells(cells_df, adata)
     assert "Gene1" in merged.columns
-    # Only common IDs (A,B)
+
     assert set(merged["cell_id"]) == {"A", "B"}
     assert merged.shape[0] == 2

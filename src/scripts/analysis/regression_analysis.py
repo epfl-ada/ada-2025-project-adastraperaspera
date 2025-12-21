@@ -51,13 +51,13 @@ def plot_nested_regression_adj_r2(
     alpha: float = 0.01,
     adjust_pvals: bool = True,
     model_order: list[str] | None = None,
-    mode: str = "genes",                  # "genes" or "average"
-    print_summary: bool = True,           # used when mode="average"
-    annotate_minmax_genes: bool = True,   # used when mode="average"
+    mode: str = "genes",
+    print_summary: bool = True,
+    annotate_minmax_genes: bool = True,
     annotate_fontsize: int = 8,
-    add_model3_legend: bool = True,       # adds right-side legend explaining Model 3(k)
+    add_model3_legend: bool = True,
     model3_legend_title: str = "Model 3(k) variants",
-    model3_legend_text: str | None = None,  # kept for backwards compat; ignored if we can infer k
+    model3_legend_text: str | None = None,
     title: str | None = None,
     figsize: tuple[float, float] = (12, 6),
     savepath: str | None = None,
@@ -92,9 +92,10 @@ def plot_nested_regression_adj_r2(
         raise ValueError(f"Missing required columns: {sorted(missing)}")
 
     if p_col not in df.columns:
-        raise ValueError(f"Missing p-value column '{p_col}'. Either add it or change p_col.")
+        raise ValueError(
+            f"Missing p-value column '{p_col}'. Either add it or change p_col."
+        )
 
-    # Infer model order if not provided
     if model_order is None:
         models = df[model_col].astype(str).unique().tolist()
         base = [m for m in ["0", "1", "2"] if m in models]
@@ -108,7 +109,9 @@ def plot_nested_regression_adj_r2(
             return None
 
         m3 = [m for m in models if isinstance(m, str) and m.startswith("3_")]
-        m3_sorted = sorted(m3, key=lambda m: (parse_k(m) is None, parse_k(m) or 10**9, m))
+        m3_sorted = sorted(
+            m3, key=lambda m: (parse_k(m) is None, parse_k(m) or 10**9, m)
+        )
 
         known = set(base) | set(m3_sorted)
         other = sorted([m for m in models if m not in known])
@@ -126,7 +129,6 @@ def plot_nested_regression_adj_r2(
                 return f"Model {m}"
         return f"Model {m}"
 
-    # Parse Model 3(k) variants in plotted order
     m3_ks = []
     for m in model_order:
         sm = str(m)
@@ -137,7 +139,6 @@ def plot_nested_regression_adj_r2(
                 pass
     has_model3_variants = len(m3_ks) > 0
 
-    # Optional BH adjustment within each model (excluding baseline "0")
     df["_p_for_sig_"] = pd.to_numeric(df[p_col], errors="coerce").astype(float)
 
     if adjust_pvals:
@@ -162,7 +163,6 @@ def plot_nested_regression_adj_r2(
     if mode not in {"genes", "average"}:
         raise ValueError("mode must be either 'genes' or 'average'")
 
-    # Reserve right margin depending on legends we might draw
     if mode == "genes":
         if add_model3_legend and has_model3_variants:
             fig.subplots_adjust(right=0.58)
@@ -190,22 +190,34 @@ def plot_nested_regression_adj_r2(
             sub_sorted = sub.sort_values([y_col, gene_col], ascending=[True, True])
             min_gene = sub_sorted.iloc[0][gene_col]
 
-            sub_sorted_desc = sub.sort_values([y_col, gene_col], ascending=[False, True])
+            sub_sorted_desc = sub.sort_values(
+                [y_col, gene_col], ascending=[False, True]
+            )
             max_gene = sub_sorted_desc.iloc[0][gene_col]
 
-            rows.append((
-                str(m),
-                float(sub[y_col].mean()),
-                float(sub[y_col].min()),
-                float(sub[y_col].max()),
-                int(len(sub)),
-                min_gene,
-                max_gene
-            ))
+            rows.append(
+                (
+                    str(m),
+                    float(sub[y_col].mean()),
+                    float(sub[y_col].min()),
+                    float(sub[y_col].max()),
+                    int(len(sub)),
+                    min_gene,
+                    max_gene,
+                )
+            )
 
         summary_df = pd.DataFrame(
             rows,
-            columns=[model_col, "mean_adj_r2", "min_adj_r2", "max_adj_r2", "n_genes", "min_gene", "max_gene"]
+            columns=[
+                model_col,
+                "mean_adj_r2",
+                "min_adj_r2",
+                "max_adj_r2",
+                "n_genes",
+                "min_gene",
+                "max_gene",
+            ],
         )
 
         means = summary_df["mean_adj_r2"].to_numpy(dtype=float)
@@ -224,22 +236,32 @@ def plot_nested_regression_adj_r2(
 
                 if isinstance(max_gene, str):
                     ax.annotate(
-                        max_gene, xy=(x[i], maxs[i]),
-                        xytext=(0, 4), textcoords="offset points",
-                        ha="center", va="bottom", fontsize=annotate_fontsize,
+                        max_gene,
+                        xy=(x[i], maxs[i]),
+                        xytext=(0, 4),
+                        textcoords="offset points",
+                        ha="center",
+                        va="bottom",
+                        fontsize=annotate_fontsize,
                     )
                 if isinstance(min_gene, str):
                     ax.annotate(
-                        min_gene, xy=(x[i], mins[i]),
-                        xytext=(0, -4), textcoords="offset points",
-                        ha="center", va="top", fontsize=annotate_fontsize,
+                        min_gene,
+                        xy=(x[i], mins[i]),
+                        xytext=(0, -4),
+                        textcoords="offset points",
+                        ha="center",
+                        va="top",
+                        fontsize=annotate_fontsize,
                     )
 
         ax.set_xticks(x)
         ax.set_xticklabels(x_labels)
         ax.set_ylabel("Adjusted R²")
         ax.set_xlabel("")
-        ax.grid(True, which="major", axis="both", linestyle="--", linewidth=0.5, alpha=0.6)
+        ax.grid(
+            True, which="major", axis="both", linestyle="--", linewidth=0.5, alpha=0.6
+        )
 
         if title is None:
             title = "Mean adjusted R² across genes (error bars: min to max)"
@@ -270,9 +292,11 @@ def plot_nested_regression_adj_r2(
                 if not np.isfinite(yy) or not np.isfinite(pp):
                     continue
                 if pp < alpha:
-                    xs_sig.append(i); ys_sig.append(yy)
+                    xs_sig.append(i)
+                    ys_sig.append(yy)
                 else:
-                    xs_nsig.append(i); ys_nsig.append(yy)
+                    xs_nsig.append(i)
+                    ys_nsig.append(yy)
 
             if xs_nsig:
                 ax.scatter(xs_nsig, ys_nsig, marker="s", s=40, c="black", zorder=3)
@@ -283,13 +307,14 @@ def plot_nested_regression_adj_r2(
         ax.set_xticklabels(x_labels)
         ax.set_ylabel("Adjusted R²")
         ax.set_xlabel("Nested model")
-        ax.grid(True, which="major", axis="both", linestyle="--", linewidth=0.5, alpha=0.6)
+        ax.grid(
+            True, which="major", axis="both", linestyle="--", linewidth=0.5, alpha=0.6
+        )
 
         if title is None:
             title = f"Adjusted R² across nested models (markers by {p_label} < {alpha})"
         ax.set_title(title)
 
-        # Gene legend (right side)
         gene_leg = ax.legend(
             loc="upper left",
             bbox_to_anchor=(1.02, 1.0),
@@ -298,13 +323,12 @@ def plot_nested_regression_adj_r2(
         )
         ax.add_artist(gene_leg)
 
-    # Right-side explanatory legend for Model 3(k) variants (model-specific text)
     if add_model3_legend and has_model3_variants:
         handles = [Line2D([0], [0], linestyle="none", marker=None) for _ in m3_ks]
 
         labels = []
         for k in m3_ks:
-            # model-specific phrasing
+
             if k == 1:
                 current_label = "Adds top-1 neighbor PIG mean-expression feature"
             else:
@@ -312,7 +336,7 @@ def plot_nested_regression_adj_r2(
             labels.append(current_label)
 
         if mode == "genes":
-            anchor = (1.02, 0.35)  # below gene legend
+            anchor = (1.02, 0.35)
         else:
             anchor = (1.02, 1.0)
 
@@ -356,22 +380,21 @@ def compute_gene_spatial_stats(
     for g in gene_cols:
         y = df[g].to_numpy()
         if np.allclose(y, 0):
-            continue  # skip constant genes
+            continue
 
-        # Spearman correlation
         r, p = spearmanr(x.ravel(), y)
         if np.isnan(r):
             continue
 
-        # Linear regression slope
         model = LinearRegression().fit(x, y)
         slope = float(model.coef_[0])
 
         results.append((g, r, p, slope))
 
-    res_df = pd.DataFrame(results, columns=["gene", "spearman_r", "spearman_p", "slope"])
+    res_df = pd.DataFrame(
+        results, columns=["gene", "spearman_r", "spearman_p", "slope"]
+    )
 
-    # --- Apply FDR correction ---
     if not res_df.empty:
         _, fdr, _, _ = multipletests(res_df["spearman_p"], method="fdr_bh")
         res_df["fdr_pval"] = fdr
@@ -405,47 +428,40 @@ def rank_neighbor_pigs_by_correlation(
     """
     rankings = {}
 
-    # Filter to genes that are actually present in the dataframe
     present_genes = [g for g in pig_genes if g in cells_df.columns]
     if not present_genes:
         logger.warning("No PIG genes found in cells_df columns.")
         return rankings
 
     for target_gene in present_genes:
-        # Get target gene expression
+
         y = cells_df[target_gene].to_numpy()
 
-        # Skip if constant or all NaN
         if np.allclose(y, 0) or np.all(np.isnan(y)):
             continue
 
-        # Find all neighbor mean columns for other PIG genes
         neighbor_correlations = []
         for other_gene in present_genes:
             if other_gene == target_gene:
-                continue  # Skip self
+                continue
 
             neighbor_col = f"neigh_mean_{other_gene}"
             if neighbor_col not in cells_df.columns:
                 logger.debug(f"Missing neighbor column: {neighbor_col}")
                 continue
 
-            # Get neighbor mean expression
             x = cells_df[neighbor_col].to_numpy()
 
-            # Skip if constant or all NaN
             if np.allclose(x, 0) or np.all(np.isnan(x)):
                 continue
 
-            # Compute correlation
             if use_spearman:
                 corr, _ = spearmanr(x, y, nan_policy="omit")
             else:
-                # Pearson correlation
-                # Remove NaN pairs
+
                 mask = ~(np.isnan(x) | np.isnan(y))
                 if np.sum(mask) < 2:
-                    continue  # Need at least 2 valid pairs
+                    continue
                 x_clean = x[mask]
                 y_clean = y[mask]
                 corr = np.corrcoef(x_clean, y_clean)[0, 1]
@@ -453,10 +469,8 @@ def rank_neighbor_pigs_by_correlation(
             if np.isnan(corr):
                 continue
 
-            # Store absolute correlation
             neighbor_correlations.append((neighbor_col, abs(corr)))
 
-        # Sort by absolute correlation (descending)
         neighbor_correlations.sort(key=lambda x: x[1], reverse=True)
         rankings[target_gene] = neighbor_correlations
 
@@ -521,13 +535,11 @@ def regress_expression_with_spatial_features(
             f"Available columns: {cells_df.columns.tolist()[:20]}..."
         )
 
-    # Filter to genes that are actually present in the dataframe
     present_genes = [g for g in pig_genes if g in cells_df.columns]
     if not present_genes:
         logger.warning("No PIG genes found in cells_df columns.")
         return pd.DataFrame()
 
-    # Compute neighbor rankings if not provided
     if neighbor_rankings is None:
         logger.info("Computing neighbor PIG rankings...")
         neighbor_rankings = rank_neighbor_pigs_by_correlation(
@@ -536,7 +548,6 @@ def regress_expression_with_spatial_features(
             use_spearman=False,
         )
 
-    # Identify available feature groups
     geometry_features = [
         "nearest_plaque_area",
         "nearest_plaque_perimeter",
@@ -546,12 +557,11 @@ def regress_expression_with_spatial_features(
     ]
     available_geometry = [f for f in geometry_features if f in cells_df.columns]
 
-    # Find multi-plaque proximity features
-    # (columns starting with n_plaques_within_ or mean_dist_to_plaques_within_)
     multi_plaque_features = [
         col
         for col in cells_df.columns
-        if col.startswith("n_plaques_within_") or col.startswith("mean_dist_to_plaques_within_")
+        if col.startswith("n_plaques_within_")
+        or col.startswith("mean_dist_to_plaques_within_")
     ]
 
     logger.info(
@@ -563,30 +573,28 @@ def regress_expression_with_spatial_features(
     results = []
 
     for gene in present_genes:
-        # Get target gene expression
+
         y = cells_df[gene].to_numpy()
 
-        # Skip if constant or all NaN
         if np.allclose(y, 0) or np.all(np.isnan(y)):
             logger.debug(f"Skipping {gene}: constant or all NaN")
             continue
 
-        # Create mask for valid observations (non-NaN in y and distance)
         valid_mask = ~(np.isnan(y) | np.isnan(cells_df[distance_col].values))
-        if np.sum(valid_mask) < 10:  # Need at least 10 observations
-            logger.debug(f"Skipping {gene}: insufficient valid observations ({np.sum(valid_mask)})")
+        if np.sum(valid_mask) < 10:
+            logger.debug(
+                f"Skipping {gene}: insufficient valid observations ({np.sum(valid_mask)})"
+            )
             continue
 
         y_valid = y[valid_mask]
         n_obs = len(y_valid)
 
-        # Store fitted models for nested F-tests
         fitted_models = {}
 
-        # Model 0: Baseline (distance only)
         try:
             x0 = cells_df[[distance_col]].values[valid_mask]
-            x0 = sm.add_constant(x0)  # Add intercept
+            x0 = sm.add_constant(x0)
             model0 = sm.OLS(y_valid, x0).fit()
             fitted_models[0] = model0
 
@@ -597,7 +605,7 @@ def regress_expression_with_spatial_features(
                     "r_squared": model0.rsquared,
                     "adj_r_squared": model0.rsquared_adj,
                     "n_obs": n_obs,
-                    "n_params": model0.df_model + 1,  # +1 for intercept
+                    "n_params": model0.df_model + 1,
                     "f_test_pval": np.nan,
                     "f_test_fstat": np.nan,
                 }
@@ -606,12 +614,11 @@ def regress_expression_with_spatial_features(
             logger.warning(f"Failed to fit Model 0 for {gene}: {e}")
             continue
 
-        # Model 1: Add plaque geometry features
         if available_geometry:
             try:
                 x1_cols = [distance_col, *available_geometry]
                 x1 = cells_df[x1_cols].values[valid_mask]
-                # Check for NaN in geometry features
+
                 geom_mask = ~np.isnan(x1).any(axis=1)
                 if np.sum(geom_mask) < 10:
                     logger.debug(
@@ -619,7 +626,7 @@ def regress_expression_with_spatial_features(
                         f"observations after geometry filtering"
                     )
                 else:
-                    # Use the same observations for Model 0 (for nested F-test)
+
                     x0_common = cells_df[[distance_col]].values[valid_mask][geom_mask]
                     y_common = y_valid[geom_mask]
                     x0_common = sm.add_constant(x0_common)
@@ -631,7 +638,6 @@ def regress_expression_with_spatial_features(
                     model1 = sm.OLS(y1_clean, x1_clean).fit()
                     fitted_models[1] = model1
 
-                    # Nested F-test: Model 1 vs Model 0 (using same observations)
                     f_test = model1.compare_f_test(model0_common)
                     f_stat = f_test[0]
                     f_pval = f_test[1]
@@ -651,10 +657,9 @@ def regress_expression_with_spatial_features(
             except Exception as e:
                 logger.debug(f"Failed to fit Model 1 for {gene}: {e}")
 
-        # Model 2: Add multi-plaque proximity features
         if multi_plaque_features:
             try:
-                # Start with Model 1 features if available, otherwise Model 0
+
                 if 1 in fitted_models and available_geometry:
                     x2_cols = [
                         distance_col,
@@ -667,7 +672,7 @@ def regress_expression_with_spatial_features(
                     base_cols = [distance_col]
 
                 x2 = cells_df[x2_cols].values[valid_mask]
-                # Check for NaN in multi-plaque features
+
                 multi_mask = ~np.isnan(x2).any(axis=1)
                 if np.sum(multi_mask) < 10:
                     logger.debug(
@@ -675,7 +680,7 @@ def regress_expression_with_spatial_features(
                         f"observations after multi-plaque filtering"
                     )
                 else:
-                    # Use the same observations for base model (for nested F-test)
+
                     x_base_common = cells_df[base_cols].values[valid_mask][multi_mask]
                     y_common = y_valid[multi_mask]
                     x_base_common = sm.add_constant(x_base_common)
@@ -687,7 +692,6 @@ def regress_expression_with_spatial_features(
                     model2 = sm.OLS(y2_clean, x2_clean).fit()
                     fitted_models[2] = model2
 
-                    # Nested F-test: Model 2 vs base model (using same observations)
                     f_test = model2.compare_f_test(base_model_common)
                     f_stat = f_test[0]
                     f_pval = f_test[1]
@@ -707,10 +711,8 @@ def regress_expression_with_spatial_features(
             except Exception as e:
                 logger.debug(f"Failed to fit Model 2 for {gene}: {e}")
 
-        # Model 3(k): Add top-k neighborhood PIG features
         if neighbor_rankings.get(gene):
-            # Determine base model columns for Model 3
-            # (prefer Model 2, then Model 1, then Model 0)
+
             if 2 in fitted_models:
                 if available_geometry:
                     base_cols = [
@@ -726,10 +728,12 @@ def regress_expression_with_spatial_features(
                 base_cols = [distance_col]
 
             for k in k_values:
-                # Get top-k neighbor features
+
                 top_k_neighbors = [col for col, _ in neighbor_rankings[gene][:k]]
-                # Filter to features that actually exist in the dataframe
-                top_k_neighbors = [col for col in top_k_neighbors if col in cells_df.columns]
+
+                top_k_neighbors = [
+                    col for col in top_k_neighbors if col in cells_df.columns
+                ]
 
                 if not top_k_neighbors:
                     continue
@@ -737,7 +741,7 @@ def regress_expression_with_spatial_features(
                 try:
                     x3_cols = [*base_cols, *top_k_neighbors]
                     x3 = cells_df[x3_cols].values[valid_mask]
-                    # Check for NaN in neighbor features
+
                     neigh_mask = ~np.isnan(x3).any(axis=1)
                     if np.sum(neigh_mask) < 10:
                         logger.debug(
@@ -746,7 +750,6 @@ def regress_expression_with_spatial_features(
                         )
                         continue
 
-                    # Use the same observations for base model (for nested F-test)
                     x_base_common = cells_df[base_cols].values[valid_mask][neigh_mask]
                     y_common = y_valid[neigh_mask]
                     x_base_common = sm.add_constant(x_base_common)
@@ -758,7 +761,6 @@ def regress_expression_with_spatial_features(
                     model3k = sm.OLS(y3_clean, x3_clean).fit()
                     fitted_models[f"3_{k}"] = model3k
 
-                    # Nested F-test: Model 3(k) vs base model (using same observations)
                     f_test = model3k.compare_f_test(base_model_common)
                     f_stat = f_test[0]
                     f_pval = f_test[1]
@@ -816,7 +818,6 @@ def separate_nested_regression_results(
         logger.warning("Empty results DataFrame provided.")
         return pd.DataFrame(), pd.DataFrame()
 
-    # Define feature descriptions for each model
     feature_descriptions = {
         "0": "distance_to_plaque",
         "1": (
@@ -829,12 +830,10 @@ def separate_nested_regression_results(
         ),
     }
 
-    # (A) Model Summaries: Extract all models, remove F-test columns
     model_summaries = results_df[
         ["gene", "model", "r_squared", "adj_r_squared", "n_obs", "n_params"]
     ].copy()
 
-    # Add feature descriptions
     def get_features(model_name: str) -> str:
         """Get feature description for a model."""
         if model_name == "0":
@@ -854,18 +853,23 @@ def separate_nested_regression_results(
 
     model_summaries["features_used"] = model_summaries["model"].apply(get_features)
 
-    # Reorder columns
     model_summaries = model_summaries[
-        ["gene", "model", "features_used", "r_squared", "adj_r_squared", "n_obs", "n_params"]
+        [
+            "gene",
+            "model",
+            "features_used",
+            "r_squared",
+            "adj_r_squared",
+            "n_obs",
+            "n_params",
+        ]
     ]
 
-    # (B) Nested Comparisons: Create comparison rows
     comparisons = []
 
     for gene in results_df["gene"].unique():
         gene_results = results_df[results_df["gene"] == gene].copy()
 
-        # Sort by model number for proper ordering
         def model_sort_key(model_name: str) -> tuple[int, int]:
             """Sort key: (model_level, k_value)."""
             if model_name == "0":
@@ -883,7 +887,6 @@ def separate_nested_regression_results(
         gene_results["_sort_key"] = gene_results["model"].apply(model_sort_key)
         gene_results = gene_results.sort_values("_sort_key").drop(columns=["_sort_key"])
 
-        # Create comparisons between consecutive models
         for i in range(len(gene_results) - 1):
             model_from_row = gene_results.iloc[i]
             model_to_row = gene_results.iloc[i + 1]
@@ -891,7 +894,6 @@ def separate_nested_regression_results(
             model_from = model_from_row["model"]
             model_to = model_to_row["model"]
 
-            # Skip if F-test p-value is NaN (shouldn't happen, but handle gracefully)
             if pd.isna(model_to_row["f_test_pval"]):
                 logger.debug(
                     f"Skipping comparison {model_from}→{model_to} for {gene}: "
@@ -899,11 +901,11 @@ def separate_nested_regression_results(
                 )
                 continue
 
-            # Calculate ΔR²
             delta_r_squared = model_to_row["r_squared"] - model_from_row["r_squared"]
-            delta_adj_r_squared = model_to_row["adj_r_squared"] - model_from_row["adj_r_squared"]
+            delta_adj_r_squared = (
+                model_to_row["adj_r_squared"] - model_from_row["adj_r_squared"]
+            )
 
-            # Create comparison label
             comparison_label = f"M{model_from}→M{model_to}"
 
             comparisons.append(
@@ -921,9 +923,8 @@ def separate_nested_regression_results(
 
     nested_comparisons = pd.DataFrame(comparisons)
 
-    # Sort comparisons for readability
     if not nested_comparisons.empty:
-        # Sort by gene, then by comparison order
+
         def comparison_sort_key(row: pd.Series) -> tuple[str, int, int]:
             """Sort key: (gene, model_level_from, model_level_to)."""
             model_from = row["model_from"]
@@ -943,8 +944,12 @@ def separate_nested_regression_results(
 
             return (row["gene"], get_level(model_from), get_level(model_to))
 
-        nested_comparisons["_sort_key"] = nested_comparisons.apply(comparison_sort_key, axis=1)
-        nested_comparisons = nested_comparisons.sort_values("_sort_key").drop(columns=["_sort_key"])
+        nested_comparisons["_sort_key"] = nested_comparisons.apply(
+            comparison_sort_key, axis=1
+        )
+        nested_comparisons = nested_comparisons.sort_values("_sort_key").drop(
+            columns=["_sort_key"]
+        )
 
     logger.info(
         f"✅ Separated results: {len(model_summaries)} model summaries, "
@@ -978,29 +983,23 @@ def apply_fdr_correction_to_comparisons(
 
     comparisons_adj = nested_comparisons.copy()
 
-    # Group by comparison type and apply FDR correction separately
     for comparison_type in comparisons_adj["comparison"].unique():
         mask = comparisons_adj["comparison"] == comparison_type
         pvals = comparisons_adj.loc[mask, "f_test_pval"].values
 
-        # Filter out NaN values for correction
         valid_mask = ~pd.isna(pvals)
         if np.sum(valid_mask) == 0:
             continue
 
         pvals_valid = pvals[valid_mask]
 
-        # Apply Benjamini-Hochberg FDR correction
         _, pvals_adj, _, _ = multipletests(pvals_valid, method="fdr_bh", alpha=alpha)
 
-        # Create adjusted p-values array (NaN for invalid, adjusted for valid)
         pvals_adj_full = np.full(len(pvals), np.nan)
         pvals_adj_full[valid_mask] = pvals_adj
 
-        # Store adjusted p-values
         comparisons_adj.loc[mask, "f_test_pval_adj"] = pvals_adj_full
 
-    # Count significant after correction
     n_sig_before = (comparisons_adj["f_test_pval"] < alpha).sum()
     n_sig_after = (comparisons_adj["f_test_pval_adj"] < alpha).sum()
 
@@ -1046,7 +1045,6 @@ def create_feature_block_importance_table(
         logger.warning("Empty comparisons DataFrame provided.")
         return pd.DataFrame()
 
-    # Determine which p-value column to use
     pval_col = (
         "f_test_pval_adj"
         if (use_fdr_corrected and "f_test_pval_adj" in nested_comparisons.columns)
@@ -1060,19 +1058,18 @@ def create_feature_block_importance_table(
         )
         pval_col = "f_test_pval"
 
-    # Group by comparison type
     summary_rows = []
 
     for comparison_type in sorted(nested_comparisons["comparison"].unique()):
-        comp_data = nested_comparisons[nested_comparisons["comparison"] == comparison_type]
+        comp_data = nested_comparisons[
+            nested_comparisons["comparison"] == comparison_type
+        ]
 
-        # Filter out NaN p-values
         comp_data_valid = comp_data[comp_data[pval_col].notna()]
 
         if len(comp_data_valid) == 0:
             continue
 
-        # Compute statistics
         mean_delta_r2 = comp_data_valid["delta_r_squared"].mean()
         median_delta_r2 = comp_data_valid["delta_r_squared"].median()
         mean_delta_adj_r2 = comp_data_valid["delta_adj_r_squared"].mean()
@@ -1108,7 +1105,7 @@ def create_best_neighbor_pigs_table(
     neighbor_rankings: dict[str, list[tuple[str, float]]],
     alpha: float = 0.05,
     use_fdr_corrected: bool = True,
-    score_col: str = "delta_adj_r_squared",  # e.g. "adj_r_squared_to"
+    score_col: str = "delta_adj_r_squared",
 ) -> pd.DataFrame:
     if nested_comparisons.empty:
         logger.warning("Empty comparisons DataFrame provided.")
@@ -1116,7 +1113,6 @@ def create_best_neighbor_pigs_table(
 
     df = nested_comparisons.copy()
 
-    # Choose p-value column
     pval_col = (
         "f_test_pval_adj"
         if (use_fdr_corrected and "f_test_pval_adj" in df.columns)
@@ -1139,8 +1135,10 @@ def create_best_neighbor_pigs_table(
                 return 0
         return 0
 
-    # Keep full chain: (2 or 3_k) -> 3_k
-    df = df[df["model_to"].str.startswith("3_") & (df["model_from"].eq("2") | df["model_from"].str.startswith("3_"))].copy()
+    df = df[
+        df["model_to"].str.startswith("3_")
+        & (df["model_from"].eq("2") | df["model_from"].str.startswith("3_"))
+    ].copy()
     if df.empty:
         logger.warning("No (2 or 3_k) → 3_k comparisons found.")
         return pd.DataFrame()
@@ -1152,16 +1150,16 @@ def create_best_neighbor_pigs_table(
         logger.warning("No increasing-k transitions found.")
         return pd.DataFrame()
 
-    # Ensure numeric deltas for cumulative computation (if present)
     df["delta_r_squared"] = pd.to_numeric(df.get("delta_r_squared"), errors="coerce")
-    df["delta_adj_r_squared"] = pd.to_numeric(df.get("delta_adj_r_squared"), errors="coerce")
+    df["delta_adj_r_squared"] = pd.to_numeric(
+        df.get("delta_adj_r_squared"), errors="coerce"
+    )
 
     best_rows = []
 
     for gene, g in df.groupby("gene", sort=False):
         g = g.copy()
 
-        # Choose best row among significant if any, else best overall, based on score_col
         g_score = pd.to_numeric(g[score_col], errors="coerce")
         g = g.assign(_score=g_score).dropna(subset=["_score"])
         if g.empty:
@@ -1179,12 +1177,9 @@ def create_best_neighbor_pigs_table(
         best_model = str(best["model_to"])
         best_step = f"M{best['model_from']}→M{best['model_to']}"
 
-        # Cumulative Δ from Model 2 to each k via DP: cum[k_to] = cum[k_from] + step_delta
-        # (works with jumps like 2->4 as long as the corresponding comparison exists)
         cum_r2 = {0: 0.0}
         cum_adj = {0: 0.0}
 
-        # build transitions sorted by k_to to make DP deterministic
         g_sorted = g.sort_values(["k_to", "k_from"]).to_dict("records")
         for row in g_sorted:
             kf, kt = int(row["k_from"]), int(row["k_to"])
@@ -1200,7 +1195,6 @@ def create_best_neighbor_pigs_table(
         total_delta_r2 = cum_r2.get(best_k, np.nan)
         total_delta_adj = cum_adj.get(best_k, np.nan)
 
-        # Which neighbors were added in the selected step (k_from+1 .. k_to)?
         added_cols, added_genes = [], []
         topk_cols, topk_genes = [], []
         if gene in neighbor_rankings and best_k > 0:
@@ -1219,12 +1213,12 @@ def create_best_neighbor_pigs_table(
                 "best_step": best_step,
                 "score": float(best["_score"]),
                 "score_metric": score_col,
-                # cumulative deltas from Model 2:
                 "delta_r_squared": total_delta_r2,
                 "delta_adj_r_squared": total_delta_adj,
-                # step deltas for the chosen transition:
                 "step_delta_r_squared": float(best.get("delta_r_squared", np.nan)),
-                "step_delta_adj_r_squared": float(best.get("delta_adj_r_squared", np.nan)),
+                "step_delta_adj_r_squared": float(
+                    best.get("delta_adj_r_squared", np.nan)
+                ),
                 "f_test_pval": float(best[pval_col]),
                 "is_significant": bool(is_sig),
                 "added_neighbor_genes": ", ".join(added_genes),
@@ -1238,6 +1232,7 @@ def create_best_neighbor_pigs_table(
     if out.empty:
         return out
 
-    out = out.sort_values("score", ascending=False, kind="stable").reset_index(drop=True)
+    out = out.sort_values("score", ascending=False, kind="stable").reset_index(
+        drop=True
+    )
     return out
-

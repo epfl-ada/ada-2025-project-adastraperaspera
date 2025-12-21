@@ -3,13 +3,14 @@ schema.py
 
 Defines canonical column groups for plaque signature modeling.
 """
+
 import pandas as pd
-# Columns always present across all mice
+
 SPATIAL_COLS = ["x_centroid", "y_centroid"]
 MORPH_COLS = ["cell_area", "nucleus_area"]
 CLUSTER_COL = "cluster_leiden"
 
-# Plaque-related columns (present only in Tg 17.9-month)
+
 PLAQUE_COLS = [
     "distance_to_plaque",
     "nearest_plaque_center_dist",
@@ -20,7 +21,7 @@ PLAQUE_COLS = [
 
 TARGET_COL = "distance_to_plaque"
 
-# Function to detect gene columns given a dataframe
+
 def get_gene_columns(df: pd.DataFrame) -> list[str]:
     """
     Detect gene-expression columns in a dataframe.

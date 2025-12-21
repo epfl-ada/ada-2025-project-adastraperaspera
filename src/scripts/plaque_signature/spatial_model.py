@@ -13,22 +13,21 @@ def train_spatial_only(data_mouse, train_idx, test_idx):
     Returns:
         model, scaler, y_test, y_pred_test
     """
-    # Prepare blocks
+
     blocks_train = {
         "genes": None,
         "morph": None,
         "cluster": None,
-        "spatial": data_mouse["spatial"].iloc[train_idx]
+        "spatial": data_mouse["spatial"].iloc[train_idx],
     }
 
     blocks_test = {
         "genes": None,
         "morph": None,
         "cluster": None,
-        "spatial": data_mouse["spatial"].iloc[test_idx]
+        "spatial": data_mouse["spatial"].iloc[test_idx],
     }
 
-    # Fit scaler
     scaler = ModalityScaler()
     scaler.fit(blocks_train)
 
@@ -38,11 +37,9 @@ def train_spatial_only(data_mouse, train_idx, test_idx):
     y_train = data_mouse["target"].iloc[train_idx].values.astype("float32")
     y_test = data_mouse["target"].iloc[test_idx].values.astype("float32")
 
-    # Train model
     model = train_hgb(X_train, y_train)
     y_pred_test = model.predict(X_test)
 
-    # Print R²
     print("HGB Spatial-only R²:", r2_score(y_test, y_pred_test))
 
     return model, scaler, y_test, y_pred_test
@@ -72,16 +69,13 @@ def predict_spatial_only(model, scaler, mouse_paths):
             "genes": None,
             "morph": None,
             "cluster": None,
-            "spatial": data_mouse["spatial"]
+            "spatial": data_mouse["spatial"],
         }
 
         X_mouse = scaler.transform(blocks_mouse).astype("float32")
         preds = model.predict(X_mouse)
 
-        all_preds[name] = {
-            "df": df_mouse,
-            "pred": preds
-        }
+        all_preds[name] = {"df": df_mouse, "pred": preds}
 
     print("Done.")
     return all_preds

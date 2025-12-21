@@ -3,17 +3,17 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
-# Standard Library Imports
+
 import warnings
 
 import numpy as np
 
-# Third-Party Library Imports
+
 import pandas as pd
 from shapely.geometry import Polygon
 import yaml
 
-# Local Module Imports
+
 from src.data.download import download_xenium_dataset
 from src.scripts.preprocessing.exploration import (
     summarize_missing_by_column,
@@ -39,14 +39,14 @@ from src.utils.logging_utils import logger
 
 warnings.filterwarnings("ignore")
 
-# Get absolute path to this script’s directory
+
 preprocessing_dir = os.path.dirname(os.path.abspath(__file__))
 scripts_dir = os.path.dirname(preprocessing_dir)
 src_dir = os.path.dirname(scripts_dir)
 root_dir = os.path.dirname(src_dir)
 config_path = os.path.join(root_dir, "configs/plaque_preprocessing.yaml")
 
-# Load YAML safely
+
 with open(os.path.realpath(config_path)) as f:
     plaque_preprocessing_cfg = yaml.safe_load(f)
 
@@ -82,13 +82,12 @@ def preprocess_cells_and_expression(
             - combined_df_normalized: Normalized combined DataFrame (transcript counts normalized via PyDESeq2).
             - gene_cols: List of gene columns in the expression matrix (i.e. gene names).
     """
-    # 1. Download the dataset if not already downloaded
+
     logger.info("\nDownloading the dataset...\n")
     os.makedirs(output_dir, exist_ok=True)
     os.makedirs(PATH_TO_DATA_FOLDER, exist_ok=True)
     xenium_path = download_xenium_dataset(url, output_dir)
 
-    # 2. Load the data and combine the cells with the expression matrix
     logger.info("\nLoading the data...\n")
     cells_path = f"{xenium_path}/cells.parquet"
     expr_path = f"{xenium_path}/cell_feature_matrix.h5"
@@ -101,7 +100,6 @@ def preprocess_cells_and_expression(
     )
     logger.info(f"Shape of combined_df: {combined_df.shape}")
 
-    # 3. Investigate the missing values
     logger.info("\nInvestigating the missing values...\n")
     col_stats_df = summarize_missing_by_column(combined_df)
     _, row_aggregates = summarize_missing_by_row(combined_df)
@@ -113,19 +111,15 @@ def preprocess_cells_and_expression(
     logger.info("\nRow-based statistics on missing values:\n")
     logger.info(row_aggregates)
 
-    # 4. Extract metadata columns and gene columns
     gene_cols = adata.var_names.tolist()
     X = adata.X
     n_genes = np.asarray((X > 0).sum(axis=1)).ravel()
 
-    # Make sure cell IDs are normalized
     cell_ids = adata.obs_names.astype(str).str.strip("b'").str.replace("'", "")
     n_genes_map = pd.DataFrame({"cell_id": cell_ids, "n_genes": n_genes})
 
-    # Attach n_genes to the combined table
     combined_df = combined_df.merge(n_genes_map, on="cell_id", how="inner")
 
-    # 5. Filter cells below quality thresholds
     logger.info("\nFiltering cells...\n")
     filtered_combined_df = filter_cells(
         combined_df.copy(),
@@ -140,9 +134,10 @@ def preprocess_cells_and_expression(
         f"Original: {cells_df.shape[0]} cells → Filtered: {filtered_combined_df.shape[0]} cells"
     )
 
-    # 6. Normalize data using PyDESeq2
     logger.info("\nNormalizing the data...\n")
-    adata_normalized, _ = pydeseq2_normalize_global(adata, min_genes=20, apply_log1p=True)
+    adata_normalized, _ = pydeseq2_normalize_global(
+        adata, min_genes=20, apply_log1p=True
+    )
     combined_df_normalized = combine_cells_and_expression(
         filtered_combined_df[cells_df.columns],
         adata_normalized,
@@ -187,7 +182,6 @@ def preprocess_plaques(PATH_TO_DATA_FOLDER: str | Path) -> tuple[pd.DataFrame, P
     """
     base_path = Path(PATH_TO_DATA_FOLDER)
 
-    # 1) Load the plaque data, build valid polygons
     logger.info("\nLoading the plaque data...\n")
     plaques_csv = base_path / "plaque_polygons.csv"
     if not plaques_csv.exists():
@@ -196,7 +190,6 @@ def preprocess_plaques(PATH_TO_DATA_FOLDER: str | Path) -> tuple[pd.DataFrame, P
     plaques_long = load_plaques(plaques_csv)
     plaques_poly = build_polygons(plaques_long)
 
-    # 2) Load the brain polygon and ensure it is valid
     logger.info("\nLoading the brain polygon...\n")
     brain_csv = base_path / "brain_polygon.csv"
     if not brain_csv.exists():
@@ -229,7 +222,6 @@ def preprocess_plaques(PATH_TO_DATA_FOLDER: str | Path) -> tuple[pd.DataFrame, P
         getattr(brain_geom, "is_valid", None),
     )
 
-    # 3) Filter the plaques with geometric rules
     logger.info("\nFiltering the plaques...\n")
     plaques_poly = filter_plaques(
         plaques_poly,
@@ -240,9 +232,10 @@ def preprocess_plaques(PATH_TO_DATA_FOLDER: str | Path) -> tuple[pd.DataFrame, P
         MERGE_OVERLAPS=plaque_preprocessing_cfg["merge_overlaps"],
     )
 
-    # 4) Filter out small plaques by area percentile (5th)
     if "area" not in plaques_poly.columns:
-        raise KeyError("Expected 'area' column in plaques_poly after geometry construction.")
+        raise KeyError(
+            "Expected 'area' column in plaques_poly after geometry construction."
+        )
 
     areas = plaques_poly["area"].to_numpy(dtype=float)
     p5 = float(np.percentile(areas, 5)) if len(areas) > 0 else 0.0

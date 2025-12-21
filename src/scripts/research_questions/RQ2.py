@@ -49,12 +49,11 @@ def evaluate_cluster_alignment(
         Contains merged tables, contingency matrices, mappings, metrics, and optionally expanded label types.
     """
 
-    # -------------------------
-    # 1) Pool your cluster labels
-    # -------------------------
     my_parts = []
     for mouse_age in available_mouse_order:
-        df = clustered_df_by_mouse_joint[mouse_age][["cell_id", "cluster_leiden"]].copy()
+        df = clustered_df_by_mouse_joint[mouse_age][
+            ["cell_id", "cluster_leiden"]
+        ].copy()
         df["mouse_age"] = mouse_age
         df["tissue"] = tissue_map[mouse_age]
         my_parts.append(df)
@@ -63,17 +62,18 @@ def evaluate_cluster_alignment(
     dup_key = my_all.duplicated(["tissue", "cell_id"]).mean()
     if dup_key > 0:
         print(
-            f"WARNING: {dup_key:.2%} duplicate (tissue, cell_id) in your table. Investigate upstream."
+            f"WARNING: {dup_key:.2%} duplicate (tissue, cell_id) in the input table. Investigate upstream."
         )
 
-    my_all["cluster_leiden"] = pd.to_numeric(my_all["cluster_leiden"], errors="raise").astype(int)
+    my_all["cluster_leiden"] = pd.to_numeric(
+        my_all["cluster_leiden"], errors="raise"
+    ).astype(int)
 
-    # -------------------------
-    # 2) Load instructor labels
-    # -------------------------
     instr = pd.read_csv(instructor_csv_path)
     instr = instr[instr["tissue"].isin(set(tissue_map.values()))].copy()
-    instr["predicted_label"] = pd.to_numeric(instr["predicted_label"], errors="raise").astype(int)
+    instr["predicted_label"] = pd.to_numeric(
+        instr["predicted_label"], errors="raise"
+    ).astype(int)
 
     label_to_celltype = (
         instr.groupby("predicted_label")["cell_type"]
@@ -87,9 +87,6 @@ def evaluate_cluster_alignment(
         how="inner",
     )
 
-    # -------------------------
-    # 3) Contingency matrix
-    # -------------------------
     cont = (
         pd.crosstab(
             merged["cluster_leiden"].astype(int),
@@ -102,14 +99,15 @@ def evaluate_cluster_alignment(
     row_sum = cont.sum(axis=1).astype(float)
     col_sum = cont.sum(axis=0).astype(float)
 
-    # -------------------------
-    # 4) Instructor → You (best Jaccard)
-    # -------------------------
     pairs = cont.stack().rename("overlap").reset_index()
     pairs.columns = ["my_cluster", "instr_cluster", "overlap"]
 
-    pairs = pairs.merge(row_sum.rename("my_size"), left_on="my_cluster", right_index=True)
-    pairs = pairs.merge(col_sum.rename("instr_size"), left_on="instr_cluster", right_index=True)
+    pairs = pairs.merge(
+        row_sum.rename("my_size"), left_on="my_cluster", right_index=True
+    )
+    pairs = pairs.merge(
+        col_sum.rename("instr_size"), left_on="instr_cluster", right_index=True
+    )
 
     den_j = pairs["my_size"] + pairs["instr_size"] - pairs["overlap"]
     pairs["jaccard"] = pairs["overlap"] / np.where(den_j == 0, np.nan, den_j)
@@ -117,16 +115,17 @@ def evaluate_cluster_alignment(
     pairs["f1"] = 2.0 * pairs["overlap"] / np.where(den_f == 0, np.nan, den_f)
 
     best_instr_to_my = (
-        pairs.sort_values(["instr_cluster", "jaccard", "overlap"], ascending=[True, False, False])
+        pairs.sort_values(
+            ["instr_cluster", "jaccard", "overlap"], ascending=[True, False, False]
+        )
         .groupby("instr_cluster", as_index=False)
         .head(1)
         .copy()
     )
-    best_instr_to_my["instr_cell_type"] = best_instr_to_my["instr_cluster"].map(label_to_celltype)
+    best_instr_to_my["instr_cell_type"] = best_instr_to_my["instr_cluster"].map(
+        label_to_celltype
+    )
 
-    # -------------------------
-    # 5) One-to-one mapping via Hungarian algorithm
-    # -------------------------
     cost = -cont.to_numpy()
     r_ind, c_ind = linear_sum_assignment(cost)
     one_to_one = pd.DataFrame(
@@ -137,7 +136,9 @@ def evaluate_cluster_alignment(
     )
     one_to_one["overlap"] = [
         cont.loc[i, j]
-        for i, j in zip(one_to_one["my_cluster"], one_to_one["instr_cluster"], strict=False)
+        for i, j in zip(
+            one_to_one["my_cluster"], one_to_one["instr_cluster"], strict=False
+        )
     ]
     one_to_one["my_size"] = one_to_one["my_cluster"].map(row_sum)
     one_to_one["instr_size"] = one_to_one["instr_cluster"].map(col_sum)
@@ -151,32 +152,33 @@ def evaluate_cluster_alignment(
     )
     one_to_one["instr_cell_type"] = one_to_one["instr_cluster"].map(label_to_celltype)
 
-    # -------------------------
-    # 6) Global diagnostics
-    # -------------------------
     ari = adjusted_rand_score(merged["predicted_label"], merged["cluster_leiden"])
-    ami = adjusted_mutual_info_score(merged["predicted_label"], merged["cluster_leiden"])
+    ami = adjusted_mutual_info_score(
+        merged["predicted_label"], merged["cluster_leiden"]
+    )
 
     instr_to_my_map = dict(
-        zip(best_instr_to_my["instr_cluster"], best_instr_to_my["my_cluster"], strict=False)
+        zip(
+            best_instr_to_my["instr_cluster"],
+            best_instr_to_my["my_cluster"],
+            strict=False,
+        )
     )
     my_to_instr_1to1_map = dict(
         zip(one_to_one["my_cluster"], one_to_one["instr_cluster"], strict=False)
     )
 
-    # Optional: label clusters by dominant instructor label
     my_to_instr_argmax = cont.idxmax(axis=1).to_dict()
     my_all["instructor_label_argmax_within_my_cluster"] = my_all["cluster_leiden"].map(
         my_to_instr_argmax
     )
 
-    # -------------------------
-    # 7) Expand label types (if mapping provided)
-    # -------------------------
     label_to_type = (
         instr[["predicted_label", "cell_type"]]
         .drop_duplicates(subset=["predicted_label"])
-        .assign(_rest=lambda d: d["cell_type"].astype(str).str.split(n=1).str[1].fillna("-"))
+        .assign(
+            _rest=lambda d: d["cell_type"].astype(str).str.split(n=1).str[1].fillna("-")
+        )
         .set_index("predicted_label")["_rest"]
         .to_dict()
     )
@@ -211,9 +213,9 @@ class LeidenClusteringResult:
     Outputs for clustering-only pipeline.
     """
 
-    df: pd.DataFrame  # Copy of the input with added 'cluster_leiden'
-    adata: AnnData  # AnnData object used by Scanpy (with UMAP computed)
-    gene_cols: list[str]  # Detected numeric gene-expression columns
+    df: pd.DataFrame
+    adata: AnnData
+    gene_cols: list[str]
 
 
 def cluster_cells_leiden(
@@ -252,7 +254,6 @@ def cluster_cells_leiden(
     log = logger or logging.getLogger(__name__)
     df = combined_df.copy()
 
-    # Defaults for metadata (exclude from gene detection)
     default_meta = {
         "cell_id",
         "x_centroid",
@@ -274,18 +275,20 @@ def cluster_cells_leiden(
     }
     meta_cols = set(meta_columns) if meta_columns is not None else default_meta
 
-    # 1) Detect numeric gene columns
     gene_cols: list[str] = [
-        c for c in df.columns if c not in meta_cols and pd.api.types.is_numeric_dtype(df[c])
+        c
+        for c in df.columns
+        if c not in meta_cols and pd.api.types.is_numeric_dtype(df[c])
     ]
     if len(gene_cols) == 0:
-        raise ValueError("No numeric gene columns detected. Check `meta_columns` or input dtypes.")
+        raise ValueError(
+            "No numeric gene columns detected. Check `meta_columns` or input dtypes."
+        )
 
     log.info("Detected %d gene columns", len(gene_cols))
 
-    # 2) Build AnnData for Scanpy
     adata = sc.AnnData(df[gene_cols].to_numpy())
-    # Minimal obs
+
     adata.obs = pd.DataFrame(
         {
             "cell_id": df["cell_id"].astype(str).values,
@@ -298,7 +301,6 @@ def cluster_cells_leiden(
     log.info("AnnData created with shape %s", adata.shape)
     log.info("=== PCA → Neighbors → Leiden Clustering ===")
 
-    # 3) Scanpy pipeline
     sc.pp.scale(adata, max_value=10)
     sc.tl.pca(adata, n_comps=n_pcs, svd_solver="arpack")
     sc.pp.neighbors(adata, n_neighbors=n_neighbors, n_pcs=n_pcs)
@@ -307,7 +309,6 @@ def cluster_cells_leiden(
 
     log.info("Leiden cluster counts:\n%s", adata.obs["leiden"].value_counts())
 
-    # 4) Add cluster labels back to df
     df["cluster_leiden"] = adata.obs["leiden"].reindex(df["cell_id"].astype(str)).values
     log.info("Added 'cluster_leiden' column to dataframe.")
 
@@ -336,7 +337,9 @@ def plot_leiden_umap_grid(
         ax = axes[r][c]
         if mouse not in adata_by_mouse:
             ax.axis("off")
-            ax.text(0.5, 0.5, f"{mouse}\n(no data)", ha="center", va="center", fontsize=10)
+            ax.text(
+                0.5, 0.5, f"{mouse}\n(no data)", ha="center", va="center", fontsize=10
+            )
             continue
         adata = adata_by_mouse[mouse]
         sc.pl.umap(
@@ -348,7 +351,7 @@ def plot_leiden_umap_grid(
             show=False,
             ax=ax,
         )
-    # Hide any unused axes
+
     for j in range(n, n_rows * n_cols):
         r, c = divmod(j, n_cols)
         axes[r][c].axis("off")
@@ -356,6 +359,7 @@ def plot_leiden_umap_grid(
         fig.suptitle(suptitle)
     fig.tight_layout()
     plt.show()
+
 
 def plot_leiden_spatial_grid(
     df_by_mouse: Mapping[str, pd.DataFrame],
@@ -375,7 +379,7 @@ def plot_leiden_spatial_grid(
     If add_legend_column=True, allocate an extra column on the right with a single legend
     describing the cluster_id → color mapping (shared across all panels).
     """
-    # Determine all clusters across inputs to ensure a consistent color mapping
+
     required = {"x_centroid", "y_centroid", "cluster_leiden"}
     clusters = []
     for m in order:
@@ -385,26 +389,22 @@ def plot_leiden_spatial_grid(
         clusters.extend(pd.unique(df["cluster_leiden"]))
     unique_clusters = pd.unique(pd.Series(clusters))
 
-    # Robust sort (numeric first in numeric order, then others by string)
     def _safe_sort_key(x):
         try:
             return (0, float(x))
         except Exception:
             return (1, str(x))
+
     hue_order = sorted(unique_clusters, key=_safe_sort_key)
 
-    # Build a stable cluster -> color mapping
-    # Seaborn will cycle if more than the base palette size.
     colors = sns.color_palette(palette_name, n_colors=len(hue_order))
     cluster_to_color = {cl: col for cl, col in zip(hue_order, colors)}
 
-    # Grid with optional legend column
     plot_cols = max(1, n_cols)
     total_cols = plot_cols + (1 if add_legend_column else 0)
     n = len(order)
     n_rows = (n + plot_cols - 1) // plot_cols
 
-    # Widen the figure to accommodate the legend column, preserving per-panel width
     if add_legend_column:
         fig_w = figsize[0] * (total_cols / plot_cols)
         fig_h = figsize[1]
@@ -414,20 +414,28 @@ def plot_leiden_spatial_grid(
 
     fig, axes = plt.subplots(n_rows, total_cols, figsize=use_figsize, squeeze=False)
 
-    # Draw the scatters
     for i, mouse in enumerate(order):
         r, c = divmod(i, plot_cols)
         ax = axes[r][c]
         df = df_by_mouse.get(mouse)
         if df is None:
             ax.axis("off")
-            ax.text(0.5, 0.5, f"{mouse}\n(no data)", ha="center", va="center", fontsize=10)
+            ax.text(
+                0.5, 0.5, f"{mouse}\n(no data)", ha="center", va="center", fontsize=10
+            )
             continue
 
         if not required.issubset(df.columns):
             missing = sorted(required - set(df.columns))
             ax.axis("off")
-            ax.text(0.5, 0.5, f"{mouse}\n(missing {missing})", ha="center", va="center", fontsize=10)
+            ax.text(
+                0.5,
+                0.5,
+                f"{mouse}\n(missing {missing})",
+                ha="center",
+                va="center",
+                fontsize=10,
+            )
             continue
 
         plot_df = df
@@ -445,28 +453,28 @@ def plot_leiden_spatial_grid(
             linewidth=0,
             alpha=0.7,
             ax=ax,
-            legend=False,  # suppress per-axes legends
+            legend=False,
         )
         ax.invert_yaxis()
         ax.set_title(str(mouse))
         ax.set_xlabel("X coordinate (µm)")
         ax.set_ylabel("Y coordinate (µm)")
 
-    # Hide any unused plotting axes (excluding the legend column)
     total_plot_slots = n_rows * plot_cols
     for j in range(n, total_plot_slots):
         r, c = divmod(j, plot_cols)
         axes[r][c].axis("off")
 
-    # Build the legend column, once
     if add_legend_column:
-        # Use the top-right cell for the legend; hide others in the legend column
+
         legend_ax = axes[0][total_cols - 1]
         for row in range(1, n_rows):
             axes[row][total_cols - 1].axis("off")
 
-        # Compose legend handles
-        handles = [mpatches.Patch(color=cluster_to_color[cl], label=str(cl)) for cl in hue_order]
+        handles = [
+            mpatches.Patch(color=cluster_to_color[cl], label=str(cl))
+            for cl in hue_order
+        ]
         legend_ax.legend(
             handles=handles,
             title=legend_title,
@@ -480,7 +488,6 @@ def plot_leiden_spatial_grid(
 
     fig.tight_layout()
     plt.show()
-
 
 
 @dataclass
@@ -543,11 +550,15 @@ def cluster_cells_leiden_joint(
             continue
         df_local = df.copy()
         if "cell_id" not in df_local.columns:
-            raise KeyError(f"DataFrame for mouse '{mouse}' is missing a 'cell_id' column.")
+            raise KeyError(
+                f"DataFrame for mouse '{mouse}' is missing a 'cell_id' column."
+            )
         df_local["cell_id"] = df_local["cell_id"].astype(str)
         df_local["mouse"] = str(mouse)
         gene_cols_mouse = [
-            c for c in df_local.columns if c not in meta_cols and is_numeric_dtype(df_local[c])
+            c
+            for c in df_local.columns
+            if c not in meta_cols and is_numeric_dtype(df_local[c])
         ]
         if not gene_cols_mouse:
             raise ValueError(f"No numeric gene columns detected for mouse '{mouse}'.")
@@ -565,11 +576,14 @@ def cluster_cells_leiden_joint(
         )
     if any(set(cols) != gene_sets[0] for cols in gene_sets[1:]):
         log.warning(
-            "Gene columns differ between mice; using intersection of %d genes.", len(gene_cols)
+            "Gene columns differ between mice; using intersection of %d genes.",
+            len(gene_cols),
         )
 
     log.info(
-        "Joint clustering across %d mice using %d gene columns.", len(per_mouse_dfs), len(gene_cols)
+        "Joint clustering across %d mice using %d gene columns.",
+        len(per_mouse_dfs),
+        len(gene_cols),
     )
 
     combined_df = pd.concat(per_mouse_dfs, axis=0, ignore_index=False)
@@ -594,13 +608,17 @@ def cluster_cells_leiden_joint(
 
     sc.pp.scale(adata, max_value=10)
     sc.tl.pca(adata, n_comps=n_pcs, svd_solver="arpack")
-    sce.pp.bbknn(adata, batch_key="mouse", n_pcs=n_pcs, neighbors_within_batch=n_neighbors)
+    sce.pp.bbknn(
+        adata, batch_key="mouse", n_pcs=n_pcs, neighbors_within_batch=n_neighbors
+    )
     sc.tl.leiden(adata, resolution=leiden_resolution, key_added="leiden")
     sc.tl.umap(adata)
 
     log.info("Global Leiden cluster counts:\n%s", adata.obs["leiden"].value_counts())
 
-    combined_df["cluster_leiden"] = adata.obs["leiden"].reindex(combined_df.index).values
+    combined_df["cluster_leiden"] = (
+        adata.obs["leiden"].reindex(combined_df.index).values
+    )
 
     df_out: dict[str, pd.DataFrame] = {}
     adata_out: dict[str, AnnData] = {}
@@ -702,25 +720,20 @@ def analyze_plaque_distance(
     """
     _logger = logger or logging.getLogger(__name__)
 
-    # --- Validation ---
     if column not in df.columns:
         raise ValueError(f"Column '{column}' not found in DataFrame.")
     if prox_thresh <= 0 or distal_thresh <= prox_thresh:
         raise ValueError("Thresholds must satisfy: 0 < prox_thresh < distal_thresh.")
 
-    # Choose working DataFrame
     df_out = df if in_place else df.copy()
 
-    # Extract data vector, drop NaNs
     x = df_out[column].astype(float)
     x_clean = x.dropna()
 
-    # --- 1. Basic summary statistics ---
     _logger.info("=== Distance to nearest plaque (µm) summary ===")
     desc = x.describe()
     _logger.info(desc)
 
-    # --- 2. Histogram (linear scale) ---
     if show_plots:
         plt.figure(figsize=figsize)
         sns.histplot(x_clean, bins=n_bins, kde=kde)
@@ -730,7 +743,6 @@ def analyze_plaque_distance(
         plt.tight_layout()
         plt.show()
 
-    # --- 3. Quantiles and thresholds ---
     q5, q25, q50, q75, q95 = np.percentile(x_clean, [5, 25, 50, 75, 95])
     quantiles: dict[str, float] = {
         "5%": float(q5),
@@ -741,14 +753,15 @@ def analyze_plaque_distance(
     }
     _logger.info(quantiles)
 
-    # --- 4. Proximity classes ---
     bins = [0.0, float(prox_thresh), float(distal_thresh), np.inf]
     labels: list[str] = [
         f"proximal (<{prox_thresh:g} µm)",
         f"intermediate ({prox_thresh:g}–{distal_thresh:g} µm)",
         f"distal (>{distal_thresh:g} µm)",
     ]
-    df_out[category_col] = pd.cut(x, bins=bins, labels=labels, include_lowest=True, right=False)
+    df_out[category_col] = pd.cut(
+        x, bins=bins, labels=labels, include_lowest=True, right=False
+    )
 
     _logger.info("\n=== Cell counts by proximity class ===")
     counts = df_out[category_col].value_counts().reindex(labels, fill_value=0)
@@ -771,16 +784,14 @@ class LeidenAnalysisResult:
     Container for outputs of `analyze_leiden_spatial`.
     """
 
-    df: pd.DataFrame  # Copy of the input with added columns (cluster, bins, etc.)
-    adata: AnnData  # AnnData object used by Scanpy
-    gene_cols: list[str]  # Detected numeric gene-expression columns
-    freq_df: pd.DataFrame  # Cluster frequency by distance bin (with midpoints & percentages)
-    freq_trend_df: pd.DataFrame  # OLS coefficients for frequency trends per cluster
-    logit_df: (
-        pd.DataFrame
-    )  # Logistic regression summary per cluster (with Bonferroni adj. p-values)
-    expr_z: pd.DataFrame  # Z-scored marker expression (clusters x genes)
-    top_z: pd.Series  # For each marker gene, the cluster with the highest z-score
+    df: pd.DataFrame
+    adata: AnnData
+    gene_cols: list[str]
+    freq_df: pd.DataFrame
+    freq_trend_df: pd.DataFrame
+    logit_df: pd.DataFrame
+    expr_z: pd.DataFrame
+    top_z: pd.Series
 
 
 def analyze_leiden_spatial(
@@ -812,15 +823,11 @@ def analyze_leiden_spatial(
     log = logger or logging.getLogger(__name__)
     df = combined_df.copy()
 
-    # -----------------------------
-    # 0) Defaults & validations
-    # -----------------------------
     required_cols = {"cell_id", "distance_to_plaque"}
     missing = required_cols - set(df.columns)
     if missing:
         raise ValueError(f"Input dataframe is missing required columns: {missing}")
 
-    # Robustly locate cluster labels (user mentioned "clustering_leiden" once)
     if cluster_col not in df.columns:
         if "cluster_leiden" in df.columns:
             cluster_col = "cluster_leiden"
@@ -832,13 +839,9 @@ def analyze_leiden_spatial(
                 f"'cluster_leiden' nor 'clustering_leiden' is present."
             )
 
-    # Normalize to df["cluster_leiden"] so the downstream code can remain unchanged
     if "cluster_leiden" not in df.columns or cluster_col != "cluster_leiden":
         df["cluster_leiden"] = df[cluster_col]
 
-    # -----------------------------
-    # 1) Detect numeric gene columns
-    # -----------------------------
     default_meta = {
         "cell_id",
         "x_centroid",
@@ -857,25 +860,25 @@ def analyze_leiden_spatial(
         "nearest_plaque_area",
         "distance_bin",
         "dist_bin_simple",
-        # cluster label columns (exclude from gene detection)
         "cluster_leiden",
         "clustering_leiden",
     }
     meta_cols = set(meta_columns) if meta_columns is not None else default_meta
 
     gene_cols: list[str] = [
-        c for c in df.columns if c not in meta_cols and pd.api.types.is_numeric_dtype(df[c])
+        c
+        for c in df.columns
+        if c not in meta_cols and pd.api.types.is_numeric_dtype(df[c])
     ]
     if len(gene_cols) == 0:
-        raise ValueError("No numeric gene columns detected. Check `meta_columns` or input dtypes.")
+        raise ValueError(
+            "No numeric gene columns detected. Check `meta_columns` or input dtypes."
+        )
 
     log.info("Detected %d gene columns", len(gene_cols))
     log.info("Using pre-existing cluster labels from column '%s'.", cluster_col)
     log.info("Cluster counts:\n%s", df["cluster_leiden"].value_counts(dropna=False))
 
-    # -----------------------------
-    # 2) Build AnnData (for UMAP/visualization only)
-    # -----------------------------
     df["cell_id"] = df["cell_id"].astype(str)
     X = df[gene_cols].to_numpy(dtype=np.float32, copy=False)
 
@@ -890,19 +893,20 @@ def analyze_leiden_spatial(
         adata.obs["dist_bin_simple"] = df["dist_bin_simple"].astype(str).values
 
     adata.obs_names = df["cell_id"].values
-    # Ensure unique obs_names for Scanpy plotting/graph ops
+
     adata.obs_names_make_unique()
     adata.var_names = pd.Index(gene_cols, name="genes")
 
-    # -----------------------------------------------
-    # 3) Cluster frequency vs. continuous distance
-    # -----------------------------------------------
     dist_num = pd.to_numeric(df["distance_to_plaque"], errors="coerce")
     max_dist = np.nanpercentile(dist_num, 99)
     bins = np.arange(0, max_dist + bin_width_um, bin_width_um)
     df["distance_bin_cont"] = pd.cut(dist_num, bins=bins)
 
-    freq_df = df.groupby(["distance_bin_cont", "cluster_leiden"]).size().reset_index(name="n_cells")
+    freq_df = (
+        df.groupby(["distance_bin_cont", "cluster_leiden"])
+        .size()
+        .reset_index(name="n_cells")
+    )
     totals = (
         df["distance_bin_cont"]
         .value_counts()
@@ -916,9 +920,6 @@ def analyze_leiden_spatial(
     )
     freq_df["prop"] = freq_df["pct"].astype(float) / 100.0
 
-    # -----------------------------------------------
-    # 4) OLS trends per cluster: prop ~ bin_mid
-    # -----------------------------------------------
     ols_rows: list[dict] = []
     for cl in sorted(freq_df["cluster_leiden"].dropna().unique(), key=str):
         sub = freq_df.loc[
@@ -965,9 +966,6 @@ def analyze_leiden_spatial(
             )
     freq_trend_df = pd.DataFrame(ols_rows)
 
-    # -----------------------------------------------
-    # 5) Logistic regression: in_cluster ~ distance
-    # -----------------------------------------------
     df["is_proximal"] = (dist_num <= proximal_threshold_um).astype(int)
 
     results: list[dict] = []
@@ -995,7 +993,9 @@ def analyze_leiden_spatial(
                 else np.nan
             )
         except Exception as e:
-            log.warning("Logit failed for cluster %s (%s). Setting slope/pval = NaN.", cl, e)
+            log.warning(
+                "Logit failed for cluster %s (%s). Setting slope/pval = NaN.", cl, e
+            )
             intercept, slope, se_intercept, se_slope, z_slope, pval, ci_lo, ci_hi = (
                 np.nan,
                 np.nan,
@@ -1029,15 +1029,17 @@ def analyze_leiden_spatial(
         logit_df["adj_pval"] = np.nan
 
     if plot and not freq_df.empty:
-        freq_df["cluster_leiden_expanded"] = freq_df["cluster_leiden"].map(expanded_types)
+        freq_df["cluster_leiden_expanded"] = freq_df["cluster_leiden"].map(
+            expanded_types
+        )
         freq_df["cluster_leiden_int"] = freq_df["cluster_leiden"].astype(int)
         logit_df_sign = logit_df.loc[logit_df["adj_pval"] < 0.01].copy()
         freq_df["cluster_leiden_int"] = pd.to_numeric(
             freq_df["cluster_leiden_int"], errors="raise"
         ).astype("int64")
-        logit_df_sign["cluster"] = pd.to_numeric(logit_df_sign["cluster"], errors="raise").astype(
-            "int64"
-        )
+        logit_df_sign["cluster"] = pd.to_numeric(
+            logit_df_sign["cluster"], errors="raise"
+        ).astype("int64")
 
         freq_df_sign = freq_df.merge(
             logit_df_sign,
@@ -1066,9 +1068,6 @@ def analyze_leiden_spatial(
         plt.tight_layout()
         plt.show()
 
-    # -----------------------------------------------
-    # 6) Marker enrichment heatmap (z-scored)
-    # -----------------------------------------------
     if marker_genes is None:
         marker_genes = {
             "microglia": ["Apoe", "Hexb", "Cst3", "C4b"],
@@ -1077,14 +1076,16 @@ def analyze_leiden_spatial(
             "oligodendrocyte": ["Mbp", "Plp1", "Cldn11"],
         }
 
-    genes_to_check = [g for genes in marker_genes.values() for g in genes if g in df.columns]
+    genes_to_check = [
+        g for genes in marker_genes.values() for g in genes if g in df.columns
+    ]
     expr_z = pd.DataFrame()
     top_z = pd.Series(dtype=object)
 
     if genes_to_check:
         df["cluster_leiden"] = df["cluster_leiden"].map(expanded_types)
         expr = df.groupby("cluster_leiden")[genes_to_check].mean(numeric_only=True)
-        # z-score across clusters per gene
+
         expr_z = (expr - expr.mean(axis=0)) / expr.std(axis=0, ddof=0)
 
         if plot and not expr_z.empty:
@@ -1103,7 +1104,9 @@ def analyze_leiden_spatial(
         top_z = expr_z.idxmax(axis=0).rename("max_in_cluster")
 
     else:
-        log.warning("No marker genes found in dataframe columns; skipping enrichment heatmap.")
+        log.warning(
+            "No marker genes found in dataframe columns; skipping enrichment heatmap."
+        )
 
     return LeidenAnalysisResult(
         df=df,

@@ -42,25 +42,23 @@ def test_download_and_extract(
 ) -> None:
     """Ensure the dataset is downloaded and extracted correctly (mocked)."""
 
-    # Patch requests.get to return dummy data
     monkeypatch.setattr("requests.get", lambda *a, **kw: DummyResponse(fake_zip_bytes))
 
-    # Run the download
     out_dir = download_xenium_dataset("http://fake.url/data.zip", str(tmp_path))
 
-    # Assertions
     out_dir_path = Path(out_dir)
     extracted_files = list(out_dir_path.glob("*"))
     assert any(f.name == "dummy.txt" for f in extracted_files)
     assert out_dir_path.exists()
     assert out_dir_path.is_dir()
 
-    # Content check
     with open(out_dir_path / "dummy.txt") as f:
         assert "Hello ADA project!" in f.read()
 
 
-def test_download_raises_on_bad_url(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+def test_download_raises_on_bad_url(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
     """Ensure that failed requests raise appropriate errors."""
 
     class FailingResponse:

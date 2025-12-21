@@ -65,9 +65,9 @@ def summarize_missing_by_column(
     if include_non_missing:
         result["n_non_missing"] = (n_rows - n_missing).values
 
-    result = result.sort_values(by=sort_by, ascending=ascending, kind="mergesort").reset_index(
-        drop=True
-    )
+    result = result.sort_values(
+        by=sort_by, ascending=ascending, kind="mergesort"
+    ).reset_index(drop=True)
 
     return result.to_dict(orient="records") if serialize else result
 

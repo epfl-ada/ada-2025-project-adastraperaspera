@@ -21,7 +21,9 @@ def split_train_test(df, test_fraction=0.2, random_state=42):
     Returns train/test indices.
     """
     if TARGET_COL not in df.columns:
-        raise ValueError("Target column not found — this mouse has no plaque distances.")
+        raise ValueError(
+            "Target column not found — this mouse has no plaque distances."
+        )
 
     y = df[TARGET_COL]
     idx = np.arange(len(df))
@@ -65,9 +67,11 @@ class ModalityScaler:
                 continue
             scaler = self.scalers[modality]
             X_scaled = scaler.transform(block.values)
-            blocks.append(pd.DataFrame(
-                X_scaled,
-                index=block.index,
-                columns=[f"{modality}_{col}" for col in block.columns],
-            ))
+            blocks.append(
+                pd.DataFrame(
+                    X_scaled,
+                    index=block.index,
+                    columns=[f"{modality}_{col}" for col in block.columns],
+                )
+            )
         return pd.concat(blocks, axis=1)

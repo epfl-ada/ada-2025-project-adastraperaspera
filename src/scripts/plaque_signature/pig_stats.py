@@ -1,6 +1,7 @@
 import pandas as pd
 from scipy.stats import linregress
 
+
 def compute_glial_pig_df(pig_z_df, glial_clusters, age_map, disease_map):
     """
     Restrict PIG scores to glial clusters and add age/disease annotations.
@@ -15,7 +16,7 @@ def compute_age_progression(pig_glial_df, glial_clusters):
     rows = []
     for c in glial_clusters:
         df_c = pig_glial_df[pig_glial_df["cluster"] == c]
-        tg = df_c[df_c["disease"]=="TG"]
+        tg = df_c[df_c["disease"] == "TG"]
         if tg["age"].nunique() < 2:
             continue
         slope, intercept, r, p, stderr = linregress(tg["age"], tg["mean_pig"])
@@ -27,14 +28,16 @@ def compute_disease_effect(pig_glial_df, glial_clusters):
     rows = []
     for c in glial_clusters:
         df = pig_glial_df[pig_glial_df["cluster"] == c]
-        tg_mean = df[df["disease"]=="TG"]["mean_pig"].mean()
-        wt_mean = df[df["disease"]=="WT"]["mean_pig"].mean()
-        rows.append({
-            "cluster": c,
-            "TG_minus_WT": tg_mean - wt_mean,
-            "TG_mean": tg_mean,
-            "WT_mean": wt_mean
-        })
+        tg_mean = df[df["disease"] == "TG"]["mean_pig"].mean()
+        wt_mean = df[df["disease"] == "WT"]["mean_pig"].mean()
+        rows.append(
+            {
+                "cluster": c,
+                "TG_minus_WT": tg_mean - wt_mean,
+                "TG_mean": tg_mean,
+                "WT_mean": wt_mean,
+            }
+        )
     return pd.DataFrame(rows)
 
 

@@ -31,7 +31,7 @@ def test_load_plaque_polygons(tmp_plaque_csv):
     gdf = load_plaque_polygons(tmp_plaque_csv)
     assert isinstance(gdf, gpd.GeoDataFrame)
     assert "geometry" in gdf.columns
-    assert len(gdf) == 2  # two polygons
+    assert len(gdf) == 2
     assert gdf.geometry.iloc[0].geom_type == "Polygon"
 
 
@@ -69,9 +69,9 @@ def test_compute_distance(dummy_cells, dummy_plaques):
     """Check correct distance calculation."""
     df = compute_cell_to_plaque_distance(dummy_cells, dummy_plaques)
     assert "distance_to_plaque" in df.columns
-    assert pytest.approx(df.loc[0, "distance_to_plaque"], rel=1e-3) == 0.0  # inside first plaque
-    assert pytest.approx(df.loc[1, "distance_to_plaque"], rel=1e-3) == 0.0  # inside second plaque
-    assert df.loc[2, "distance_to_plaque"] > 3.0  # far from both
+    assert pytest.approx(df.loc[0, "distance_to_plaque"], rel=1e-3) == 0.0
+    assert pytest.approx(df.loc[1, "distance_to_plaque"], rel=1e-3) == 0.0
+    assert df.loc[2, "distance_to_plaque"] > 3.0
 
 
 def test_compute_distance_missing_cols(dummy_plaques):

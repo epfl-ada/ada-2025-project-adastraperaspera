@@ -26,10 +26,10 @@ def test_filter_cells_relative_quantiles() -> None:
             "n_genes": np.linspace(10, 100, 10),
         }
     )
-    # Keep top 80% → should drop bottom 2 cells
+
     filtered = filter_cells(df, transcript_q=0.2, area_q=0.2)
     assert len(filtered) == 8
-    # Ensure the lowest transcript_counts and areas are gone
+
     assert filtered["transcript_counts"].min() > df["transcript_counts"].quantile(0.2)
 
 
@@ -38,7 +38,7 @@ def test_normalize_expression_and_nonzero_fraction() -> None:
     x = np.array([[1, 0], [3, 4]], dtype=float)
     adata = sc.AnnData(X=x)
     normed = normalize_expression(adata)
-    # After normalization and log1p, should remain nonnegative
+
     assert (normed.X >= 0).all()
     frac = compute_nonzero_fraction(normed)
     assert 0 < frac <= 1

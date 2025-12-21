@@ -10,17 +10,17 @@ import pytest
 
 geopandas = pytest.importorskip("geopandas")
 gpd = geopandas
-from shapely.geometry import Polygon  # noqa: E402
+from shapely.geometry import Polygon
 
 pytest.importorskip("yaml")
-from src.scripts.plaque_alignment.app import run_align_and_export  # noqa: E402
-from src.scripts.plaque_alignment.config import load_config  # noqa: E402
+from src.scripts.plaque_alignment.app import run_align_and_export
+from src.scripts.plaque_alignment.config import load_config
 
 
 def _make_minimal_dataset(tmp_path: Path) -> tuple[Path, Path, Path, Path]:
     base = tmp_path / "base"
     base.mkdir(parents=True, exist_ok=True)
-    # Keypoints: identity-like mapping (src==dst) with small noise
+
     kp = pd.DataFrame(
         {
             "fixedX": [0.0, 10.0, 50.0, 100.0],
@@ -32,7 +32,6 @@ def _make_minimal_dataset(tmp_path: Path) -> tuple[Path, Path, Path, Path]:
     kp_path = base / "keypoints.csv"
     kp.to_csv(kp_path, index=False)
 
-    # Simple square polygon in IF pixels
     poly = Polygon([(0, 0), (10, 0), (10, 10), (0, 10), (0, 0)])
     gdf = gpd.GeoDataFrame({"geometry": [poly]}, crs="EPSG:4326")
     plaques_path = base / "plaques.geojson"
@@ -43,7 +42,9 @@ def _make_minimal_dataset(tmp_path: Path) -> tuple[Path, Path, Path, Path]:
     return kp_path, plaques_path, out_sel, logs_dir
 
 
-def _write_cfg(tmp_path: Path, kp: Path, plaques: Path, out_sel: Path, logs_dir: Path) -> Path:
+def _write_cfg(
+    tmp_path: Path, kp: Path, plaques: Path, out_sel: Path, logs_dir: Path
+) -> Path:
     cfg = {
         "paths": {
             "base_dir": str(tmp_path),
@@ -71,7 +72,9 @@ def _write_cfg(tmp_path: Path, kp: Path, plaques: Path, out_sel: Path, logs_dir:
     return cfg_path
 
 
-def test_run_align_and_export_integration(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_run_align_and_export_integration(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     kp_path, plaques_path, out_sel, logs_dir = _make_minimal_dataset(tmp_path)
     cfg_path = _write_cfg(tmp_path, kp_path, plaques_path, out_sel, logs_dir)
 
@@ -79,7 +82,7 @@ def test_run_align_and_export_integration(tmp_path: Path, monkeypatch: pytest.Mo
     rc = run_align_and_export(cfg)
     assert rc == 0
     assert out_sel.exists()
-    # Check header and at least one row
+
     lines = out_sel.read_text(encoding="utf-8").splitlines()
     assert any(line.startswith("#Selection") for line in lines)
     assert any(line == "Selection,X,Y" for line in lines)

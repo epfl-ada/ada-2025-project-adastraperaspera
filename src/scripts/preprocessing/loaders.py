@@ -80,12 +80,14 @@ def expression_to_dataframe(adata: sc.AnnData) -> pd.DataFrame:
     logger.info("Converting AnnData to DataFrame...")
 
     x = adata.X
-    if hasattr(x, "tocsc"):  # sparse matrix
+    if hasattr(x, "tocsc"):
         expr_df = pd.DataFrame.sparse.from_spmatrix(
             x, index=adata.obs_names.astype(str), columns=adata.var_names
         )
-    else:  # dense numpy array
-        expr_df = pd.DataFrame(x, index=adata.obs_names.astype(str), columns=adata.var_names)
+    else:
+        expr_df = pd.DataFrame(
+            x, index=adata.obs_names.astype(str), columns=adata.var_names
+        )
 
     expr_df.index = expr_df.index.astype(str).str.strip("b'").str.replace("'", "")
     expr_df.index.name = "cell_id"
@@ -94,7 +96,9 @@ def expression_to_dataframe(adata: sc.AnnData) -> pd.DataFrame:
     return expr_df
 
 
-def merge_expression_with_cells(cells_df: pd.DataFrame, adata: sc.AnnData) -> pd.DataFrame:
+def merge_expression_with_cells(
+    cells_df: pd.DataFrame, adata: sc.AnnData
+) -> pd.DataFrame:
     """
     Merge filtered cell metadata (with distances) and gene expression values.
 
@@ -107,7 +111,9 @@ def merge_expression_with_cells(cells_df: pd.DataFrame, adata: sc.AnnData) -> pd
     """
     expr_df = expression_to_dataframe(adata)
     cells_df = cells_df.copy()
-    cells_df["cell_id"] = cells_df["cell_id"].astype(str).str.strip("b'").str.replace("'", "")
+    cells_df["cell_id"] = (
+        cells_df["cell_id"].astype(str).str.strip("b'").str.replace("'", "")
+    )
 
     common_ids = set(cells_df["cell_id"]) & set(expr_df.index)
     logger.info(f"Merging {len(common_ids)} common cell IDs")

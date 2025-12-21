@@ -26,33 +26,32 @@ from sklearn.metrics import r2_score
 from sklearn.cross_decomposition import PLSRegression
 from sklearn.ensemble import HistGradientBoostingRegressor
 
-# LightGBM
+
 import lightgbm as lgb
 
-# XGBoost
+
 try:
     from xgboost import XGBRegressor
+
     XGB_AVAILABLE = True
 except ImportError:
     XGB_AVAILABLE = False
 
-# CatBoost
+
 try:
     from catboost import CatBoostRegressor
+
     CATBOOST_AVAILABLE = True
 except ImportError:
     CATBOOST_AVAILABLE = False
 
-
-# ---------------------------------------------------------
-#                   MODEL TRAINERS
-# ---------------------------------------------------------
 
 def train_linear(X_train, y_train):
     """Ordinary least squares regression."""
     model = LinearRegression()
     model.fit(X_train, y_train)
     return model
+
 
 def train_ridge(X_train, y_train):
     model = Ridge(alpha=1.0)
@@ -85,7 +84,8 @@ def train_xgboost(X_train, y_train):
         subsample=0.8,
         colsample_bytree=0.8,
         reg_lambda=1.0,
-        random_state=42    )
+        random_state=42,
+    )
     model.fit(X_train, y_train)
     return model
 
@@ -133,10 +133,6 @@ def train_hgb(X_train, y_train):
     return model
 
 
-# ---------------------------------------------------------
-#                   EVALUATION
-# ---------------------------------------------------------
-
 def evaluate_model(model, X_train, y_train, X_test, y_test):
     """Return train & test R²."""
     y_pred_train = model.predict(X_train)
@@ -147,18 +143,10 @@ def evaluate_model(model, X_train, y_train, X_test, y_test):
     }
 
 
-# ---------------------------------------------------------
-#                 SIGNATURE EXTRACTION
-# ---------------------------------------------------------
-
 def extract_plaque_signature(pls_model, X):
     """Return first latent PLS axis."""
     return pls_model.transform(X)[:, 0]
 
-
-# ---------------------------------------------------------
-#                 FULL ABLATION RUNNER
-# ---------------------------------------------------------
 
 def run_ablation_experiments(X_train, y_train, X_test, y_test):
     """
@@ -193,12 +181,14 @@ def run_ablation_experiments(X_train, y_train, X_test, y_test):
             results.append(scores)
 
         except Exception as e:
-            results.append({
-                "Model": name,
-                "train_r2": None,
-                "test_r2": None,
-                "Time": None,
-                "Error": str(e),
-            })
+            results.append(
+                {
+                    "Model": name,
+                    "train_r2": None,
+                    "test_r2": None,
+                    "Time": None,
+                    "Error": str(e),
+                }
+            )
 
     return pd.DataFrame(results)

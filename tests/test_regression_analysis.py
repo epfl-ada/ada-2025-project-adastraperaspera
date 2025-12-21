@@ -15,9 +15,9 @@ def fake_data():
     df = pd.DataFrame(
         {
             "distance_to_plaque": distance,
-            "GeneA": distance * 0.5 + np.random.randn(n) * 2,  # positive trend
-            "GeneB": -distance * 0.3 + np.random.randn(n) * 2,  # negative trend
-            "GeneC": np.random.randn(n),  # random noise
+            "GeneA": distance * 0.5 + np.random.randn(n) * 2,
+            "GeneB": -distance * 0.3 + np.random.randn(n) * 2,
+            "GeneC": np.random.randn(n),
         }
     )
     return df
@@ -29,7 +29,6 @@ def test_compute_gene_spatial_stats(fake_data):
     assert {"gene", "spearman_r", "spearman_p", "slope"}.issubset(stats_df.columns)
     assert "GeneA" in stats_df["gene"].values
 
-    # sanity checks: GeneA slope positive, GeneB negative
     slope_dict = dict(zip(stats_df["gene"], stats_df["slope"], strict=False))
     assert slope_dict["GeneA"] > 0
     assert slope_dict["GeneB"] < 0

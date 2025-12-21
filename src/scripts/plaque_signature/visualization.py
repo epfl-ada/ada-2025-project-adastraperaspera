@@ -9,6 +9,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
 
+
 def plot_pig_z_scores_per_cluster_per_mouse(
     pig_z_df,
     x: str = "cluster",
@@ -61,7 +62,6 @@ def plot_pig_z_scores_per_cluster_per_mouse(
     return ax
 
 
-
 def plot_hist_comparison(
     all_preds: dict,
     mice: list[str],
@@ -78,7 +78,7 @@ def plot_hist_comparison(
     xlim=None,
     add_all: bool = False,
     all_label: str = "all",
-    max_points: int | None = None, 
+    max_points: int | None = None,
     ax=None,
 ):
     """
@@ -89,7 +89,6 @@ def plot_hist_comparison(
     if ax is None:
         _, ax = plt.subplots(figsize=figsize)
 
-    # Collect & sanitize arrays
     preds_by_mouse = {}
     for m in mice:
         if m not in all_preds or pred_key not in all_preds[m]:
@@ -104,12 +103,13 @@ def plot_hist_comparison(
         preds_by_mouse[m] = arr
 
     if add_all and preds_by_mouse:
-        preds_by_mouse[all_label] = np.concatenate(list(preds_by_mouse.values()), axis=0)
+        preds_by_mouse[all_label] = np.concatenate(
+            list(preds_by_mouse.values()), axis=0
+        )
 
     if not preds_by_mouse:
         raise ValueError("No valid prediction arrays found to plot.")
 
-    # Determine x-range
     if xlim is None:
         all_vals = np.concatenate(list(preds_by_mouse.values()), axis=0)
         lo, hi = np.nanpercentile(all_vals, [0.5, 99.5])
@@ -120,19 +120,19 @@ def plot_hist_comparison(
 
     x = np.linspace(xmin, xmax, grid_size)
 
-    # Styling close to seaborn whitegrid look
     ax.set_axisbelow(True)
     ax.grid(True, alpha=0.2)
     ax.spines["top"].set_visible(False)
     ax.spines["right"].set_visible(False)
 
-    # Plot KDEs (filled)
     if gaussian_kde is None:
-        raise ImportError("scipy is required for KDE plotting (scipy.stats.gaussian_kde).")
+        raise ImportError(
+            "scipy is required for KDE plotting (scipy.stats.gaussian_kde)."
+        )
 
     for label, arr in preds_by_mouse.items():
         if arr.size < 2 or np.std(arr) == 0:
-            # Fallback: very thin/degenerate distributions
+
             ax.hist(arr, bins=50, density=True, alpha=fill_alpha, label=label)
             continue
 
@@ -150,6 +150,7 @@ def plot_hist_comparison(
     plt.tight_layout()
     return ax
 
+
 def rotate_coords(df, angle_deg, x_col="x_centroid", y_col="y_centroid"):
     """
     Rotate coordinates in a dataframe by angle_deg degrees around their centroid.
@@ -161,22 +162,20 @@ def rotate_coords(df, angle_deg, x_col="x_centroid", y_col="y_centroid"):
 
     angle = np.radians(angle_deg)
 
-    # Center of rotation = mean position
     cx = df_rot[x_col].mean()
     cy = df_rot[y_col].mean()
 
-    # Shift points so centroid becomes (0,0)
     x = df_rot[x_col] - cx
     y = df_rot[y_col] - cy
 
     x_new = x * np.cos(angle) - y * np.sin(angle)
     y_new = x * np.sin(angle) + y * np.cos(angle)
 
-    # Shift back to original location
     df_rot[x_col] = x_new + cx
     df_rot[y_col] = y_new + cy
 
     return df_rot
+
 
 def plot_spatial_mouse(all_preds, name, cmap="viridis"):
     """
@@ -186,10 +185,7 @@ def plot_spatial_mouse(all_preds, name, cmap="viridis"):
     pred = all_preds[name]["pred"]
 
     plt.figure(figsize=(7, 7))
-    plt.scatter(
-        df["x_centroid"], df["y_centroid"],
-        c=pred, s=4, cmap=cmap, alpha=0.6
-    )
+    plt.scatter(df["x_centroid"], df["y_centroid"], c=pred, s=4, cmap=cmap, alpha=0.6)
     plt.gca().invert_yaxis()
     plt.colorbar(label="Predicted Plaque Proximity (HGB Spatial-Only)")
     plt.title(f"Spatial Prediction Map — {name}")
@@ -202,7 +198,7 @@ def plot_spatial_mouse(all_preds, name, cmap="viridis"):
 def mirror_coords(df, mode="horizontal", x_col="x_centroid", y_col="y_centroid"):
     """
     Mirror coordinates in a dataframe around their centroid.
-    
+
     mode:
         - "horizontal": flips x
         - "vertical": flips y
@@ -217,20 +213,22 @@ def mirror_coords(df, mode="horizontal", x_col="x_centroid", y_col="y_centroid")
     cy = df_m[y_col].mean()
 
     if mode == "horizontal":
-        df_m[x_col] = 2*cx - df_m[x_col]
+        df_m[x_col] = 2 * cx - df_m[x_col]
     elif mode == "vertical":
-        df_m[y_col] = 2*cy - df_m[y_col]
+        df_m[y_col] = 2 * cy - df_m[y_col]
     elif mode == "both":
-        df_m[x_col] = 2*cx - df_m[x_col]
-        df_m[y_col] = 2*cy - df_m[y_col]
+        df_m[x_col] = 2 * cx - df_m[x_col]
+        df_m[y_col] = 2 * cy - df_m[y_col]
     else:
-        # no mirroring
+
         return df
 
     return df_m
 
 
-def plot_spatial_compare(all_preds, names, rotations=None, mirrors=None, cmap="viridis"):
+def plot_spatial_compare(
+    all_preds, names, rotations=None, mirrors=None, cmap="viridis"
+):
     """
     Spatial maps in a fixed 2x3 grid (up to 6 mice), with:
       - consistent axis limits + equal aspect ratio
@@ -245,9 +243,10 @@ def plot_spatial_compare(all_preds, names, rotations=None, mirrors=None, cmap="v
 
     nrows, ncols = 2, 3
     if len(names) > nrows * ncols:
-        raise ValueError(f"2x3 grid supports at most {nrows*ncols} plots; got {len(names)} names.")
+        raise ValueError(
+            f"2x3 grid supports at most {nrows*ncols} plots; got {len(names)} names."
+        )
 
-    # ----- Pass 1: transform + collect global limits and global color range -----
     prepared = []
     all_x, all_y, all_pred = [], [], []
 
@@ -274,31 +273,29 @@ def plot_spatial_compare(all_preds, names, rotations=None, mirrors=None, cmap="v
     all_y = np.concatenate(all_y) if all_y else np.array([0, 1])
     all_pred = np.concatenate(all_pred) if all_pred else np.array([0, 1])
 
-    # Global spatial limits (add a small padding)
     x_min, x_max = np.nanmin(all_x), np.nanmax(all_x)
     y_min, y_max = np.nanmin(all_y), np.nanmax(all_y)
     x_pad = 0.02 * (x_max - x_min) if x_max > x_min else 1.0
     y_pad = 0.02 * (y_max - y_min) if y_max > y_min else 1.0
 
     xlim = (x_min - x_pad, x_max + x_pad)
-    ylim_inverted = (y_max + y_pad, y_min - y_pad)  # inverted y
+    ylim_inverted = (y_max + y_pad, y_min - y_pad)
 
-    # Global color normalization
     vmin, vmax = float(np.nanmin(all_pred)), float(np.nanmax(all_pred))
     norm = mcolors.Normalize(vmin=vmin, vmax=vmax)
 
-    # ----- Figure layout: 2x3 plots + dedicated colorbar column -----
     fig = plt.figure(figsize=(7 * ncols + 1.2, 7 * nrows))
-    gs = fig.add_gridspec(nrows, ncols + 1, width_ratios=[1, 1, 1, 0.06], wspace=0.25, hspace=0.25)
+    gs = fig.add_gridspec(
+        nrows, ncols + 1, width_ratios=[1, 1, 1, 0.06], wspace=0.25, hspace=0.25
+    )
 
     axes = []
     for r in range(nrows):
         for c in range(ncols):
             axes.append(fig.add_subplot(gs[r, c]))
 
-    cax = fig.add_subplot(gs[:, -1])  # colorbar axis spanning both rows
+    cax = fig.add_subplot(gs[:, -1])
 
-    # ----- Pass 2: plot -----
     last_sc = None
     for ax, (name, x, y, pred, angle, mirror_mode) in zip(axes, prepared):
         last_sc = ax.scatter(x, y, c=pred, s=4, cmap=cmap, norm=norm, alpha=0.6)
@@ -311,17 +308,14 @@ def plot_spatial_compare(all_preds, names, rotations=None, mirrors=None, cmap="v
         ax.set_xlabel("X")
         ax.set_ylabel("Y")
 
-    # Hide unused axes
-    for ax in axes[len(prepared):]:
+    for ax in axes[len(prepared) :]:
         ax.set_visible(False)
 
-    # Shared colorbar (uses the same norm as every subplot)
     mappable = plt.cm.ScalarMappable(norm=norm, cmap=cmap)
     mappable.set_array([])
     fig.colorbar(mappable, cax=cax, label="Predicted Plaque Score")
 
     plt.show()
-
 
 
 def compute_umap(df, n_neighbors=30, min_dist=0.1):
@@ -331,25 +325,20 @@ def compute_umap(df, n_neighbors=30, min_dist=0.1):
     """
     coords = df[["x_centroid", "y_centroid"]].values
 
-    reducer = umap.UMAP(
-        n_neighbors=n_neighbors,
-        min_dist=min_dist,
-        metric="euclidean"
-    )
+    reducer = umap.UMAP(n_neighbors=n_neighbors, min_dist=min_dist, metric="euclidean")
     emb = reducer.fit_transform(coords)
     return emb
 
-def plot_umap_embedding(df, emb, color_values=None, cmap="viridis",
-                        title="UMAP Embedding", s=4, alpha=0.6):
+
+def plot_umap_embedding(
+    df, emb, color_values=None, cmap="viridis", title="UMAP Embedding", s=4, alpha=0.6
+):
     """
     Plot a precomputed UMAP embedding with optional coloring.
     """
     plt.figure(figsize=(7, 7))
 
-    sc = plt.scatter(
-        emb[:, 0], emb[:, 1],
-        c=color_values, cmap=cmap, s=s, alpha=alpha
-    )
+    sc = plt.scatter(emb[:, 0], emb[:, 1], c=color_values, cmap=cmap, s=s, alpha=alpha)
 
     if color_values is not None:
         plt.colorbar(sc, label="Color")
@@ -361,9 +350,9 @@ def plot_umap_embedding(df, emb, color_values=None, cmap="viridis",
     plt.show()
 
 
-def compute_and_plot_umap(all_preds, name,
-                          n_neighbors=30, min_dist=0.1,
-                          color="prediction", cmap="viridis"):
+def compute_and_plot_umap(
+    all_preds, name, n_neighbors=30, min_dist=0.1, color="prediction", cmap="viridis"
+):
     """
     Fast helper: compute UMAP once, then call plot_umap_embedding.
     """
@@ -392,14 +381,13 @@ def compute_and_plot_umap(all_preds, name,
 
     return emb
 
+
 def plot_ablation_heatmap(results_ablation, cmap="viridis"):
     """
     Heatmap of test R² for modality ablation results.
     """
     heatmap_df = results_ablation.pivot_table(
-        index="Modalities",
-        columns="Model",
-        values="test_r2"
+        index="Modalities", columns="Model", values="test_r2"
     )
 
     plt.figure(figsize=(16, 8))
@@ -409,7 +397,7 @@ def plot_ablation_heatmap(results_ablation, cmap="viridis"):
         fmt=".3f",
         cmap=cmap,
         linewidths=0.5,
-        cbar_kws={"label": "Test R²"}
+        cbar_kws={"label": "Test R²"},
     )
     plt.title("Modality Ablation Heatmap (Test R²)", fontsize=16)
     plt.xlabel("Model")
@@ -423,8 +411,7 @@ def plot_best_model_per_modality(results_ablation):
     Barplot of the best-performing model for each modality.
     """
     best_per_modality = (
-        results_ablation
-        .sort_values(["Modalities", "test_r2"], ascending=[True, False])
+        results_ablation.sort_values(["Modalities", "test_r2"], ascending=[True, False])
         .groupby("Modalities")
         .first()
         .reset_index()
@@ -436,7 +423,7 @@ def plot_best_model_per_modality(results_ablation):
         x="Modalities",
         y="test_r2",
         hue="Model",
-        palette="tab10"
+        palette="tab10",
     )
 
     plt.xticks(rotation=45, ha="right")
@@ -452,19 +439,20 @@ def plot_pred_vs_true(y_true, y_pred, title="Predicted vs True Plaque Distance")
     """
     plt.figure(figsize=(7, 7))
     plt.scatter(y_true, y_pred, s=10, alpha=0.4)
-    plt.plot(
-        [min(y_true), max(y_true)],
-        [min(y_true), max(y_true)],
-        "r--"
-    )
+    plt.plot([min(y_true), max(y_true)], [min(y_true), max(y_true)], "r--")
     plt.xlabel("True Distance")
     plt.ylabel("Predicted Distance")
     plt.title(title)
     plt.tight_layout()
     plt.show()
 
-def plot_spatial_score_vs_age_by_genotype(all_preds, age_map, disease_map,
-                                          title="Spatial-Only Predicted Score vs Age (TG vs WT)"):
+
+def plot_spatial_score_vs_age_by_genotype(
+    all_preds,
+    age_map,
+    disease_map,
+    title="Spatial-Only Predicted Score vs Age (TG vs WT)",
+):
     """
     Plot mean ± std predicted plaque score vs age for TG and WT mice.
 
@@ -482,7 +470,7 @@ def plot_spatial_score_vs_age_by_genotype(all_preds, age_map, disease_map,
     title : str
         Title for the plot.
     """
-    # Build grouped values
+
     grouped = {}
 
     for name, entry in all_preds.items():
@@ -497,17 +485,12 @@ def plot_spatial_score_vs_age_by_genotype(all_preds, age_map, disease_map,
         grouped[disease]["means"].append(pred.mean())
         grouped[disease]["stds"].append(pred.std())
 
-    # Plot
     plt.figure(figsize=(9, 6))
 
     for disease, d in grouped.items():
-        # Sort by age
+
         ages, means, stds = zip(*sorted(zip(d["ages"], d["means"], d["stds"])))
-        plt.errorbar(
-            ages, means, yerr=stds,
-            fmt="-o", capsize=5,
-            label=disease
-        )
+        plt.errorbar(ages, means, yerr=stds, fmt="-o", capsize=5, label=disease)
 
     plt.title(title)
     plt.xlabel("Age (months)")
@@ -568,14 +551,13 @@ def plot_jsd_heatmap(jsd_matrix, title="Jensen–Shannon Divergence Between Mice
         jsd_matrix,
         annot=True,
         fmt=".3f",
-        cmap="mako",  # darker → lighter
+        cmap="mako",
         linewidths=0.5,
         square=True,
-        cbar_kws={"label": "Jensen–Shannon Distance"}
+        cbar_kws={"label": "Jensen–Shannon Distance"},
     )
     plt.title(title, fontsize=14)
     plt.xlabel("Mouse")
     plt.ylabel("Mouse")
     plt.tight_layout()
     plt.show()
-

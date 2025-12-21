@@ -1,5 +1,6 @@
 import pandas as pd
 
+
 def load_all_mice(mouse_paths):
     """
     Load all mouse CSVs into a dict of DataFrames.
@@ -12,6 +13,7 @@ def load_all_mice(mouse_paths):
         df["cluster_leiden"] = df["cluster_leiden"].astype(int)
         mice[name] = df
     return mice
+
 
 def zscore_mouse(df, gene_cols):
     """
@@ -34,6 +36,7 @@ def zscore_all_mice(mice, gene_cols):
         mice_z[name] = zscore_mouse(df, gene_cols)
     return mice_z
 
+
 import numpy as np
 
 PIG_GENES = [
@@ -55,6 +58,7 @@ PIG_GENES = [
     "Ifit3",
 ]
 
+
 def compute_pig_scores(mice_z, pig_genes=PIG_GENES):
     """
     Compute PIG (Plaque-Induced Gene) scores per cluster per mouse.
@@ -69,16 +73,16 @@ def compute_pig_scores(mice_z, pig_genes=PIG_GENES):
         for c in sorted(df["cluster_leiden"].unique()):
             df_c = df[df["cluster_leiden"] == c]
 
-            # PIG score = mean of PIG genes per cell
             pig_score = df_c[pig_genes].mean(axis=1)
 
-            rows.append({
-                "mouse": mouse,
-                "cluster": c,
-                "mean_pig": pig_score.mean(),
-                "std_pig": pig_score.std(),
-                "cells": len(pig_score)
-            })
+            rows.append(
+                {
+                    "mouse": mouse,
+                    "cluster": c,
+                    "mean_pig": pig_score.mean(),
+                    "std_pig": pig_score.std(),
+                    "cells": len(pig_score),
+                }
+            )
 
     return pd.DataFrame(rows)
-

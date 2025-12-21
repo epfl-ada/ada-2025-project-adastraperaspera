@@ -6,9 +6,9 @@ from types import SimpleNamespace
 import pytest
 
 pytest.importorskip("yaml")
-import yaml  # noqa: E402
+import yaml
 
-from src.scripts.plaque_alignment.config import (  # noqa: E402
+from src.scripts.plaque_alignment.config import (
     AppCfg,
     apply_cli_overrides,
     load_config,
@@ -80,7 +80,7 @@ def test_apply_cli_overrides_updates_fields(tmp_path: Path) -> None:
         log_tz="Europe/Zurich",
     )
     cfg2 = apply_cli_overrides(cfg, args)
-    # same object mutated and returned
+
     assert cfg2 is cfg
     assert cfg.paths.keypoints_csv.name == "new_kp.csv"
     assert cfg.paths.plaque_geojson.name == "new_plaques.geojson"

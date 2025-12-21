@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import base64
-from collections.abc import Sequence,Mapping
+from collections.abc import Sequence, Mapping
 import logging
 import os
 from pathlib import Path
@@ -17,9 +17,9 @@ from shapely.affinity import rotate as shp_rotate
 from shapely.geometry import MultiPolygon, Polygon
 from scipy.stats import spearmanr
 from statsmodels.stats.multitest import multipletests
-
-
-# For exact tab20 colors
+from collections.abc import Iterable
+from anndata import AnnData
+from typing import Any
 import matplotlib.cm as cm
 import matplotlib.colors as mcolors
 from matplotlib.colors import to_hex
@@ -30,15 +30,14 @@ def _tab20_hex(n: int) -> list[str]:
     return [mcolors.to_hex(cmap(i)) for i in range(max(n, 1))]
 
 
-# Get current directory
 vis_dir = os.path.dirname(os.path.abspath(__file__))
 scripts_dir = os.path.dirname(vis_dir)
 src_dir = os.path.dirname(scripts_dir)
 figures_dir = os.path.join(src_dir, "data", "figures")
 
 
-def interactive_comp_pig_regression_grid(agg, PIGS, bin_order,figures_dir):
-    # Create a 4x4 grid of subplots for up to 16 genes
+def interactive_comp_pig_regression_grid(agg, PIGS, bin_order, figures_dir):
+
     n = len(PIGS)
     rows = 4
     cols = 4
@@ -67,7 +66,6 @@ def interactive_comp_pig_regression_grid(agg, PIGS, bin_order,figures_dir):
 
             xcats = dsub["distance_bin"].astype(str)
 
-            # Add error band
             fig.add_trace(
                 go.Scatter(
                     x=pd.concat([xcats, xcats[::-1]]),
@@ -89,7 +87,6 @@ def interactive_comp_pig_regression_grid(agg, PIGS, bin_order,figures_dir):
                 col=col,
             )
 
-            # Add mean line
             fig.add_trace(
                 go.Scatter(
                     x=xcats,
@@ -122,8 +119,6 @@ def interactive_comp_pig_regression_grid(agg, PIGS, bin_order,figures_dir):
         title_text="PIG Expression by Distance and Cell Type (4×4 grid)",
         showlegend=False,
         margin=dict(t=120, b=60, l=60, r=60),
-
-        # transparent background (ONLY change)
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0)",
     )
@@ -143,7 +138,6 @@ def interactive_comp_pig_regression_grid(agg, PIGS, bin_order,figures_dir):
     logging.info(f"Saved to {out_path}")
 
 
-
 def plot_gene_trends_interactive(
     mean_expr: pd.DataFrame,
     genes: list[str],
@@ -155,7 +149,7 @@ def plot_gene_trends_interactive(
     width: int = 820,
     use_webgl: bool = True,
     *,
-    sem_expr: pd.DataFrame | None = None,  # optional SEM matrix (same shape as mean_expr)
+    sem_expr: pd.DataFrame | None = None,
 ) -> go.Figure:
     """
     Interactive version of 'plot_gene_trends' with optional SEM error bars.
@@ -165,33 +159,34 @@ def plot_gene_trends_interactive(
     genes: list of genes to display (subset of columns in mean_expr/sem_expr).
     """
     if mean_expr.empty:
-        raise ValueError("mean_expr is empty; check your inputs")
+        raise ValueError("mean_expr is empty; verify inputs")
 
-    # ---- Order bins & rounded labels ----
     idx = mean_expr.index
     if isinstance(idx, pd.IntervalIndex):
-        # sort by bin midpoints, then rebuild mean/sem accordingly
+
         order = sorted(idx, key=lambda iv: iv.mid)
         M = mean_expr.loc[order]
         S = sem_expr.loc[order] if sem_expr is not None else None
         bin_labels = [f"{int(round(iv.left))}-{int(round(iv.right))}" for iv in order]
     else:
-        # keep existing order; still provide nice labels
+
         M = mean_expr.copy()
         S = sem_expr.copy() if sem_expr is not None else None
         bin_labels = [str(x) for x in M.index]
 
-    # ---- Filter genes present ----
     genes_present = [g for g in genes if g in M.columns]
     if not genes_present:
-        raise ValueError("None of the requested genes were found in 'mean_expr' columns.")
+        raise ValueError(
+            "None of the requested genes were found in 'mean_expr' columns."
+        )
     if S is not None:
-        # ensure SEM has the same genes; drop missing gracefully
+
         genes_present = [g for g in genes_present if g in S.columns]
         if not genes_present:
-            raise ValueError("Requested genes not present in both mean_expr and sem_expr.")
+            raise ValueError(
+                "Requested genes not present in both mean_expr and sem_expr."
+            )
 
-    # ---- Build long frames for Plotly ----
     M2 = M[genes_present].copy()
     M2["__bin__"] = bin_labels
     long_mean = M2.melt(id_vars="__bin__", var_name="gene", value_name="mean_expr")
@@ -205,16 +200,15 @@ def plot_gene_trends_interactive(
         long = long_mean
         long["sem_expr"] = None
 
-    # ---- Choose trace type (error bars not supported in Scattergl) ----
     use_gl = bool(use_webgl and S is None)
 
     fig = go.Figure()
     for g in genes_present:
         sub = long[long["gene"] == g]
-        # error bars if SEM exists
+
         err = None
         if S is not None:
-            # Plotly expects 'array' (absolute size of +/- error)
+
             err = dict(
                 type="data",
                 array=sub["sem_expr"].to_numpy(),
@@ -231,7 +225,7 @@ def plot_gene_trends_interactive(
                 mode="lines+markers",
                 name=g,
                 line=dict(width=line_width),
-                error_y=err,  # ignored by Scattergl; shown by Scatter
+                error_y=err,
                 hovertemplate=(
                     "Bin: %{x}<br>"
                     f"Gene: {g}<br>"
@@ -243,7 +237,6 @@ def plot_gene_trends_interactive(
             )
         )
 
-    # ---- Layout cosmetics ----
     fig.update_layout(
         title=title,
         xaxis_title=xlabel,
@@ -254,7 +247,7 @@ def plot_gene_trends_interactive(
         legend_title="Gene",
         margin=dict(l=60, r=20, t=60, b=60),
     )
-    # Keep the bin order as given
+
     fig.update_xaxes(tickangle=45, categoryorder="array", categoryarray=bin_labels)
 
     return fig
@@ -288,24 +281,22 @@ def plot_mean_heatmap_interactive(
 
     expr = mean_expr[gene_cols].copy()
 
-    # Gene selection by gradient
     grad = expr.diff().abs().sum().sort_values(ascending=False)
     top_genes = grad.head(top_n).index
     sub_df = expr[top_genes]
 
-    # Z-score (optional)
     if zscore:
-        # convertit sparse -> dense si besoin, puis zscore colonne par colonne
-        sub_df = sub_df.apply(lambda x: x.sparse.to_dense() if pd.api.types.is_sparse(x) else x)
+
+        sub_df = sub_df.apply(
+            lambda x: x.sparse.to_dense() if pd.api.types.is_sparse(x) else x
+        )
         sub_df = (sub_df - sub_df.mean()) / (sub_df.std(ddof=0).replace(0, np.nan))
 
-    # Labels d'axe X
     if isinstance(mean_expr.index, pd.IntervalIndex):
         x_labels = [f"{b.left:.0f}-{b.right:.0f}" for b in mean_expr.index]
     else:
         x_labels = [str(x) for x in mean_expr.index]
 
-    # 2D array for plotly
     fig = px.imshow(
         sub_df.T.values,
         x=x_labels,
@@ -318,7 +309,7 @@ def plot_mean_heatmap_interactive(
         height=height,
         width=width,
     )
-    # Center color scale at 0 for z score
+
     if zscore:
         vmax = float(np.nanmax(np.abs(sub_df.values)))
         fig.update_coloraxes(cmid=0.0, cmax=vmax, cmin=-vmax)
@@ -349,12 +340,11 @@ def gene_distribution_selector_interactive(
     df: DataFrame (cells x genes) with numeric columns for gene expression.
     genes: list of gene column names in df.
     """
-    # --- Precompute per-gene traces (raw + log1p) ---
-    traces = []  # list of go.Scatter / go.Histogram
-    vis_map = {}  # (gene, scale) -> list of trace indices to set visible=True
-    x_ranges = {}  # scale -> (global_min, global_max) for consistent axes
 
-    # Prepare global x-limits for stability across genes
+    traces = []
+    vis_map = {}
+    x_ranges = {}
+
     def _clean(x):
         x = np.asarray(x, dtype=float)
         return x[np.isfinite(x)]
@@ -365,12 +355,11 @@ def gene_distribution_selector_interactive(
     x_ranges["log1p"] = (float(np.nanmin(log_vals)), float(np.nanmax(log_vals)))
 
     for g in genes:
-        # Raw
+
         x_raw = _clean(df[g].to_numpy())
-        # Log1p
+
         x_log = _clean(np.log1p(df[g].to_numpy()))
 
-        # Histogram (raw)
         h_raw = go.Histogram(
             x=x_raw,
             nbinsx=bins,
@@ -379,7 +368,7 @@ def gene_distribution_selector_interactive(
             opacity=0.45,
             showlegend=False,
         )
-        # KDE (raw)
+
         raw_kde_trace = None
         if x_raw.size > 5:
             xr = np.linspace(
@@ -401,7 +390,6 @@ def gene_distribution_selector_interactive(
             except Exception:
                 pass
 
-        # Histogram (log1p)
         h_log = go.Histogram(
             x=x_log,
             nbinsx=bins,
@@ -410,7 +398,7 @@ def gene_distribution_selector_interactive(
             opacity=0.45,
             showlegend=False,
         )
-        # KDE (log1p)
+
         log_kde_trace = None
         if x_log.size > 5:
             xl = np.linspace(
@@ -419,7 +407,7 @@ def gene_distribution_selector_interactive(
                 kde_points,
             )
             try:
-                kde_l = gaussian_kde(x_log)  # déjà > 0
+                kde_l = gaussian_kde(x_log)
                 yl = kde_l(xl)
                 log_kde_trace = go.Scatter(
                     x=xl,
@@ -432,15 +420,14 @@ def gene_distribution_selector_interactive(
             except Exception:
                 pass
 
-        # Store indices for visibility toggling
         start_idx = len(traces)
-        g_raw_idxs = [start_idx]  # raw hist
+        g_raw_idxs = [start_idx]
         traces.append(h_raw)
         if raw_kde_trace is not None:
             g_raw_idxs.append(len(traces))
             traces.append(raw_kde_trace)
 
-        g_log_idxs = [len(traces)]  # log hist
+        g_log_idxs = [len(traces)]
         traces.append(h_log)
         if log_kde_trace is not None:
             g_log_idxs.append(len(traces))
@@ -449,26 +436,21 @@ def gene_distribution_selector_interactive(
         vis_map[(g, "raw")] = g_raw_idxs
         vis_map[(g, "log1p")] = g_log_idxs
 
-    # --- Build the figure with all traces (initially hide everything) ---
     fig = go.Figure(data=traces)
     for t in fig.data:
         t.visible = False
 
-    # Initial state
     init_gene = genes[0]
     init_scale = "log1p"
     for idx in vis_map[(init_gene, init_scale)]:
         fig.data[idx].visible = True
 
-    # --- Dropdowns ---
-    # Helper to build visibility masks
     def visibility_for(g, scale):
         vis = [False] * len(traces)
         for idx in vis_map[(g, scale)]:
             vis[idx] = True
         return vis
 
-    # Buttons for genes
     gene_buttons = []
     for g in genes:
         gene_buttons.append(
@@ -489,7 +471,6 @@ def gene_distribution_selector_interactive(
             )
         )
 
-    # Buttons for scale
     scale_buttons = []
     for sc in ["raw", "log1p"]:
         scale_buttons.append(
@@ -546,15 +527,13 @@ def gene_distribution_selector_interactive(
         margin=dict(l=60, r=20, t=90, b=60),
     )
 
-    # Consistent x ranges per scale (switch via relayout on button click)
-    # We’ll attach ranges to layout meta for clarity (optional)
     fig.layout.meta = dict(xrange_raw=x_ranges["raw"], xrange_log=x_ranges["log1p"])
     fig.update_layout(
         title={
             "text": f"{title} - {init_gene} ({init_scale})",
-            "x": 0.5,  # center horizontally
+            "x": 0.5,
             "xanchor": "center",
-            "y": 0.97,  # slightly below top edge
+            "y": 0.97,
             "yanchor": "top",
         },
         updatemenus=[
@@ -565,7 +544,7 @@ def gene_distribution_selector_interactive(
                 x=0.0,
                 xanchor="left",
                 y=1.12,
-                yanchor="top",  # a bit below title
+                yanchor="top",
                 bgcolor="white",
                 bordercolor="#ccc",
             ),
@@ -590,7 +569,7 @@ def gene_distribution_selector_interactive(
 def plot_top_spatial_genes_interactive(
     stats_df: pd.DataFrame,
     top_n: int = 20,
-    metrics: list[str] | None = None,  # ex: ["spearman_r","slope"]
+    metrics: list[str] | None = None,
     gene_col: str = "gene",
     p_col_candidates=("p_value", "pval", "p"),
     fdr_col_candidates=("fdr", "q_value", "adj_p", "qval"),
@@ -608,18 +587,19 @@ def plot_top_spatial_genes_interactive(
     if gene_col not in df.columns:
         raise ValueError(f"'{gene_col}' absent de stats_df.")
 
-    # Auto-detect metrics if not provided
     if metrics is None:
         non_metric = {gene_col, *p_col_candidates, *fdr_col_candidates}
-        metrics = [c for c in df.select_dtypes(include=[np.number]).columns if c not in non_metric]
+        metrics = [
+            c
+            for c in df.select_dtypes(include=[np.number]).columns
+            if c not in non_metric
+        ]
     if not metrics:
         raise ValueError("Aucune métrique numérique détectée. Fournis `metrics=[...]`.")
 
-    # p/FDR columns for hover (if present)
     p_col = next((c for c in p_col_candidates if c in df.columns), None)
     fdr_col = next((c for c in fdr_col_candidates if c in df.columns), None)
 
-    # Build one trace (horizontal bar) per metric; visibility will be toggled via dropdown
     traces = []
     vis_map = {}
     top_n = int(min(top_n, len(df)))
@@ -627,15 +607,15 @@ def plot_top_spatial_genes_interactive(
     for m in metrics:
         if m not in df.columns:
             continue
-        top = (
-            df.nlargest(top_n, m).copy().sort_values(m, ascending=True)
-        )  # pour empiler vers le haut
+        top = df.nlargest(top_n, m).copy().sort_values(m, ascending=True)
 
         hover = f"<b>%{{y}}</b><br>{m}: %{{x:.4g}}"
         custom = None
         if p_col or fdr_col:
             hover += f"<br>{p_col or 'p'}: %{{customdata[0]:.2e}}" if p_col else ""
-            hover += f"<br>{fdr_col or 'FDR'}: %{{customdata[1]:.2e}}" if fdr_col else ""
+            hover += (
+                f"<br>{fdr_col or 'FDR'}: %{{customdata[1]:.2e}}" if fdr_col else ""
+            )
             custom = np.stack(
                 [
                     top[p_col].to_numpy() if p_col else np.full(len(top), np.nan),
@@ -649,7 +629,9 @@ def plot_top_spatial_genes_interactive(
             y=top[gene_col].to_numpy(),
             orientation="h",
             name=m,
-            marker=dict(color=np.where(top[m] >= 0, "rgb(31,120,180)", "rgb(227,26,28)")),
+            marker=dict(
+                color=np.where(top[m] >= 0, "rgb(31,120,180)", "rgb(227,26,28)")
+            ),
             hovertemplate=hover,
             customdata=custom,
             visible=False,
@@ -665,7 +647,6 @@ def plot_top_spatial_genes_interactive(
 
     fig = go.Figure(data=traces)
 
-    # Menu dropdown
     buttons = []
     for m in metrics:
         vis = [i == vis_map[m] for i in range(len(traces))]
@@ -693,7 +674,7 @@ def plot_top_spatial_genes_interactive(
         ),
         xaxis_title=init_metric,
         yaxis_title="Gene",
-        margin=dict(l=140, r=30, t=110, b=50),  # top ↑ for menu
+        margin=dict(l=140, r=30, t=110, b=50),
         showlegend=False,
         updatemenus=[
             dict(
@@ -714,14 +695,11 @@ def plot_top_spatial_genes_interactive(
 
 
 def interactive_comp_pig_regression(agg, PIGS, bin_order):
-    # --- mean and SEM per (gene, broad_type, bin)
 
     btypes = agg["broad_type"].unique().tolist()
     fig = go.Figure()
 
-    # We’ll add 2 traces per broad type per gene: line (mean) + band (± 1.96×SEM).
-    # We'll store indices of the "line" traces per gene to control legend visibility per dropdown.
-    traces_per_gene = 2 * len(btypes)  # band + line for each type (upper bound)
+    traces_per_gene = 2 * len(btypes)
     line_idxs_per_gene: list[list[int]] = []
 
     for gi, gene in enumerate(PIGS):
@@ -730,12 +708,11 @@ def interactive_comp_pig_regression(agg, PIGS, bin_order):
         for bi, bt in enumerate(btypes):
             dsub = sub[sub["broad_type"] == bt]
             if dsub.empty:
-                # Skip empty groups (avoid blank traces)
+
                 continue
 
             xcats = dsub["distance_bin"].astype(str)
 
-            # Error band (invisible in legend) — use ~95% CI via 1.96×SEM
             fig.add_trace(
                 go.Scatter(
                     x=pd.concat([xcats, xcats[::-1]]),
@@ -750,13 +727,12 @@ def interactive_comp_pig_regression(agg, PIGS, bin_order):
                     line=dict(width=0),
                     name=f"{bt} ± 1.96×SEM",
                     legendgroup=bt,
-                    showlegend=False,  # <-- avoid legend clutter
+                    showlegend=False,
                     visible=(gi == 0),
                     hoverinfo="skip",
                 )
             )
 
-            # Mean line
             fig.add_trace(
                 go.Scatter(
                     x=xcats,
@@ -764,7 +740,7 @@ def interactive_comp_pig_regression(agg, PIGS, bin_order):
                     mode="lines+markers",
                     name=bt,
                     legendgroup=bt,
-                    showlegend=(gi == 0),  # <-- legend only shown for first gene
+                    showlegend=(gi == 0),
                     visible=(gi == 0),
                     hovertemplate=(
                         f"Gene: {gene}<br>Type: {bt}<br>Bin: %{{x}}<br>"
@@ -772,25 +748,23 @@ def interactive_comp_pig_regression(agg, PIGS, bin_order):
                     ),
                 )
             )
-            # Record index of the just-added line trace for legend control
+
             line_idxs_for_gene.append(len(fig.data) - 1)
 
         line_idxs_per_gene.append(line_idxs_for_gene)
 
-    # Dropdown buttons (toggle visibility blocks per gene)
     buttons = []
     total_traces = len(fig.data)
     for gi, gene in enumerate(PIGS):
         vis = [False] * total_traces
         showlegend = [False] * total_traces
-        # Turn on visibility for traces that belong to this gene block
-        # We added traces sequentially per gene; however, some may be missing.
+
         start = gi * traces_per_gene
         for idx in range(traces_per_gene):
             k = start + idx
             if k < total_traces:
                 vis[k] = True
-        # Ensure legend entries for the visible gene's line traces
+
         for k in line_idxs_per_gene[gi]:
             showlegend[k] = True
         buttons.append(
@@ -818,31 +792,34 @@ def interactive_comp_pig_regression(agg, PIGS, bin_order):
             dict(
                 type="dropdown",
                 buttons=buttons,
-                x=1.1,  # --> move dropdown to the right
+                x=1.1,
                 xanchor="right",
-                y=1.22,  # --> raise dropdown a bit higher above the legend
+                y=1.22,
                 yanchor="top",
                 pad=dict(l=2, r=2, t=2, b=2),
-                direction="down",  # menu expands downward
+                direction="down",
                 showactive=True,
             )
         ],
-        margin=dict(l=60, r=20, t=120, b=60),  # extra top space to avoid overlap
+        margin=dict(l=60, r=20, t=120, b=60),
         legend=dict(
             orientation="h",
             yanchor="bottom",
-            y=1.05,  # --> move legend slightly up
+            y=1.05,
             xanchor="center",
             x=0.5,
         ),
     )
 
-    # Horizontal legend above plot
-    fig.update_layout(legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0))
+    fig.update_layout(
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0)
+    )
 
     fig.show()
     fig.write_html(os.path.join(figures_dir, "pig_by_distance_interactive.html"))
-    logging.info(f"Saved to {os.path.join(figures_dir, 'pig_by_distance_interactive.html')}")
+    logging.info(
+        f"Saved to {os.path.join(figures_dir, 'pig_by_distance_interactive.html')}"
+    )
 
 
 def plot_gene_expression_by_distance_interactive(
@@ -855,7 +832,7 @@ def plot_gene_expression_by_distance_interactive(
     title: str = "Plaque-Induced Gene Expression vs Distance (mean ± 95% CI ≈ 1.96×SEM, log1p)",
     x_label: str = "Distance to Plaque (µm, binned)",
     y_label: str = "Mean log1p Expression",
-    use_ci95: bool = True,  # multiply SEM by 1.96
+    use_ci95: bool = True,
 ):
     """
     Interactive line plot with ALL genes overlaid (different colors) and CI bands.
@@ -864,12 +841,10 @@ def plot_gene_expression_by_distance_interactive(
 
     df = summary_df.copy()
 
-    # Keep only genes found in data
     pig_genes = [g for g in pig_genes if g in df[gene_col].unique()]
     if not pig_genes:
         raise ValueError("None of the requested genes are present in summary_df.")
 
-    # Convert interval bins to clean labels
     def _bin_label(b):
         if isinstance(b, pd.Interval):
             return f"{int(round(b.left))}-{int(round(b.right))}"
@@ -877,7 +852,6 @@ def plot_gene_expression_by_distance_interactive(
 
     df["bin_label"] = df[distance_col].apply(_bin_label)
 
-    # ~95% CI if requested
     scale = 1.96 if use_ci95 else 1.0
 
     fig = go.Figure()
@@ -889,7 +863,6 @@ def plot_gene_expression_by_distance_interactive(
         s = sub[sem_col].to_numpy(float) * scale
         x = sub["bin_label"].tolist()
 
-        # mean line (each gene gets a different default Plotly color)
         fig.add_trace(
             go.Scatter(
                 x=x,
@@ -901,7 +874,6 @@ def plot_gene_expression_by_distance_interactive(
             )
         )
 
-        # SEM/CI (shaded band) — same trace color family will be used automatically
         fig.add_trace(
             go.Scatter(
                 x=x + x[::-1],
@@ -921,8 +893,6 @@ def plot_gene_expression_by_distance_interactive(
         autosize=True,
         template="plotly_white",
         margin=dict(t=120, l=60, r=20, b=60),
-
-        # transparent background
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0)",
     )
@@ -940,6 +910,7 @@ def plot_gene_expression_by_distance_interactive(
 
     fig.show()
     return fig
+
 
 def _infer_grid_shape(key_to_pos: dict[str, tuple[int, int]]) -> tuple[int, int]:
     rs = [r for r, _ in key_to_pos.values()]
@@ -962,12 +933,17 @@ def _pad_to_max(img: np.ndarray, target_h: int, target_w: int) -> np.ndarray:
     h, w = img.shape[:2]
     pad_h = max(0, target_h - h)
     pad_w = max(0, target_w - w)
-    # center pad
+
     top = pad_h // 2
     bottom = pad_h - top
     left = pad_w // 2
     right = pad_w - left
-    return np.pad(img, ((top, bottom), (left, right), (0, 0)), mode="constant", constant_values=255)
+    return np.pad(
+        img,
+        ((top, bottom), (left, right), (0, 0)),
+        mode="constant",
+        constant_values=255,
+    )
 
 
 def _to_data_uri(img: np.ndarray) -> str:
@@ -982,8 +958,8 @@ def _to_data_uri(img: np.ndarray) -> str:
 
 def make_wt_tg_age_grid_scatter_from_csv(
     *,
-    csv_paths: dict[str, str | Path],                 # {"wt2": "...csv", "tg2": "...csv", ...}
-    age_map: dict[str, tuple[str, str]],              # age_label -> (wt_key, tg_key)
+    csv_paths: dict[str, str | Path],
+    age_map: dict[str, tuple[str, str]],
     title: str | None = "WT vs TG by age (interactive)",
     filename: str = "wt_tg_age_grid_scatter.html",
     out_dir: str = "frontend/public/plots",
@@ -992,15 +968,10 @@ def make_wt_tg_age_grid_scatter_from_csv(
     y_candidates=("y_centroid", "y"),
     reverse_y: bool = True,
     swap_xy: bool = False,
-
-    # --- NEW: make all panels same color ---
     uniform_color: str = "gold",
     marker_size: float = 1.8,
     marker_opacity: float = 0.65,
-
-    # --- NEW: flip horizontally only for specific samples/keys ---
     flip_h_keys: Iterable[str] = ("wt5", "tg17"),
-
     row_label_wt: str = "Wild type",
     row_label_tg: str = "Transgenic",
     row_label_font_size: int = 18,
@@ -1010,7 +981,6 @@ def make_wt_tg_age_grid_scatter_from_csv(
 
     flip_h_keys = set(flip_h_keys)
 
-    # ---- helpers ----
     def pick_xy(df: pd.DataFrame):
         xcol = next((c for c in x_candidates if c in df.columns), None)
         ycol = next((c for c in y_candidates if c in df.columns), None)
@@ -1034,19 +1004,16 @@ def make_wt_tg_age_grid_scatter_from_csv(
         if swap_xy:
             x, y = y, x
 
-        # horizontal flip only for selected keys (mirror within that sample's bounds)
         if key in flip_h_keys:
             xmin, xmax = float(x.min()), float(x.max())
             x = (xmin + xmax) - x
 
         return x, y
 
-    # fixed age order based on insertion order in age_map
     age_labels = list(age_map.keys())
     if len(age_labels) != 3:
         raise ValueError("age_map should contain exactly 3 ages for a 2×3 grid.")
 
-    # ---- create subplot grid ----
     fig = make_subplots(
         rows=2,
         cols=3,
@@ -1055,24 +1022,22 @@ def make_wt_tg_age_grid_scatter_from_csv(
         vertical_spacing=0.05,
     )
 
-    # Track global ranges so all panels match
     xmins, xmaxs, ymins, ymaxs = [], [], [], []
 
-    # single marker style for everything
     marker_common = dict(
         size=marker_size,
         opacity=marker_opacity,
         color=uniform_color,
     )
 
-    # ---- add traces ----
     for j, age in enumerate(age_labels, start=1):
         wt_key, tg_key = age_map[age]
 
-        # WT (row 1)
         x_wt, y_wt = prep_df(wt_key)
-        xmins.append(float(x_wt.min())); xmaxs.append(float(x_wt.max()))
-        ymins.append(float(y_wt.min())); ymaxs.append(float(y_wt.max()))
+        xmins.append(float(x_wt.min()))
+        xmaxs.append(float(x_wt.max()))
+        ymins.append(float(y_wt.min()))
+        ymaxs.append(float(y_wt.max()))
 
         fig.add_trace(
             go.Scattergl(
@@ -1083,13 +1048,15 @@ def make_wt_tg_age_grid_scatter_from_csv(
                 showlegend=False,
                 hovertemplate=f"{row_label_wt}<br>Age: {age}<br>x=%{{x:.2f}}<br>y=%{{y:.2f}}<extra></extra>",
             ),
-            row=1, col=j
+            row=1,
+            col=j,
         )
 
-        # TG (row 2)
         x_tg, y_tg = prep_df(tg_key)
-        xmins.append(float(x_tg.min())); xmaxs.append(float(x_tg.max()))
-        ymins.append(float(y_tg.min())); ymaxs.append(float(y_tg.max()))
+        xmins.append(float(x_tg.min()))
+        xmaxs.append(float(x_tg.max()))
+        ymins.append(float(y_tg.min()))
+        ymaxs.append(float(y_tg.max()))
 
         fig.add_trace(
             go.Scattergl(
@@ -1100,24 +1067,26 @@ def make_wt_tg_age_grid_scatter_from_csv(
                 showlegend=False,
                 hovertemplate=f"{row_label_tg}<br>Age: {age}<br>x=%{{x:.2f}}<br>y=%{{y:.2f}}<extra></extra>",
             ),
-            row=2, col=j
+            row=2,
+            col=j,
         )
 
-    # ---- unify axes ----
     xr = [min(xmins), max(xmaxs)]
     yr = [min(ymins), max(ymaxs)]
 
     for r in (1, 2):
         for c in (1, 2, 3):
             fig.update_xaxes(
-                row=r, col=c,
+                row=r,
+                col=c,
                 range=xr,
                 showgrid=False,
                 zeroline=False,
                 visible=False,
             )
             fig.update_yaxes(
-                row=r, col=c,
+                row=r,
+                col=c,
                 range=yr,
                 showgrid=False,
                 zeroline=False,
@@ -1127,29 +1096,34 @@ def make_wt_tg_age_grid_scatter_from_csv(
                 autorange="reversed" if reverse_y else True,
             )
 
-    # ---- row labels (bigger + bold) ----
     fig.update_layout(
-        annotations=list(fig.layout.annotations) + [
+        annotations=list(fig.layout.annotations)
+        + [
             dict(
                 text=f"<b>{row_label_wt}</b>",
-                x=0.01, y=0.97,
-                xref="paper", yref="paper",
-                xanchor="left", yanchor="middle",
+                x=0.01,
+                y=0.97,
+                xref="paper",
+                yref="paper",
+                xanchor="left",
+                yanchor="middle",
                 showarrow=False,
                 font=dict(size=row_label_font_size),
             ),
             dict(
                 text=f"<b>{row_label_tg}</b>",
-                x=0.01, y=0.50,
-                xref="paper", yref="paper",
-                xanchor="left", yanchor="middle",
+                x=0.01,
+                y=0.50,
+                xref="paper",
+                yref="paper",
+                xanchor="left",
+                yanchor="middle",
                 showarrow=False,
                 font=dict(size=row_label_font_size),
             ),
         ]
     )
 
-    # ---- overall layout + transparency ----
     fig.update_layout(
         title=title,
         autosize=True,
@@ -1164,7 +1138,6 @@ def make_wt_tg_age_grid_scatter_from_csv(
     return fig
 
 
-
 def make_alignment_overlay_plot(
     *,
     df_ref: pd.DataFrame,
@@ -1173,8 +1146,8 @@ def make_alignment_overlay_plot(
     aligned_label: str = "TG5 aligned → TG17",
     x_col: str = "x_centroid",
     y_col: str = "y_centroid",
-    swap_xy: bool = True,  # swap x and y (requested)
-    reverse_y: bool = True,  # image-like orientation (optional but usually correct)
+    swap_xy: bool = True,
+    reverse_y: bool = True,
     max_points: int | None = 200_000,
     marker_size: float = 1.8,
     opacity: float = 0.6,
@@ -1189,7 +1162,6 @@ def make_alignment_overlay_plot(
             x, y = y, x
         return x, y
 
-    # Downsample for speed
     if max_points is not None:
         if len(df_ref) > max_points:
             df_ref = df_ref.sample(max_points, random_state=0)
@@ -1230,15 +1202,12 @@ def make_alignment_overlay_plot(
 
     fig.update_layout(
         title=title,
-        # height=700,
-        # width=None,  # responsive inside iframe
         autosize=True,
         margin=dict(l=30, r=20, t=80, b=30),
         dragmode="pan",
         template="plotly_white",
         showlegend=True,
         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
-        # transparent background
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0)",
     )
@@ -1286,7 +1255,6 @@ def make_plaques_detected_plotly(
     All geometries are optionally rotated by 180° for orientation consistency.
     """
 
-    # ------------------ sanity checks ------------------
     if "geometry" not in df.columns:
         raise ValueError("df must contain a 'geometry' column with shapely objects.")
     if "is_convex" not in df.columns:
@@ -1299,7 +1267,6 @@ def make_plaques_detected_plotly(
     if "area" not in P.columns:
         P["area"] = P["geometry"].map(lambda g: getattr(g, "area", np.nan))
 
-    # ------------------ helpers ------------------
     def iter_polygons(g):
         if isinstance(g, Polygon):
             yield g
@@ -1333,10 +1300,9 @@ def make_plaques_detected_plotly(
 
     fig = go.Figure()
 
-    # ------------------ brain ROI ------------------
     if brain_geom is not None and brain_geom.is_valid:
         g = rot(brain_geom)
-        x, y = map(list, g.exterior.xy)  # IMPORTANT FIX
+        x, y = map(list, g.exterior.xy)
         fig.add_trace(
             go.Scatter(
                 x=x,
@@ -1348,7 +1314,6 @@ def make_plaques_detected_plotly(
             )
         )
 
-    # ------------------ plaques ------------------
     for row in P.itertuples(index=False):
         g = getattr(row, "geometry", None)
         is_convex = bool(getattr(row, "is_convex", False))
@@ -1364,7 +1329,7 @@ def make_plaques_detected_plotly(
             if poly.is_empty or not poly.is_valid:
                 continue
 
-            x, y = map(list, poly.exterior.xy)  # IMPORTANT FIX
+            x, y = map(list, poly.exterior.xy)
 
             fig.add_trace(
                 go.Scatter(
@@ -1376,12 +1341,13 @@ def make_plaques_detected_plotly(
                         width=0.9,
                         dash="solid" if is_convex else "dash",
                     ),
-                    hovertemplate=(f"Plaque {pid}<br>" f"Area: {area:,.0f} µm²<extra></extra>"),
+                    hovertemplate=(
+                        f"Plaque {pid}<br>" f"Area: {area:,.0f} µm²<extra></extra>"
+                    ),
                     showlegend=False,
                 )
             )
 
-    # ------------------ convex hull overlays ------------------
     rng = np.random.default_rng(seed)
     n = min(len(P), int(sample_hulls))
     if n > 0:
@@ -1392,7 +1358,7 @@ def make_plaques_detected_plotly(
                 continue
 
             hull = rot(g.convex_hull)
-            x, y = map(list, hull.exterior.xy)  # IMPORTANT FIX
+            x, y = map(list, hull.exterior.xy)
 
             fig.add_trace(
                 go.Scatter(
@@ -1405,7 +1371,6 @@ def make_plaques_detected_plotly(
                 )
             )
 
-    # ------------------ layout ------------------
     fig.update_layout(
         title=title or "Detected Aβ plaques after normalization",
         width=figsize_px[0],
@@ -1436,7 +1401,6 @@ def make_plaques_detected_plotly(
         zeroline=False,
     )
 
-    # ------------------ save ------------------
     out_path = Path(out_dir) / filename
     out_path.parent.mkdir(parents=True, exist_ok=True)
     fig.write_html(out_path, include_plotlyjs="cdn")
@@ -1478,7 +1442,6 @@ def make_cell_to_plaque_distance_distribution_plotly(
     if x.size == 0:
         raise ValueError(f"No valid numeric values found in '{column}'.")
 
-    # Optional clipping (useful to avoid the long tail dominating the view)
     if clip_quantiles is not None:
         loq, hiq = clip_quantiles
         lo = np.quantile(x, loq)
@@ -1487,10 +1450,8 @@ def make_cell_to_plaque_distance_distribution_plotly(
     else:
         x_plot = x
 
-    # Quantiles (computed on *full* distribution, not clipped)
     q5, q25, q50, q75, q95 = np.percentile(x, [5, 25, 50, 75, 95])
 
-    # Histogram (counts)
     counts, edges = np.histogram(x_plot, bins=n_bins)
     centers = 0.5 * (edges[:-1] + edges[1:])
 
@@ -1506,14 +1467,12 @@ def make_cell_to_plaque_distance_distribution_plotly(
         )
     )
 
-    # Optional KDE-like smoothing on histogram counts (fast, no SciPy dependency)
     if show_kde and counts.sum() > 0:
-        # Heuristic bandwidth in "bin units"
+
         if bandwidth is None:
-            # Slight smoothing proportional to bins
+
             bandwidth = max(1.0, n_bins / 30.0)
 
-        # Gaussian kernel in bin space
         kx = np.arange(-int(4 * bandwidth), int(4 * bandwidth) + 1)
         kernel = np.exp(-(kx**2) / (2 * bandwidth**2))
         kernel = kernel / kernel.sum()
@@ -1530,7 +1489,6 @@ def make_cell_to_plaque_distance_distribution_plotly(
             )
         )
 
-    # Threshold lines
     for val, lab in [
         (prox_thresh, f"proximal threshold ({prox_thresh:g} µm)"),
         (distal_thresh, f"distal threshold ({distal_thresh:g} µm)"),
@@ -1543,7 +1501,6 @@ def make_cell_to_plaque_distance_distribution_plotly(
             annotation_position="top",
         )
 
-    # Quantile lines
     for val, lab in [
         (q5, "q5"),
         (q25, "q25"),
@@ -1568,14 +1525,12 @@ def make_cell_to_plaque_distance_distribution_plotly(
         template="simple_white",
         margin=dict(l=60, r=20, t=70, b=55),
         autosize=True,
-        height=None,   # pick what fits your layout
+        height=None,
         width=980,
-        # transparent backgrounds for embedding
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0)",
     )
 
-    # Save HTML responsive
     out_path = Path(out_dir) / filename
     out_path.parent.mkdir(parents=True, exist_ok=True)
     fig.write_html(
@@ -1621,7 +1576,6 @@ def make_expression_distribution_selector_plotly(
             x = np.log1p(x)
         return x[np.isfinite(x)]
 
-    # ---------- global x-range ----------
     all_vals = []
     for g in set(genes) | set(all_genes):
         all_vals.append(transform(df[g].to_numpy()))
@@ -1636,7 +1590,6 @@ def make_expression_distribution_selector_plotly(
     centers = 0.5 * (bin_edges[:-1] + bin_edges[1:])
     bw = bin_edges[1] - bin_edges[0]
 
-    # ---------- avg reference ----------
     avg_hist = None
     avg_q25 = avg_q75 = avg_mean = avg_zero_frac = None
 
@@ -1661,7 +1614,6 @@ def make_expression_distribution_selector_plotly(
             avg_mean = float(np.mean(means))
             avg_zero_frac = float(np.mean(zfs))
 
-    # ---------- KDE-like smoothing ----------
     def smooth(counts):
         if not kde:
             return None
@@ -1674,7 +1626,6 @@ def make_expression_distribution_selector_plotly(
 
     avg_smooth = smooth(avg_hist) if avg_hist is not None else None
 
-    # ---------- traces per gene ----------
     traces = []
     visibility = []
 
@@ -1690,7 +1641,6 @@ def make_expression_distribution_selector_plotly(
 
         is_visible = gi == 0
 
-        # avg IQR
         if show_iqr and avg_q25 is not None:
             traces.append(
                 go.Scatter(
@@ -1705,7 +1655,6 @@ def make_expression_distribution_selector_plotly(
             )
             visibility.append(is_visible)
 
-        # gene IQR
         if show_iqr:
             traces.append(
                 go.Scatter(
@@ -1720,7 +1669,6 @@ def make_expression_distribution_selector_plotly(
             )
             visibility.append(is_visible)
 
-        # avg histogram
         if avg_hist is not None:
             traces.append(
                 go.Bar(
@@ -1734,7 +1682,6 @@ def make_expression_distribution_selector_plotly(
             )
             visibility.append(is_visible)
 
-        # gene histogram
         traces.append(
             go.Bar(
                 x=centers,
@@ -1747,7 +1694,6 @@ def make_expression_distribution_selector_plotly(
         )
         visibility.append(is_visible)
 
-        # avg KDE
         if avg_smooth is not None:
             traces.append(
                 go.Scatter(
@@ -1761,7 +1707,6 @@ def make_expression_distribution_selector_plotly(
             )
             visibility.append(is_visible)
 
-        # gene KDE
         if gene_smooth is not None:
             traces.append(
                 go.Scatter(
@@ -1775,7 +1720,6 @@ def make_expression_distribution_selector_plotly(
             )
             visibility.append(is_visible)
 
-        # mean lines
         if show_mean:
             traces.append(
                 go.Scatter(
@@ -1802,7 +1746,6 @@ def make_expression_distribution_selector_plotly(
                 )
                 visibility.append(is_visible)
 
-    # ---------- dropdown ----------
     n_traces_per_gene = len(visibility) // len(genes)
 
     buttons = []
@@ -1856,6 +1799,7 @@ def make_expression_distribution_selector_plotly(
 
     return fig
 
+
 def get_leiden_color_map(adata_by_mouse, order, key="leiden"):
     """
     Return {cluster_label: hex_color} using Scanpy's stored palette:
@@ -1870,7 +1814,6 @@ def get_leiden_color_map(adata_by_mouse, order, key="leiden"):
         if key not in ad.obs:
             continue
 
-        #  ensure categorical so categories exist and match Scanpy ordering
         if not pd.api.types.is_categorical_dtype(ad.obs[key]):
             ad.obs[key] = ad.obs[key].astype("category")
 
@@ -1921,7 +1864,6 @@ def make_joint_clustering_umap_grid_plotly(
     n_cols = max(1, int(n_cols))
     n_rows = (n + n_cols - 1) // n_cols
 
-    # Collect global Leiden categories
     all_leiden = []
     for mouse in order:
         ad = adata_by_mouse.get(mouse)
@@ -1986,9 +1928,9 @@ def make_joint_clustering_umap_grid_plotly(
                     marker=dict(
                         size=marker_size,
                         opacity=marker_opacity,
-                        color=leiden_color_map[k],  # EXACT Scanpy color
+                        color=leiden_color_map[k],
                     ),
-                    showlegend=False,   # NO LEGEND
+                    showlegend=False,
                     hovertemplate=(
                         f"Mouse: {mouse}<br>"
                         f"Leiden: {k}<br>"
@@ -2000,7 +1942,9 @@ def make_joint_clustering_umap_grid_plotly(
                 col=col,
             )
 
-        fig.update_xaxes(visible=False, showgrid=False, zeroline=False, row=row, col=col)
+        fig.update_xaxes(
+            visible=False, showgrid=False, zeroline=False, row=row, col=col
+        )
         fig.update_yaxes(
             visible=False,
             showgrid=False,
@@ -2032,8 +1976,7 @@ def make_joint_clustering_umap_grid_plotly(
         default_height="100%",
     )
 
-    return fig,leiden_color_map
-
+    return fig, leiden_color_map
 
 
 def make_leiden_spatial_grid_plotly(
@@ -2045,7 +1988,7 @@ def make_leiden_spatial_grid_plotly(
     random_state: int = 0,
     suptitle: str = "Spatial map of Leiden clusters across mice",
     legend_title: str = "Leiden cluster",
-    palette_name: str = "tab20",   # currently supports tab20 exactly
+    palette_name: str = "tab20",
     point_size: float = 4,
     point_alpha: float = 0.7,
     invert_y: bool = True,
@@ -2055,7 +1998,6 @@ def make_leiden_spatial_grid_plotly(
 ) -> go.Figure:
     required = {"x_centroid", "y_centroid", "cluster_leiden"}
 
-    # collect clusters across mice for consistent mapping
     clusters = []
     for m in order:
         df = df_by_mouse.get(m)
@@ -2073,7 +2015,9 @@ def make_leiden_spatial_grid_plotly(
     hue_order = sorted(unique_clusters, key=_safe_sort_key)
 
     if palette_name != "tab20":
-        raise ValueError("This implementation currently matches Matplotlib 'tab20' exactly. Use palette_name='tab20'.")
+        raise ValueError(
+            "This implementation currently matches Matplotlib 'tab20' exactly. Use palette_name='tab20'."
+        )
 
     colors = _tab20_hex(len(hue_order))
     cluster_to_color = {cl: col for cl, col in zip(hue_order, colors)}
@@ -2086,21 +2030,22 @@ def make_leiden_spatial_grid_plotly(
         rows=n_rows,
         cols=plot_cols,
         subplot_titles=[str(m) for m in order] + [""] * (n_rows * plot_cols - n),
-        horizontal_spacing=0.12,  # ← more horizontal air
-        vertical_spacing=0.16,    # ← more vertical air
+        horizontal_spacing=0.12,
+        vertical_spacing=0.16,
     )
 
-
-    # build panel scatters
     for i, mouse in enumerate(order):
         r, c = divmod(i, plot_cols)
         row, col = r + 1, c + 1
 
         df = df_by_mouse.get(mouse)
         if df is None or not required.issubset(df.columns) or len(df) == 0:
-            # show an empty placeholder
+
             fig.add_annotation(
-                x=0.5, y=0.5, xref=f"x{i+1} domain", yref=f"y{i+1} domain",
+                x=0.5,
+                y=0.5,
+                xref=f"x{i+1} domain",
+                yref=f"y{i+1} domain",
                 text=f"{mouse}<br>(no data)",
                 showarrow=False,
             )
@@ -2110,7 +2055,6 @@ def make_leiden_spatial_grid_plotly(
         if sample_for_scatter is not None and sample_for_scatter < len(df):
             plot_df = df.sample(sample_for_scatter, random_state=random_state)
 
-        # one trace per cluster (needed for a clean legend with fixed colors)
         for j, cl in enumerate(hue_order):
             sub = plot_df[plot_df["cluster_leiden"] == cl]
             if sub.empty:
@@ -2123,54 +2067,58 @@ def make_leiden_spatial_grid_plotly(
                     mode="markers",
                     name=str(cl),
                     legendgroup=str(cl),
-                    showlegend=(i == 0),  # show each cluster once in legend (first panel only)
-                    marker=dict(size=point_size, color=cluster_to_color[cl], opacity=point_alpha),
+                    showlegend=(i == 0),
+                    marker=dict(
+                        size=point_size, color=cluster_to_color[cl], opacity=point_alpha
+                    ),
                     hovertemplate=(
                         f"Mouse: {mouse}<br>"
                         f"Cluster: {cl}<br>"
                         "x: %{x:.1f}<br>y: %{y:.1f}<extra></extra>"
                     ),
                 ),
-                row=row, col=col,
+                row=row,
+                col=col,
             )
 
-        # axis formatting per panel
-        fig.update_xaxes(title_text="X coordinate (µm)", row=row, col=col, showgrid=False, zeroline=False)
+        fig.update_xaxes(
+            title_text="X coordinate (µm)",
+            row=row,
+            col=col,
+            showgrid=False,
+            zeroline=False,
+        )
         fig.update_yaxes(
             title_text="Y coordinate (µm)",
-            row=row, col=col,
-            showgrid=False, zeroline=False,
+            row=row,
+            col=col,
+            showgrid=False,
+            zeroline=False,
             autorange="reversed" if invert_y else True,
-            scaleanchor=f"x{(i+1) if (i>0) else ''}",  # keep 1:1 aspect
+            scaleanchor=f"x{(i+1) if (i>0) else ''}",
             scaleratio=1,
         )
 
-    # layout + legend as a right-side column
     fig.update_layout(
-            title=suptitle,
-            width=figsize_px[0],
-            height=figsize_px[1],
-            template="simple_white",
+        title=suptitle,
+        width=figsize_px[0],
+        height=figsize_px[1],
+        template="simple_white",
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+        margin=dict(l=60, r=240, t=90, b=70),
+        legend=dict(
+            title=legend_title,
+            orientation="v",
+            x=1.02,
+            y=1.0,
+            xanchor="left",
+            yanchor="top",
+            bgcolor="rgba(0,0,0,0)",
+            borderwidth=0,
+        ),
+    )
 
-            # transparent everywhere
-            paper_bgcolor="rgba(0,0,0,0)",
-            plot_bgcolor="rgba(0,0,0,0)",
-
-            margin=dict(l=60, r=240, t=90, b=70),  # keep legend column space
-            legend=dict(
-                title=legend_title,
-                orientation="v",
-                x=1.02,
-                y=1.0,
-                xanchor="left",
-                yanchor="top",
-                bgcolor="rgba(0,0,0,0)",  # transparent legend box
-                borderwidth=0,
-            ),
-        )
-
-
-    # optional save
     if filename:
         out_path = Path(out_dir) / filename
         out_path.parent.mkdir(parents=True, exist_ok=True)
@@ -2178,7 +2126,7 @@ def make_leiden_spatial_grid_plotly(
             str(out_path),
             include_plotlyjs="cdn",
             full_html=True,
-            config={"responsive": True, "displayModeBar": False,"scrollZoom": True},
+            config={"responsive": True, "displayModeBar": False, "scrollZoom": True},
         )
 
     return fig
@@ -2217,9 +2165,6 @@ def make_cluster_frequency_vs_distance_plotly(
     dfp["cluster_leiden"] = dfp["cluster_leiden"].astype(str)
     dfp = dfp.dropna(subset=["bin_mid", "pct", "cluster_leiden"])
 
-    # ---------------------------------------
-    # Filter to significant clusters (same as seaborn)
-    # ---------------------------------------
     if logit_df is not None and not logit_df.empty and "adj_pval" in logit_df.columns:
         sig_clusters = (
             logit_df.loc[logit_df["adj_pval"] < p_adj_thresh, "cluster"]
@@ -2235,7 +2180,6 @@ def make_cluster_frequency_vs_distance_plotly(
 
     fig = go.Figure()
 
-    # one line per Leiden cluster
     for cl, sub in dfp.groupby("cluster_leiden"):
         fig.add_trace(
             go.Scatter(
@@ -2245,7 +2189,7 @@ def make_cluster_frequency_vs_distance_plotly(
                 line=dict(width=line_width),
                 marker=dict(size=marker_size),
                 opacity=opacity,
-                showlegend=False,  # ✅ no legend
+                showlegend=False,
                 hovertemplate=(
                     f"Leiden cluster: {cl}<br>"
                     "Distance bin mid: %{x:.1f} µm<br>"
@@ -2294,14 +2238,15 @@ def make_cluster_frequency_vs_distance_plotly(
 
     return fig
 
+
 def make_marker_enrichment_heatmap_plotly(
     expr_z: pd.DataFrame,
     *,
     title: str = "Marker gene enrichment (z-scored across clusters)",
     filename: str = "expression_per_cluster.html",
     out_dir: str = "frontend/public/plots",
-    z_clip: float = 3.0,                # clip colors to [-z_clip, z_clip]
-    show_values: bool = False,       
+    z_clip: float = 3.0,
+    show_values: bool = False,
 ) -> go.Figure:
     """
     Interactive Plotly heatmap for expr_z from analyze_leiden_spatial().
@@ -2310,18 +2255,17 @@ def make_marker_enrichment_heatmap_plotly(
     """
 
     if expr_z is None or expr_z.empty:
-        raise ValueError("expr_z is empty. (No marker genes found or enrichment skipped.)")
+        raise ValueError(
+            "expr_z is empty. (No marker genes found or enrichment skipped.)"
+        )
 
-    # Ensure numeric matrix
     mat = expr_z.copy()
     mat = mat.apply(pd.to_numeric, errors="coerce")
 
-    # Optional: drop columns that are all NaN
     mat = mat.loc[:, mat.notna().any(axis=0)]
     if mat.empty:
         raise ValueError("expr_z has no numeric values after cleaning.")
 
-    # Clip to keep colormap stable
     z = mat.to_numpy(dtype=float)
     z = np.clip(z, -float(z_clip), float(z_clip))
 
@@ -2336,15 +2280,13 @@ def make_marker_enrichment_heatmap_plotly(
             colorscale="RdBu",
             colorbar=dict(title="Z-score"),
             hovertemplate=(
-                "Cluster: %{y}<br>"
-                "Gene: %{x}<br>"
-                "Z-score: %{z:.2f}<extra></extra>"
+                "Cluster: %{y}<br>" "Gene: %{x}<br>" "Z-score: %{z:.2f}<extra></extra>"
             ),
         )
     )
 
     if show_values:
-        # overlays text values (can get crowded if many genes)
+
         fig.update_traces(
             text=np.round(z, 2),
             texttemplate="%{text}",
@@ -2369,7 +2311,7 @@ def make_marker_enrichment_heatmap_plotly(
         title="",
         showgrid=False,
         zeroline=False,
-        autorange="reversed",  # keeps top row at top (like seaborn)
+        autorange="reversed",
     )
 
     out_path = Path(out_dir) / filename
@@ -2411,7 +2353,6 @@ def make_pig_type_spearman_heatmap_plotly(
     if prop_mat.shape[1] == 0:
         raise ValueError("prop_mat has no columns (cell types).")
 
-    # ---- correlations + p-values ----
     corrs = pd.DataFrame(index=pig_cols, columns=prop_mat.columns, dtype=float)
     pvals = pd.DataFrame(index=pig_cols, columns=prop_mat.columns, dtype=float)
 
@@ -2426,7 +2367,6 @@ def make_pig_type_spearman_heatmap_plotly(
             corrs.loc[g, ct] = float(r) if np.isfinite(r) else np.nan
             pvals.loc[g, ct] = float(p) if np.isfinite(p) else np.nan
 
-    # ---- FDR correction ----
     mask = np.isfinite(pvals.to_numpy())
     flat = pvals.to_numpy()[mask]
     q = pvals.copy()
@@ -2437,20 +2377,15 @@ def make_pig_type_spearman_heatmap_plotly(
     else:
         q[:] = np.nan
 
-    sig = (q <= float(fdr_alpha))
-    corrs_masked = corrs.where(sig)  # non-sig -> NaN
+    sig = q <= float(fdr_alpha)
+    corrs_masked = corrs.where(sig)
 
-    # ---- Plotly heatmap ----
     z = corrs_masked.to_numpy(dtype=float)
 
-    # Text annotations only for significant cells
     text = None
     if show_values:
         text = np.where(np.isfinite(z), np.round(z, 2).astype(str), "")
 
-    # Make NaNs appear black: use a separate "background" heatmap layer in black,
-    # then overlay the coolwarm heatmap with NaNs transparent.
-    # Layer 1: black background
     fig = go.Figure()
     fig.add_trace(
         go.Heatmap(
@@ -2463,8 +2398,6 @@ def make_pig_type_spearman_heatmap_plotly(
         )
     )
 
-    # Layer 2: coolwarm-like heatmap for significant cells only
-    # (Plotly's RdBu is close; we reverse it to match coolwarm orientation)
     fig.add_trace(
         go.Heatmap(
             z=z,
@@ -2474,7 +2407,7 @@ def make_pig_type_spearman_heatmap_plotly(
             zmax=1,
             zmid=0,
             colorscale="RdBu",
-            reversescale=True,  # closer to seaborn coolwarm
+            reversescale=True,
             colorbar=dict(title="Spearman ρ"),
             text=text,
             texttemplate="%{text}" if show_values else None,
@@ -2519,7 +2452,7 @@ def make_half_distance_plotly(
     slope_col: str = "slope",
     qval_col: str | None = "qval",
     filter_negative: bool = True,
-    sort: str = "half",  # "half" | "abs_half_desc" | "qval_then_half"
+    sort: str = "half",
     top_n: int | None = None,
     log_scale: bool = False,
     tissue_radius_um: float | None = None,
@@ -2537,9 +2470,6 @@ def make_half_distance_plotly(
     plot_df : DataFrame indexed by gene with column 'half_dist_um'
     """
 
-    # -----------------------------
-    # Filtering
-    # -----------------------------
     if filter_negative:
         work = df.loc[
             df[slope_col] < 0,
@@ -2548,16 +2478,10 @@ def make_half_distance_plotly(
     else:
         work = df[[gene_col, slope_col] + ([qval_col] if qval_col else [])].copy()
 
-    # -----------------------------
-    # Compute half-distance
-    # -----------------------------
     work["half_dist_um"] = np.log(2) / work[slope_col].abs()
     work.replace([np.inf, -np.inf], np.nan, inplace=True)
     work.dropna(subset=["half_dist_um"], inplace=True)
 
-    # -----------------------------
-    # Sorting
-    # -----------------------------
     if sort == "half":
         work.sort_values("half_dist_um", ascending=True, inplace=True)
     elif sort == "abs_half_desc":
@@ -2566,7 +2490,9 @@ def make_half_distance_plotly(
     elif sort == "qval_then_half":
         if qval_col is None or qval_col not in work.columns:
             raise ValueError("qval_then_half requires qval_col.")
-        work.sort_values([qval_col, "half_dist_um"], ascending=[True, True], inplace=True)
+        work.sort_values(
+            [qval_col, "half_dist_um"], ascending=[True, True], inplace=True
+        )
     else:
         raise ValueError("Invalid sort option.")
 
@@ -2579,9 +2505,6 @@ def make_half_distance_plotly(
     if n == 0:
         raise ValueError("No rows to plot after filtering.")
 
-    # -----------------------------
-    # Plotly figure
-    # -----------------------------
     fig = go.Figure()
 
     fig.add_trace(
@@ -2594,7 +2517,6 @@ def make_half_distance_plotly(
         )
     )
 
-    # Reference line for tissue radius
     if tissue_radius_um is not None:
         fig.add_vline(
             x=tissue_radius_um,
@@ -2604,19 +2526,14 @@ def make_half_distance_plotly(
             annotation_position="top right",
         )
 
-    # -----------------------------
-    # Layout
-    # -----------------------------
     fig.update_layout(
         title=title or f"Half-distance expression for {n} genes",
         xaxis_title="Distance to halve expression (µm)",
         yaxis_title="Gene",
-        yaxis=dict(autorange="reversed"),  # shortest at top
+        yaxis=dict(autorange="reversed"),
         autosize=True,
         margin=dict(l=140, r=30, t=80, b=60),
         template="simple_white",
-
-        # transparent background
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0)",
     )
@@ -2624,9 +2541,6 @@ def make_half_distance_plotly(
     if log_scale:
         fig.update_xaxes(type="log")
 
-    # -----------------------------
-    # Annotations
-    # -----------------------------
     if annotate:
         for gene, v in plot_df["half_dist_um"].items():
             if not np.isfinite(v):
@@ -2641,9 +2555,6 @@ def make_half_distance_plotly(
                 font=dict(size=11),
             )
 
-    # -----------------------------
-    # Save HTML
-    # -----------------------------
     out_path = Path(out_dir) / filename
     out_path.parent.mkdir(parents=True, exist_ok=True)
     fig.write_html(
@@ -2688,8 +2599,8 @@ def plot_model_performance_interactive(
         autosize=True,
         template="simple_white",
         margin=dict(l=60, r=20, t=70, b=60),
-        paper_bgcolor="rgba(0,0,0,0)",  # transparent background
-        plot_bgcolor="rgba(0,0,0,0)",   # transparent plot area
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
         legend_title_text="",
     )
 
@@ -2706,6 +2617,7 @@ def plot_model_performance_interactive(
 
     fig.show()
     return fig
+
 
 def plot_residual_vs_distance_interactive(
     y_true: pd.Series,
@@ -2736,7 +2648,6 @@ def plot_residual_vs_distance_interactive(
     r = float(np.corrcoef(y_true_s.to_numpy(), residuals.to_numpy())[0, 1])
     print(f"Pearson r = {r:.2f}")
 
-    # --- rolling median smoother (same idea as your matplotlib version) ---
     order = np.argsort(y_true_s.to_numpy())
     x_sorted = y_true_s.to_numpy()[order]
     y_sorted = residuals.to_numpy()[order]
@@ -2744,16 +2655,10 @@ def plot_residual_vs_distance_interactive(
 
     y_smooth = None
     if window > 5:
-        y_smooth = (
-            pd.Series(y_sorted)
-            .rolling(window, center=True)
-            .median()
-            .to_numpy()
-        )
+        y_smooth = pd.Series(y_sorted).rolling(window, center=True).median().to_numpy()
 
     fig = go.Figure()
 
-    # scatter points
     fig.add_trace(
         go.Scattergl(
             x=y_true_s.to_numpy(),
@@ -2762,13 +2667,11 @@ def plot_residual_vs_distance_interactive(
             marker=dict(size=6, opacity=0.5),
             name=f"Cells (n={len(y_true_s)})",
             hovertemplate=(
-                "True distance: %{x:.1f} µm<br>"
-                "Residual: %{y:.1f} µm<extra></extra>"
+                "True distance: %{x:.1f} µm<br>" "Residual: %{y:.1f} µm<extra></extra>"
             ),
         )
     )
 
-    # smoother line
     if y_smooth is not None:
         fig.add_trace(
             go.Scatter(
@@ -2781,7 +2684,6 @@ def plot_residual_vs_distance_interactive(
             )
         )
 
-    # y=0 reference line
     fig.add_hline(y=0, line_dash="dash", line_width=1, line_color="red")
 
     fig.update_layout(
@@ -2791,11 +2693,8 @@ def plot_residual_vs_distance_interactive(
         autosize=True,
         template="simple_white",
         margin=dict(l=70, r=20, t=80, b=60),
-
-        # transparent background
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0)",
-
         legend=dict(
             orientation="h",
             yanchor="bottom",
@@ -2818,6 +2717,7 @@ def plot_residual_vs_distance_interactive(
 
     fig.show()
     return fig
+
 
 def plot_model_performance_interactive(
     results_df: pd.DataFrame,
@@ -2848,8 +2748,8 @@ def plot_model_performance_interactive(
         autosize=True,
         template="simple_white",
         margin=dict(l=60, r=20, t=70, b=60),
-        paper_bgcolor="rgba(0,0,0,0)",  # transparent background
-        plot_bgcolor="rgba(0,0,0,0)",   # transparent plot area
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
         legend_title_text="",
     )
 
@@ -2866,6 +2766,7 @@ def plot_model_performance_interactive(
 
     fig.show()
     return fig
+
 
 def plot_true_pred_kde_interactive(
     y_true: pd.Series,
@@ -2885,9 +2786,6 @@ def plot_true_pred_kde_interactive(
     Always stacked vertically (responsive-safe).
     """
 
-    # -----------------------------
-    # Clean & validate
-    # -----------------------------
     y_true_arr = pd.to_numeric(pd.Series(y_true), errors="coerce").to_numpy()
     y_pred_arr = pd.to_numeric(pd.Series(y_pred), errors="coerce").to_numpy()
 
@@ -2897,9 +2795,6 @@ def plot_true_pred_kde_interactive(
     if y_true_arr.size == 0 or y_pred_arr.size == 0:
         raise ValueError("y_true and y_pred must contain finite values.")
 
-    # -----------------------------
-    # Layout
-    # -----------------------------
     rows = 2 if show_qq else 1
     fig = make_subplots(
         rows=rows,
@@ -2907,13 +2802,11 @@ def plot_true_pred_kde_interactive(
         vertical_spacing=0.12,
         subplot_titles=(
             ["KDE: true vs predicted", "Q–Q plot"]
-            if show_qq else ["KDE: true vs predicted"]
+            if show_qq
+            else ["KDE: true vs predicted"]
         ),
     )
 
-    # -----------------------------
-    # KDE panel (row 1)
-    # -----------------------------
     common_min = float(min(y_true_arr.min(), y_pred_arr.min()))
     common_max = float(max(y_true_arr.max(), y_pred_arr.max()))
     xs = np.linspace(common_min, common_max, kde_points)
@@ -2948,9 +2841,6 @@ def plot_true_pred_kde_interactive(
     fig.update_xaxes(title_text="Distance to plaque (µm)", row=1, col=1)
     fig.update_yaxes(title_text="Density", row=1, col=1)
 
-    # -----------------------------
-    # Q-Q panel (row 2)
-    # -----------------------------
     if show_qq:
         n = min(y_true_arr.size, y_pred_arr.size)
         if qq_points is not None:
@@ -2998,9 +2888,6 @@ def plot_true_pred_kde_interactive(
             fig.update_xaxes(type="log", row=2, col=1)
             fig.update_yaxes(type="log", row=2, col=1)
 
-    # -----------------------------
-    # Layout & export
-    # -----------------------------
     fig.update_layout(
         height=700 if show_qq else 420,
         title_text=f"{model_name}: True vs Predicted Distance",
@@ -3045,18 +2932,19 @@ def _bivariate_palette_rowwise(
     Residual controls base hue row-wise (low/mid/high residual),
     distance controls brightness col-wise (near->far).
     """
-    # Base colors for residual bins (low/mid/high) – choose the exact same base as your matplotlib version.
+
     base = np.array(
         [
-            [0.25, 0.55, 0.85],  # bluish   (low residual)
-            [0.55, 0.75, 0.55],  # greenish (mid residual)
-            [0.90, 0.45, 0.45],  # reddish  (high residual)
+            [0.25, 0.55, 0.85],
+            [0.55, 0.75, 0.55],
+            [0.90, 0.45, 0.45],
         ],
         dtype=float,
     )[:n_resid]
 
-    # brightness factors for distance bins (near->far)
-    factors = np.array([dist_hi]) if n_dist == 1 else np.linspace(dist_lo, dist_hi, n_dist)
+    factors = (
+        np.array([dist_hi]) if n_dist == 1 else np.linspace(dist_lo, dist_hi, n_dist)
+    )
 
     out = np.zeros((n_resid, n_dist, 3), dtype=float)
     for r in range(n_resid):
@@ -3086,9 +2974,7 @@ def plot_bivariate_resid_distance_spatial_interactive(
     legend_count_min: int | None = None,
     palette_dist_lo: float = 0.25,
     palette_dist_hi: float = 0.95,
-    # provide the exact palette (3×3×3 RGB floats in [0,1]) from the matplotlib version
     colors_rgb: np.ndarray | None = None,
-    # plaques
     plaque_x_col: str = "plaque_x",
     plaque_y_col: str = "plaque_y",
     show_plaques: bool = True,
@@ -3102,9 +2988,7 @@ def plot_bivariate_resid_distance_spatial_interactive(
     show_marker_legend: bool = True,
     marker_legend_fontsize: int = 12,
     marker_legend_framealpha: float = 0.90,
-    # layout control (NEW)
-    layout: str = "vertical",  # "vertical" (default) or "horizontal"
-    # output
+    layout: str = "vertical",
     title: str = "Residual vs distance bivariate map",
     out_dir: str = "frontend/public/plots",
     filename: str = "residuals_vs_distance.html",
@@ -3134,15 +3018,19 @@ def plot_bivariate_resid_distance_spatial_interactive(
     df["_resid_bin_"] = pd.qcut(df["_resid_"], q=n_bins, duplicates="drop")
     df["_dist_bin_"] = pd.qcut(df["_dist_"], q=n_bins, duplicates="drop")
 
-    if df["_resid_bin_"].cat.categories.size != 3 or df["_dist_bin_"].cat.categories.size != 3:
-        raise ValueError("qcut produced fewer than 3 bins (ties). Consider jitter or fixed edges.")
+    if (
+        df["_resid_bin_"].cat.categories.size != 3
+        or df["_dist_bin_"].cat.categories.size != 3
+    ):
+        raise ValueError(
+            "qcut produced fewer than 3 bins (ties). Consider jitter or fixed edges."
+        )
 
     resid_cats = df["_resid_bin_"].cat.categories
     dist_cats = df["_dist_bin_"].cat.categories
-    df["_resid_idx_"] = df["_resid_bin_"].cat.codes  # 0,1,2
-    df["_dist_idx_"] = df["_dist_bin_"].cat.codes    # 0,1,2
+    df["_resid_idx_"] = df["_resid_bin_"].cat.codes
+    df["_dist_idx_"] = df["_dist_bin_"].cat.codes
 
-    # Use EXACT palette from matplotlib if provided, otherwise compute it the same way.
     if colors_rgb is None:
         colors_rgb = _bivariate_palette_rowwise(
             n_resid=3, n_dist=3, dist_lo=palette_dist_lo, dist_hi=palette_dist_hi
@@ -3152,8 +3040,9 @@ def plot_bivariate_resid_distance_spatial_interactive(
     if colors_rgb.shape != (3, 3, 3):
         raise ValueError("colors_rgb must have shape (3, 3, 3).")
 
-    # Convert using matplotlib's converter (exact hex formatting)
-    flat_hex = [to_hex(colors_rgb[r, d], keep_alpha=False) for r in range(3) for d in range(3)]
+    flat_hex = [
+        to_hex(colors_rgb[r, d], keep_alpha=False) for r in range(3) for d in range(3)
+    ]
 
     counts = (
         df.groupby(["_resid_idx_", "_dist_idx_"], observed=True)
@@ -3163,9 +3052,6 @@ def plot_bivariate_resid_distance_spatial_interactive(
         .reshape(3, 3)
     )
 
-    # -----------------------------
-    # Figure layout (NEW)
-    # -----------------------------
     if layout == "vertical":
         fig = make_subplots(
             rows=2,
@@ -3195,9 +3081,6 @@ def plot_bivariate_resid_distance_spatial_interactive(
         spatial_pos = dict(row=1, col=2)
         fig_width, fig_height = 900, 520
 
-    # -----------------------------
-    # LEFT (or TOP) legend heatmap with discrete 9 colors
-    # -----------------------------
     z = np.arange(9).reshape(3, 3)
 
     eps = 1e-6
@@ -3212,7 +3095,9 @@ def plot_bivariate_resid_distance_spatial_interactive(
         **legend_pos,
     )
 
-    dist_labels = [f"{dist_cats[j].left:.0f}-{dist_cats[j].right:.0f} µm" for j in range(3)]
+    dist_labels = [
+        f"{dist_cats[j].left:.0f}-{dist_cats[j].right:.0f} µm" for j in range(3)
+    ]
     resid_labels_topdown = [str(c) for c in resid_cats][::-1]
 
     fig.update_xaxes(
@@ -3236,7 +3121,6 @@ def plot_bivariate_resid_distance_spatial_interactive(
         autorange="reversed",
     )
 
-    # Legend counts annotations (xref/yref for legend is always x1/y1 because legend subplot is first)
     if legend_show_counts:
         ann = list(fig.layout.annotations)
         for r in range(3):
@@ -3257,9 +3141,6 @@ def plot_bivariate_resid_distance_spatial_interactive(
                 )
         fig.update_layout(annotations=ann)
 
-    # -----------------------------
-    # Spatial scatter (always subplot #2 => axes x2/y2 in both layouts)
-    # -----------------------------
     ridx = df["_resid_idx_"].to_numpy()
     didx = df["_dist_idx_"].to_numpy()
     color_idx = (ridx * 3 + didx).astype(int)
@@ -3283,11 +3164,17 @@ def plot_bivariate_resid_distance_spatial_interactive(
         **spatial_pos,
     )
 
-    if show_plaques and (plaque_x_col in cells_df.columns) and (plaque_y_col in cells_df.columns):
+    if (
+        show_plaques
+        and (plaque_x_col in cells_df.columns)
+        and (plaque_y_col in cells_df.columns)
+    ):
         plaques = cells_df[[plaque_x_col, plaque_y_col]].copy()
         plaques["_px_"] = pd.to_numeric(plaques[plaque_x_col], errors="coerce")
         plaques["_py_"] = pd.to_numeric(plaques[plaque_y_col], errors="coerce")
-        plaques = plaques.loc[np.isfinite(plaques["_px_"]) & np.isfinite(plaques["_py_"])]
+        plaques = plaques.loc[
+            np.isfinite(plaques["_px_"]) & np.isfinite(plaques["_py_"])
+        ]
 
         if plaque_round_decimals is not None:
             plaques["_px_"] = plaques["_px_"].round(plaque_round_decimals)
@@ -3325,9 +3212,6 @@ def plot_bivariate_resid_distance_spatial_interactive(
         scaleratio=1,
     )
 
-    # -----------------------------
-    # Layout & export
-    # -----------------------------
     fig.update_layout(
         title=f"{model_name}: Residual bin × distance bin (bivariate) — spatial map",
         width=fig_width,
@@ -3371,22 +3255,18 @@ def plot_top_gene_importances_interactive(
 ) -> go.Figure:
     """Interactive heatmap of top predictive genes across models (Plotly)."""
 
-    # Normalize importance per model
     normed = importance_df.groupby("model", group_keys=False).apply(
         lambda d: d.assign(norm_importance=d["importance"] / d["importance"].max())
     )
 
-    # Take top_n per model
     top_genes = normed.groupby("model", group_keys=False).apply(
         lambda d: d.nlargest(top_n, "norm_importance")
     )
 
-    # Pivot for heatmap
     pivot = top_genes.pivot_table(
         index="gene", columns="model", values="norm_importance", fill_value=0
     )
 
-    # Order genes by average importance
     pivot = pivot.loc[pivot.mean(axis=1).sort_values(ascending=False).index]
 
     fig = go.Figure(
@@ -3405,8 +3285,8 @@ def plot_top_gene_importances_interactive(
         autosize=True,
         template="simple_white",
         margin=dict(l=140, r=30, t=70, b=60),
-        paper_bgcolor="rgba(0,0,0,0)",  # transparent background
-        plot_bgcolor="rgba(0,0,0,0)",   # transparent plot area
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
     )
 
     out_path = Path(out_dir) / filename
@@ -3422,6 +3302,7 @@ def plot_top_gene_importances_interactive(
 
     fig.show()
     return fig
+
 
 def make_plaques_detected_plotly(
     *,
@@ -3449,7 +3330,6 @@ def make_plaques_detected_plotly(
     All geometries are optionally rotated by 180° for orientation consistency.
     """
 
-    # ------------------ sanity checks ------------------
     if "geometry" not in df.columns:
         raise ValueError("df must contain a 'geometry' column with shapely objects.")
     if "is_convex" not in df.columns:
@@ -3462,7 +3342,6 @@ def make_plaques_detected_plotly(
     if "area" not in P.columns:
         P["area"] = P["geometry"].map(lambda g: getattr(g, "area", np.nan))
 
-    # ------------------ helpers ------------------
     def iter_polygons(g):
         if isinstance(g, Polygon):
             yield g
@@ -3496,10 +3375,9 @@ def make_plaques_detected_plotly(
 
     fig = go.Figure()
 
-    # ------------------ brain ROI ------------------
     if brain_geom is not None and brain_geom.is_valid:
         g = rot(brain_geom)
-        x, y = map(list, g.exterior.xy)   # IMPORTANT FIX
+        x, y = map(list, g.exterior.xy)
         fig.add_trace(
             go.Scatter(
                 x=x,
@@ -3511,7 +3389,6 @@ def make_plaques_detected_plotly(
             )
         )
 
-    # ------------------ plaques ------------------
     for row in P.itertuples(index=False):
         g = getattr(row, "geometry", None)
         is_convex = bool(getattr(row, "is_convex", False))
@@ -3527,7 +3404,7 @@ def make_plaques_detected_plotly(
             if poly.is_empty or not poly.is_valid:
                 continue
 
-            x, y = map(list, poly.exterior.xy)   # IMPORTANT FIX
+            x, y = map(list, poly.exterior.xy)
 
             fig.add_trace(
                 go.Scatter(
@@ -3540,14 +3417,12 @@ def make_plaques_detected_plotly(
                         dash="solid" if is_convex else "dash",
                     ),
                     hovertemplate=(
-                        f"Plaque {pid}<br>"
-                        f"Area: {area:,.0f} µm²<extra></extra>"
+                        f"Plaque {pid}<br>" f"Area: {area:,.0f} µm²<extra></extra>"
                     ),
                     showlegend=False,
                 )
             )
 
-    # ------------------ convex hull overlays ------------------
     rng = np.random.default_rng(seed)
     n = min(len(P), int(sample_hulls))
     if n > 0:
@@ -3558,7 +3433,7 @@ def make_plaques_detected_plotly(
                 continue
 
             hull = rot(g.convex_hull)
-            x, y = map(list, hull.exterior.xy)   # IMPORTANT FIX
+            x, y = map(list, hull.exterior.xy)
 
             fig.add_trace(
                 go.Scatter(
@@ -3571,11 +3446,8 @@ def make_plaques_detected_plotly(
                 )
             )
 
-    # ------------------ layout ------------------
     fig.update_layout(
         title=title or "Detected Aβ plaques after normalization",
-        #width=figsize_px[0],
-        #height=figsize_px[1],
         autosize=True,
         template="simple_white",
         margin=dict(l=40, r=40, t=60, b=40),
@@ -3603,12 +3475,12 @@ def make_plaques_detected_plotly(
         zeroline=False,
     )
 
-    # ------------------ save ------------------
     out_path = Path(out_dir) / filename
     out_path.parent.mkdir(parents=True, exist_ok=True)
     fig.write_html(out_path, include_plotlyjs="cdn")
 
     return fig
+
 
 def make_cell_to_plaque_distance_map_plotly(
     *,
@@ -3635,7 +3507,6 @@ def make_cell_to_plaque_distance_map_plotly(
     Interactive spatial map of distance from each cell to nearest plaque.
     """
 
-    # ------------------ cells ------------------
     C = cells_df.copy()
 
     if max_points is not None and len(C) > max_points:
@@ -3646,7 +3517,6 @@ def make_cell_to_plaque_distance_map_plotly(
     lo = np.quantile(dvals, clip_quantiles[0]) if vmin is None else vmin
     hi = np.quantile(dvals, clip_quantiles[1]) if vmax is None else vmax
 
-    # ------------------ main scatter ------------------
     fig = go.Figure()
 
     fig.add_trace(
@@ -3667,14 +3537,12 @@ def make_cell_to_plaque_distance_map_plotly(
                 ),
             ),
             hovertemplate=(
-                "Cell<br>"
-                f"Distance: %{{marker.color:.1f}} µm<extra></extra>"
+                "Cell<br>" f"Distance: %{{marker.color:.1f}} µm<extra></extra>"
             ),
             showlegend=False,
         )
     )
 
-    # ------------------ plaque overlays ------------------
     def iter_polygons(g):
         if isinstance(g, Polygon):
             yield g
@@ -3706,15 +3574,11 @@ def make_cell_to_plaque_distance_map_plotly(
                         ),
                         hoverinfo="skip",
                         showlegend=False,
-                        
                     )
                 )
 
-    # ------------------ layout ------------------
     fig.update_layout(
         title=title,
-        #width=figsize_px[0],
-        #height=figsize_px[1],
         autosize=True,
         template="simple_white",
         margin=dict(l=60, r=40, t=60, b=50),
@@ -3737,12 +3601,12 @@ def make_cell_to_plaque_distance_map_plotly(
         autorange="reversed" if invert_y else True,
     )
 
-    # ------------------ save ------------------
     out_path = Path(out_dir) / filename
     out_path.parent.mkdir(parents=True, exist_ok=True)
     fig.write_html(out_path, include_plotlyjs="cdn")
 
     return fig
+
 
 def _infer_grid_shape(key_to_pos: dict[str, tuple[int, int]]) -> tuple[int, int]:
     rs = [r for r, _ in key_to_pos.values()]
@@ -3760,7 +3624,7 @@ def _pad_to_max(img: np.ndarray, *, target_h: int, target_w: int) -> np.ndarray:
     if h == target_h and w == target_w:
         return img
     out = np.zeros((target_h, target_w, 3), dtype=img.dtype)
-    # top-left pad (matches typical "imshow" alignment)
+
     out[:h, :w, :] = img
     return out
 
@@ -3772,7 +3636,6 @@ def make_image_grid_interactive(
     col_ticks: Iterable[str],
     row_ticks: Iterable[str],
     flip_h_keys: Iterable[str] = (),
-    # output
     title: str | None = None,
     filename: str = "image_grid.html",
     out_dir: str = "frontend/public/plots",
@@ -3789,7 +3652,6 @@ def make_image_grid_interactive(
     """
     flip_h_keys = set(flip_h_keys)
 
-    # 1) Load images + crop bottom 10%
     imgs: dict[str, np.ndarray] = {}
     shapes: list[tuple[int, int]] = []
 
@@ -3799,7 +3661,7 @@ def make_image_grid_interactive(
             img = np.fliplr(img)
 
         h = img.shape[0]
-        keep_h = max(1, int(round(h * 0.9)))  # keep top 90%
+        keep_h = max(1, int(round(h * 0.9)))
         img = img[:keep_h, ...]
 
         imgs[key] = img
@@ -3808,14 +3670,11 @@ def make_image_grid_interactive(
     if not shapes:
         raise ValueError("No images loaded. `files` is empty?")
 
-    # 2) Target size
     max_h = max(h for h, _ in shapes)
     max_w = max(w for _, w in shapes)
 
-    # 3) Grid shape
     n_rows, n_cols = _infer_grid_shape(key_to_pos)
 
-    # 4) Create subplot grid
     fig = make_subplots(
         rows=n_rows,
         cols=n_cols,
@@ -3823,27 +3682,28 @@ def make_image_grid_interactive(
         vertical_spacing=0.02,
     )
 
-    # 5) Add images
     for key, (r0, c0) in key_to_pos.items():
         if key not in imgs:
             continue
         img = _pad_to_max(imgs[key], target_h=max_h, target_w=max_w)
 
-        # Plotly rows/cols are 1-indexed
         r = r0 + 1
         c = c0 + 1
 
         fig.add_trace(go.Image(z=img), row=r, col=c)
 
-        # Hide per-panel axes and lock aspect like imshow(aspect="equal")
         fig.update_xaxes(visible=False, row=r, col=c)
-        fig.update_yaxes(visible=False, row=r, col=c, scaleanchor=f"x{(r-1)*n_cols + c}", scaleratio=1)
+        fig.update_yaxes(
+            visible=False,
+            row=r,
+            col=c,
+            scaleanchor=f"x{(r-1)*n_cols + c}",
+            scaleratio=1,
+        )
 
-    # 6) Unified row/col labels (annotations)
     col_ticks = list(col_ticks)
     row_ticks = list(row_ticks)
 
-    # Column labels (top, centered over each column)
     for j in range(n_cols):
         x_center = (j + 0.5) / n_cols
         fig.add_annotation(
@@ -3856,7 +3716,6 @@ def make_image_grid_interactive(
             font=dict(size=12),
         )
 
-    # Row labels (left, centered on each row) — note Plotly y=0 is bottom in paper coords
     for i in range(n_rows):
         y_center = 1 - (i + 0.5) / n_rows
         fig.add_annotation(
@@ -3870,7 +3729,6 @@ def make_image_grid_interactive(
             font=dict(size=12),
         )
 
-    # Axis titles (like your big_ax labels)
     fig.add_annotation(
         x=0.5,
         y=-0.06,
@@ -3891,7 +3749,6 @@ def make_image_grid_interactive(
         font=dict(size=13),
     )
 
-    # 7) Layout: transparent background + tidy margins
     fig.update_layout(
         title=title,
         autosize=True,
@@ -3900,7 +3757,6 @@ def make_image_grid_interactive(
         plot_bgcolor="rgba(0,0,0,0)",
     )
 
-    # 8) Save HTML
     out_path = Path(out_dir) / filename
     out_path.parent.mkdir(parents=True, exist_ok=True)
     fig.write_html(
@@ -3913,6 +3769,7 @@ def make_image_grid_interactive(
     )
 
     return fig
+
 
 def plot_leiden_logit_slopes_interactive(
     logit_df: pd.DataFrame,
@@ -3944,11 +3801,9 @@ def plot_leiden_logit_slopes_interactive(
     if missing:
         raise KeyError(f"logit_df is missing required columns: {sorted(missing)}")
 
-    # 1) sort + filter significant
     df = logit_df.sort_values(pval_col, ascending=True).reset_index(drop=True)
     sig = df.loc[df[pval_col] < pval_threshold].copy()
 
-    # map cluster → cell type
     def _map_cluster(x: Any) -> str:
         try:
             return my_label_to_type[int(x)]
@@ -3957,7 +3812,6 @@ def plot_leiden_logit_slopes_interactive(
 
     sig["cell_type"] = sig[cluster_col].apply(_map_cluster)
 
-    # split
     neg = sig.loc[sig[slope_col] < 0].sort_values(slope_col, ascending=True)
     pos = sig.loc[sig[slope_col] > 0].sort_values(slope_col, ascending=True)
 
@@ -3969,7 +3823,6 @@ def plot_leiden_logit_slopes_interactive(
 
     fig = go.Figure()
 
-    # --- bars ---
     fig.add_bar(
         x=xL,
         y=neg[slope_col],
@@ -3988,16 +3841,13 @@ def plot_leiden_logit_slopes_interactive(
         customdata=pos["cell_type"],
     )
 
-    # zero reference line
     fig.add_hline(y=0, line_width=1, line_color="black")
 
-    # --- annotations ---
     max_abs = float(sig[slope_col].abs().max()) if len(sig) else 1.0
     ypad = ypad_scale * max_abs if max_abs > 0 else 0.1
 
     annotations = []
 
-    # negative labels (bottom)
     for x, y, txt in zip(xL, neg[slope_col], neg["cell_type"], strict=False):
         annotations.append(
             dict(
@@ -4012,7 +3862,6 @@ def plot_leiden_logit_slopes_interactive(
             )
         )
 
-    # positive labels (top)
     for x, y, txt in zip(xR, pos[slope_col], pos["cell_type"], strict=False):
         annotations.append(
             dict(
@@ -4036,11 +3885,8 @@ def plot_leiden_logit_slopes_interactive(
         width=fig_width,
         height=fig_height,
         margin=dict(l=80, r=30, t=80 if title else 50, b=40),
-
-        # transparent background
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0)",
-
         legend=dict(
             orientation="h",
             yanchor="bottom",
@@ -4050,7 +3896,6 @@ def plot_leiden_logit_slopes_interactive(
         ),
     )
 
-    # save
     out_path = Path(out_dir) / filename
     out_path.parent.mkdir(parents=True, exist_ok=True)
     fig.write_html(
@@ -4063,6 +3908,7 @@ def plot_leiden_logit_slopes_interactive(
     )
 
     return fig, sig
+
 
 def make_cluster_frequency_distance_to_plaque_plotly(
     freq_df: pd.DataFrame,
@@ -4086,10 +3932,9 @@ def make_cluster_frequency_distance_to_plaque_plotly(
 
     dfp = freq_df.copy()
 
-    # Use expanded cluster names for legend (like the original code intends)
     if expanded_types is not None:
         dfp["cluster_name"] = dfp[cluster_col].map(expanded_types)
-        # If some clusters missing in mapping, fallback to original label
+
         dfp["cluster_name"] = dfp["cluster_name"].astype(object)
         miss = dfp["cluster_name"].isna()
         if miss.any():
@@ -4097,13 +3942,11 @@ def make_cluster_frequency_distance_to_plaque_plotly(
     else:
         dfp["cluster_name"] = dfp[cluster_col].astype(str)
 
-    # Clean numeric x/y
     dfp[x_col] = pd.to_numeric(dfp[x_col], errors="coerce")
     dfp[y_col] = pd.to_numeric(dfp[y_col], errors="coerce")
     dfp = dfp.dropna(subset=[x_col, y_col, "cluster_name"])
 
-    # Sort so lines connect in the right order
-    dfp = dfp.sort_values([ "cluster_name", x_col ])
+    dfp = dfp.sort_values(["cluster_name", x_col])
 
     fig = px.line(
         dfp,
@@ -4125,17 +3968,14 @@ def make_cluster_frequency_distance_to_plaque_plotly(
         autosize=True,
         template="simple_white",
         margin=dict(l=70, r=30, t=80, b=60),
-
-        # transparent background
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0)",
-
         legend_title_text="Cluster",
         legend=dict(
             yanchor="top",
             y=1.0,
             xanchor="left",
-            x=1.02,   # to the right (like bbox_to_anchor)
+            x=1.02,
         ),
     )
 

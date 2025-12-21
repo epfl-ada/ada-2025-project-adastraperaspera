@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 from scipy.stats import gaussian_kde, kurtosis, skew
 
-# Default metadata columns for your Xenium dataset
+
 DEFAULT_META_COLS = {
     "cell_id",
     "x_centroid",
@@ -24,7 +24,9 @@ DEFAULT_META_COLS = {
 }
 
 
-def get_gene_columns(df: pd.DataFrame, meta_cols: Iterable[str] = DEFAULT_META_COLS) -> list[str]:
+def get_gene_columns(
+    df: pd.DataFrame, meta_cols: Iterable[str] = DEFAULT_META_COLS
+) -> list[str]:
     """Return numeric columns not in meta as gene feature columns."""
     num_cols = df.select_dtypes(include=[np.number]).columns.tolist()
     meta_set = set(meta_cols)
@@ -53,7 +55,9 @@ class QCBounds:
     hi_genes: float
 
 
-def _iqr_bounds(s: pd.Series, mult: float = 3.0, floor: float = 1.0) -> tuple[float, float]:
+def _iqr_bounds(
+    s: pd.Series, mult: float = 3.0, floor: float = 1.0
+) -> tuple[float, float]:
     q1, q3 = s.quantile([0.25, 0.75])
     iqr = q3 - q1
     lo = max(floor, float(q1 - mult * iqr))
@@ -67,8 +71,7 @@ def add_qc_metrics(df: pd.DataFrame, gene_cols: Iterable[str]) -> pd.DataFrame:
     """
     out = df.copy()
     gc = list(gene_cols)
-    # Counts the number of genes with above zero expression level in each cell
-    # Dimension: cells x 1
+
     out["n_genes"] = (out[gc] > 0).sum(axis=1).astype("int64")
     return out
 
@@ -82,7 +85,6 @@ def filter_cells_iqr(
     min_floor_counts: float = 1.0,
     min_floor_genes: float = 1.0,
 ) -> tuple[pd.DataFrame, pd.Series, QCBounds, dict[str, int], pd.DataFrame]:
-    # TODO: update docstring to be more granular
     """
     Add QC metrics, compute IQR-based bounds for n_counts / n_genes, build a mask,
     and return filtered cells.
@@ -96,7 +98,9 @@ def filter_cells_iqr(
     """
     df_qc = add_qc_metrics(df, gene_cols)
 
-    lo_genes, hi_genes = _iqr_bounds(df_qc["n_genes"], mult=iqr_mult, floor=min_floor_genes)
+    lo_genes, hi_genes = _iqr_bounds(
+        df_qc["n_genes"], mult=iqr_mult, floor=min_floor_genes
+    )
 
     area_ok = df_qc.get(area_col, pd.Series(1, index=df_qc.index, dtype="int64")) > 0
     nuc_ok = df_qc.get(nucleus_col, pd.Series(0, index=df_qc.index, dtype="int64")) > 0
@@ -116,7 +120,9 @@ def filter_cells_iqr(
     summary_numbers = {"kept": kept, "total": total, "removed": removed}
 
     cols_to_show = [
-        c for c in ["n_counts", "n_genes", area_col, nucleus_col] if c in df_clean.columns
+        c
+        for c in ["n_counts", "n_genes", area_col, nucleus_col]
+        if c in df_clean.columns
     ]
     describe_tbl = df_clean[cols_to_show].describe().T
 
@@ -144,7 +150,9 @@ def summarize_genes(gene_df: pd.DataFrame) -> pd.DataFrame:
                 "std": g.std(axis=0, ddof=1).values,
                 "median": g.median(axis=0).values,
                 "mad": g.subtract(g.median()).abs().median(axis=0).values,
-                "skew": g.apply(lambda s: skew(s, bias=False, nan_policy="omit")).values,
+                "skew": g.apply(
+                    lambda s: skew(s, bias=False, nan_policy="omit")
+                ).values,
                 "kurtosis": g.apply(
                     lambda s: kurtosis(s, fisher=True, bias=False, nan_policy="omit")
                 ).values,
@@ -197,7 +205,6 @@ def compute_pigs_zscores(
             "Ifit3",
         ]
 
-    # Map lowercased gene names to actual column names
     lower_map = {c.lower(): c for c in gene_cols}
     pigs_present = [lower_map[p.lower()] for p in pigs if p.lower() in lower_map]
     pigs_missing = [p for p in pigs if p.lower() not in lower_map]
@@ -205,11 +212,10 @@ def compute_pigs_zscores(
     if not pigs_present:
         return pd.DataFrame(index=df.index), {"present": [], "missing": pigs_missing}
 
-    # Extract expression matrix for present genes
     Xp = df[pigs_present].to_numpy(dtype=float)
     mu = np.nanmean(Xp, axis=0, keepdims=True)
     sd = np.nanstd(Xp, axis=0, keepdims=True)
-    sd[sd == 0] = 1.0  # avoid division by zero
+    sd[sd == 0] = 1.0
     Xp_z = (Xp - mu) / sd
 
     if clip is not None:
@@ -218,7 +224,6 @@ def compute_pigs_zscores(
     pigs_z = pd.DataFrame(Xp_z, index=df.index, columns=pigs_present)
 
     return pigs_z, {"present": pigs_present, "missing": pigs_missing}
-
 
 
 def compute_weird_gene_scores(
@@ -235,7 +240,7 @@ def compute_weird_gene_scores(
     Args:
         gene_df: DataFrame of shape (cells x genes) with numeric gene columns.
         clip_z: Clip value for the Z-transformed components (±clip_z).
-        ddof_std: ddof for standard deviation (0 matches your original).
+        ddof_std: ddof for standard deviation (0 matches the original default).
         eps: small constant to avoid division by zero.
 
     Returns:
@@ -244,26 +249,21 @@ def compute_weird_gene_scores(
     """
     G = gene_df
 
-    # Basic counts / fractions
     nz = (G > 0).sum(axis=0).astype(float)
     n = float(len(G))
     zero_frac = 1.0 - nz / max(n, eps)
 
-    # Moments / dispersion
     mean_ = G.mean(axis=0)
     std_ = G.std(axis=0, ddof=ddof_std)
     cv = std_ / (mean_.replace(0, np.nan))
 
-    # Shape: skew/kurt (omit NaNs)
     sk = G.apply(lambda s: skew(s, bias=False, nan_policy="omit"))
     ku = G.apply(lambda s: kurtosis(s, fisher=True, bias=False, nan_policy="omit"))
 
-    # Tails
     q10 = G.quantile(0.10, axis=0)
     q90 = G.quantile(0.90, axis=0)
     tail_ratio = (q90 + eps) / (q10 + eps)
 
-    # Aggregate table
     S = pd.DataFrame(
         {
             "zero_frac": zero_frac,
@@ -280,7 +280,6 @@ def compute_weird_gene_scores(
         }
     ).replace([np.inf, -np.inf], np.nan)
 
-    # Z-standardize selected components
     def _zcol(col: pd.Series) -> pd.Series:
         return (col - col.mean()) / (col.std(ddof=ddof_std) + eps)
 
@@ -294,14 +293,12 @@ def compute_weird_gene_scores(
         }
     )
 
-    # Clip and sum to get the composite score
     Zc = Z.clip(lower=-clip_z, upper=clip_z)
     weird_score = Zc.sum(axis=1)
 
     S = S.copy()
     S["weird_score"] = weird_score
 
-    # Sort by composite score (desc = "weirder" first)
     S = S.sort_values("weird_score", ascending=False)
 
     return S, Z
@@ -315,7 +312,7 @@ def _panel(values: pd.Series, ax: plt.Axes, title: str, bins: int, use_log1p: bo
     try:
         xs = np.linspace(x.min(), x.max(), 400)
         if use_log1p:
-            kde = gaussian_kde(x)  # already log1p-transformed
+            kde = gaussian_kde(x)
         else:
             kde = gaussian_kde(x[x > 0] if np.count_nonzero(x) > 5 else x)
         ax.plot(xs, kde(xs), linewidth=1.75)
@@ -324,6 +321,3 @@ def _panel(values: pd.Series, ax: plt.Axes, title: str, bins: int, use_log1p: bo
     ax.set_title(f"{title}{' (log1p)' if use_log1p else ''}", fontsize=10)
     ax.set_xlabel("log1p(expression)" if use_log1p else "expression")
     ax.set_ylabel("density")
-
-
-
