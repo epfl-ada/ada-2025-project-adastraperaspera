@@ -81,10 +81,7 @@ const RQSection = () => {
                 className="group relative overflow-hidden rounded-2xl border border-border bg-card shadow-sm hover:shadow-md transition"
               >
                 {/* Background image style={{ backgroundImage: `url(${rq.bgImage})` }}*/}
-                <div
-                  className="absolute inset-0 bg-cover bg-center"
-                  aria-hidden="true"
-                />
+                <div className="absolute inset-0 bg-foreground/30" />
                 {/* Soft overlay to keep text readable */}
                 <div className="absolute inset-0 bg-gradient-to-b from-background/40 via-background/70 to-background/95" />
 
@@ -99,7 +96,7 @@ const RQSection = () => {
                     </div>
                   </div>*/}
 
-                  <p className="mt-4 text-sm font-semibold text-muted-foreground leading-relaxed">
+                  <p className="mt-4 text-sm font-semibold text-black/80 leading-relaxed">
                     {rq.question}
                   </p>
 
