@@ -1,4 +1,6 @@
-import { Shapes } from "lucide-react";
+import { Shapes,CircleChevronRight} from "lucide-react";
+import PlotFrame from "@/components/PlotFrame";
+const base = import.meta.env.BASE_URL;
 
 const Chapter8 = () => {
   return (
@@ -21,14 +23,65 @@ const Chapter8 = () => {
               </p>
 
               <p className="text-lg text-muted-foreground leading-relaxed">
-                So you test whether plaque geometry and local plaque density add
-                explanatory power. They do, but modestly.
+                So we test whether plaque geometry and local plaque density add
+                explanatory power.
               </p>
 
               <p className="text-lg text-muted-foreground leading-relaxed">
-                It is a secondary layer. Biologically real, statistically
-                detectable, but smaller than the dominant signals.
+                To increase explanatory power (R²), reduce heteroscedasticity, and test
+                whether plaque shape contributes to local responses, we compute geometric
+                properties of the nearest plaque for each cell:{" "}
+                <span className="font-medium text-foreground">
+                  area, perimeter, major axis length and orientation
+                </span>
+                .
               </p>
+
+              <PlotFrame
+                src={`${base}plots/geometric_characteristics_of_plaque.html`}
+                title="Geometric characteristics of the nearest plaque"
+                size="md"
+                caption="Distributions of nearest-plaque geometry features (area, perimeter, major axis, orientation) summarized via box plots."
+              />
+
+              <p className="text-lg text-muted-foreground leading-relaxed">
+                Nearest-plaque distance captures proximity to <em>one</em> plaque, but local
+                pathology may also depend on plaque <em>crowding</em>. We therefore introduce
+                two additional{" "}
+                <span className="font-medium text-foreground">
+                  multi-plaque proximity features
+                </span>{" "}
+                computed within a radius{" "}
+                <span className="font-medium text-foreground">R = 61 µm</span> (the median
+                nearest-plaque distance): the{" "}
+                <span className="font-medium text-foreground">count</span> of plaques within
+                this radius, and the{" "}
+                <span className="font-medium text-foreground">mean distance</span> to plaques
+                within the same neighborhood.
+              </p>
+
+              <p className="text-lg text-muted-foreground leading-relaxed">
+                To validate that R is informative, we check the Count distribution and CDF.
+                The distribution shows meaningful variation:{" "}
+                <span className="font-medium text-foreground">55.2%</span> of cells have{" "}
+                <span className="font-medium text-foreground">0</span> plaques within 61 µm,
+                while the remainder have up to{" "}
+                <span className="font-medium text-foreground">21</span> plaques within that
+                radius—indicating a usable local density signal.
+              </p>
+
+              <PlotFrame
+                src={`${base}plots/multi_plaque_proximity.html`}
+                title="Multi-plaque proximity features"
+                size="lg"
+                caption="Histogram and CDF of local plaque density (Count within R = 61 µm), validating that multi-plaque proximity provides informative variation beyond nearest-plaque distance."
+              />
+
+              <p className="text-lg text-muted-foreground leading-relaxed">
+                Overall, geometry and crowding behave like a second layer. Biologically real
+                and statistically detectable, but smaller than the dominant drivers.
+              </p>
+              
             </div>
           </div>
 

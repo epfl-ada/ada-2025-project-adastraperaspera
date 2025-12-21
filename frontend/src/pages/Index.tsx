@@ -27,6 +27,7 @@ import Chapter4 from "@/components/Chapter4";
 import Chapter5 from "@/components/Chapter5";
 import Chapter6 from "@/components/Chapter6";
 import Chapter7 from "@/components/Chapter7";
+import Chapter8 from "@/components/Chapter8";
 
 const Index = () => {
   return (
@@ -58,6 +59,7 @@ const Index = () => {
       <Chapter5 />
       <Chapter6 />
       <Chapter7 />
+      <Chapter8 />
       <Footer />
     </main>
   );
