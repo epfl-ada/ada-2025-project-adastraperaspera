@@ -1,4 +1,4 @@
-import { Shapes,CircleChevronRight} from "lucide-react";
+import { Shapes, CircleChevronRight } from "lucide-react";
 import PlotFrame from "@/components/PlotFrame";
 const base = import.meta.env.BASE_URL;
 
@@ -67,7 +67,7 @@ const Chapter8 = () => {
                 <span className="font-medium text-foreground">0</span> plaques within 61 µm,
                 while the remainder have up to{" "}
                 <span className="font-medium text-foreground">21</span> plaques within that
-                radius—indicating a usable local density signal.
+                radius-indicating a usable local density signal.
               </p>
 
               <PlotFrame
@@ -81,7 +81,7 @@ const Chapter8 = () => {
                 Overall, geometry and crowding behave like a second layer. Biologically real
                 and statistically detectable, but smaller than the dominant drivers.
               </p>
-              
+
             </div>
           </div>
 

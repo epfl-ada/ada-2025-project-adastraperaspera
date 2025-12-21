@@ -15,26 +15,26 @@
    2.e. Inferring cell types via clustering 
 
 3. Results: Plaque-Proximity Effects  
-   3.a RQ1 — How does cell-type composition change in plaque proximity?  
+   3.a RQ1 - How does cell-type composition change in plaque proximity?  
    3.a.i Logistic regression specification, multiple-testing control, and effect interpretation  
-   3.b RQ2 — Relationship between cell type composition, PIG expression, and plaque distance  
+   3.b RQ2 - Relationship between cell type composition, PIG expression, and plaque distance  
    3.b.i Correlation analysis: cell-type proportions vs mean PIG expression (Spearman)  
    3.b.ii Joint regression case study (Apoe): cell type + distance → expression  
    3.b.iii Stratified mean expression by distance and cell type  
-   3.c RQ3 — How does PIG expression change in plaque proximity?  
+   3.c RQ3 - How does PIG expression change in plaque proximity?  
    3.c.i Binned means, confidence intervals, and ANOVA evidence  
    3.c.ii Per-gene distance regressions, FDR control, and “distance-to-half-expression”   
 
 4. Predictive Modeling: Inferring Plaque Distance  
-   4.a RQ4 — When modeling plaque distance, which features are most important?
+   4.a RQ4 - When modeling plaque distance, which features are most important?
    4.a.i Benchmarking setup and results 
    4.b Additional feature modalities
    4.c Deep-dive into the expression models
 
-5. Age- and Genotype-Aware Signatures  
-   5.a RQ5 — How does the gene expression change with age for each cell type and mouse group?
-   5.b Disease specificity (Tg vs WT) by cluster and gene ranking  
-   5.c Age trajectories: Tg (2→5→17 months) vs WT stability  
+5. Age and Genotype specific patterns
+   5.a RQ5 - How does the gene expression change with age for each cell type and mouse group?
+   5.b Disease specificity (Tg vs WT) by cell type 
+   5.c Age trajectories for Tg and WT at (2, 5, 13+ months)  
 
 6. Discussion and Limitations  
    6.a What we can conclude robustly (and what we cannot)  
@@ -102,7 +102,7 @@ The mutations induced in Tg mice forces the expression of amyloid precursor prot
 
 To obtain plaque coordinates, we hand-labeled **11 plaque-free regions** and **9 plaques** across a range of sizes, then trained a **random forest classifier** to segment the remaining plaques in the IF image.
 
-Next, plaque coordinates were transformed from IF-image space to morphology-image space using a **RANSAC-based transformation** trained on **26 visually aligned landmark pairs**. After alignment, we achieved **RMSE = 3.2 µm**, which is small relative to the **median cell-to-plaque distance (61 µm)**—supporting that alignment error is unlikely to dominate distance-based trends.
+Next, plaque coordinates were transformed from IF-image space to morphology-image space using a **RANSAC-based transformation** trained on **26 visually aligned landmark pairs**. After alignment, we achieved **RMSE = 3.2 µm**, which is small relative to the **median cell-to-plaque distance (61 µm)**-supporting that alignment error is unlikely to dominate distance-based trends.
 
 After alignment, we performed plaque post-processing to improve biological plausibility and robustness: we merged intersecting plaques, removed plaques outside the brain boundary, and filtered plaques below the 5th percentile in area. This produced **1,736 Aβ plaques**, visualized below.
 
@@ -209,7 +209,7 @@ This anatomical concordance is central for later interpretation: spatial plaque 
 
 ## 3. Results: Plaque-Proximity Effects
 
-## 3.a RQ1 — How does cell type composition change in plaque proximity?
+## 3.a RQ1 - How does cell type composition change in plaque proximity?
 
 ### 3.a.i Logistic regression specification and interpretation
 We model the relationship between **cluster membership** and **distance to the nearest plaque** using logistic regression. After fitting, we find statistically significant coefficients for **14 of 19 clusters**, using a **Bonferroni-adjusted p-value threshold of 0.01**.
@@ -280,7 +280,7 @@ These non-linearities motivate correlation and regression analyses that do not a
 
 ---
 
-## 3.b RQ2 — Relationship between cell type composition, PIG expression, and plaque distance
+## 3.b RQ2 - Relationship between cell type composition, PIG expression, and plaque distance
 
 Cluster-level marker enrichment shows that some clusters exhibit strong over- or under-expression of specific genes. For example:
 - Cluster 8 (immune) over-expresses **Hexb** (z-score ~4).  
@@ -318,15 +318,15 @@ Detailed summary:
 
 | Cell type (ID & label) | Description | Sign of ρgc | PIG genes involved |
 |---|---|---:|---|
-| 07 — Corticothalamic, Gluta | Layer 6b corticothalamic glutamatergic neurons | Negative | Core 14 PIGs |
-| 08 — Immune | Microglia/macrophages, etc. | Positive | Core 14 PIGs |
-| 10 — Hypothalamic medial, Gluta | Medial mammillary glutamatergic neurons | Negative | Core 14 PIGs |
-| 12 — Cerebral LGE, GABA | LGE-derived cerebral nuclei GABAergic neurons | Negative | Core 14 PIGs |
-| 14 — Dentate, Gluta | Dentate gyrus immature glutamatergic neurons | Negative | Core 14 PIGs |
-| 15 — Hypothalamic Gnrh1, Gluta | GnRH1-expressing glutamatergic neurons | Negative | Core 14 PIGs |
-| 16 — Olfactory bulb, Gluta | Cajal–Retzius glutamatergic neurons | Negative | Core 14 PIGs |
-| 17 — Medulla, GABA | Medulla GABAergic neurons | Negative | Core 14 PIGs |
-| 03 — Intra/Extratelencephalic, Gluta | Intra-/extratelencephalic glutamatergic neurons | Positive | Nrep only |
+| 07 - Corticothalamic, Gluta | Layer 6b corticothalamic glutamatergic neurons | Negative | Core 14 PIGs |
+| 08 - Immune | Microglia/macrophages, etc. | Positive | Core 14 PIGs |
+| 10 - Hypothalamic medial, Gluta | Medial mammillary glutamatergic neurons | Negative | Core 14 PIGs |
+| 12 - Cerebral LGE, GABA | LGE-derived cerebral nuclei GABAergic neurons | Negative | Core 14 PIGs |
+| 14 - Dentate, Gluta | Dentate gyrus immature glutamatergic neurons | Negative | Core 14 PIGs |
+| 15 - Hypothalamic Gnrh1, Gluta | GnRH1-expressing glutamatergic neurons | Negative | Core 14 PIGs |
+| 16 - Olfactory bulb, Gluta | Cajal–Retzius glutamatergic neurons | Negative | Core 14 PIGs |
+| 17 - Medulla, GABA | Medulla GABAergic neurons | Negative | Core 14 PIGs |
+| 03 - Intra/Extratelencephalic, Gluta | Intra-/extratelencephalic glutamatergic neurons | Positive | Nrep only |
 
 **Counts by correlation direction**
 
@@ -377,7 +377,7 @@ The stratified plot corroborates the regression interpretation: astrocyte/ependy
 
 ---
 
-## 3.c RQ3 — How does PIG expression change in plaque proximity?
+## 3.c RQ3 - How does PIG expression change in plaque proximity?
 
 ### 3.c.i Distance-binned means, confidence intervals, and ANOVA
 We group cells into **5 equal-count distance bins** and compute, for each PIG:
@@ -436,7 +436,7 @@ Nearest-plaque distance captures proximity to *one* plaque, but local pathology 
 - **Count:** number of plaques within radius R  
 - **Mean Distance:** average distance to plaques within radius R  
 
-To validate that R is informative, we check the Count distribution and CDF. The distribution shows meaningful variation: **55.2%** of cells have **0** plaques within 61 µm, while the remainder have up to **21** plaques within that radius—indicating a usable local density signal.
+To validate that R is informative, we check the Count distribution and CDF. The distribution shows meaningful variation: **55.2%** of cells have **0** plaques within 61 µm, while the remainder have up to **21** plaques within that radius-indicating a usable local density signal.
 
 <p align="center">
   <!-- This was obtained with plot_multi_plaque_proximity; usage in results.ipynb -->
@@ -499,7 +499,7 @@ Key findings:
 
 ## 4. Predictive Modeling: Inferring Plaque Distance
 
-## 4.a RQ4 — When modeling plaque distance, which features are most important?
+## 4.a RQ4 - When modeling plaque distance, which features are most important?
 
 ### 4.a.i Benchmarking setup and results
 We benchmark models that predict plaque distance from the **347-gene expression vector**, using a random **80/20 train/test split over cells**:
@@ -555,7 +555,7 @@ Cluster-specific errors reinforce this: mean absolute residuals are largest for 
 | 15 | Hypothalamic GnRH1-expressing glutamatergic neurons | 917 | 32.2295 |
 | 18 | Pons glutamatergic neurons | 499 | 17.8746 |
 
-Top predictive genes are relatively consistent across modeling classes. Notably, **Gfap** and **Spag16** appear in the top 5 across all models, and three of four models rank **Gfap** as the single most important predictor—reinforcing earlier evidence that Gfap peaks near plaques and decays with distance. Other highly ranked genes include **Lyz2** (immune/glial association) and **Igf2**, which shows an opposite trend (peaking around ~270 µm and declining toward plaques).
+Top predictive genes are relatively consistent across modeling classes. Notably, **Gfap** and **Spag16** appear in the top 5 across all models, and three of four models rank **Gfap** as the single most important predictor-reinforcing earlier evidence that Gfap peaks near plaques and decays with distance. Other highly ranked genes include **Lyz2** (immune/glial association) and **Igf2**, which shows an opposite trend (peaking around ~270 µm and declining toward plaques).
 
 | Rank | ElasticNet | LASSO | Random Forest | XGBoost |
 |---:|---|---|---|---|
@@ -636,7 +636,7 @@ We next compare linear models (Ridge/Lasso/PLS) to nonlinear models (especially 
 <p align="center">
   <!-- This was obtained with plot_ablation_heatmap; usage in results.ipynb -->
   <img src="src/data/figures/modality_ablation.png" width="480">
-  <br><em>*Figure 26. Modality ablation performance across model classes: heatmap and summary bars highlighting that nonlinear models—especially spatial-only boosting—can achieve high R² driven by spatial structure.*</em>
+  <br><em>*Figure 26. Modality ablation performance across model classes: heatmap and summary bars highlighting that nonlinear models-especially spatial-only boosting-can achieve high R² driven by spatial structure.*</em>
 </p>
 <p align="center">
   <!-- This was obtained with plot_best_model_per_modality; usage in results.ipynb -->
@@ -684,7 +684,7 @@ Conclusion: the spatial-only model primarily learns conserved tissue geometry (e
 
 ## 4.c Deep dive into the expression models
 
-We begin by interrogating the brain-region segmentation implicitly learned by our decision tree when it is trained to reconstruct the plaque-distance field. Concretely, we approximate the murine brain with a 200×200 grid of spatial tiles and, within each tile, compute the average distance to the nearest plaque (which is then visualized as a colored field across the tissue). When comparing the inferred decision surface to the ground-truth plaque-distance field, several salient behaviors become apparent. First, the model recovers a prominent large-distance region in the ventricular area.Second, it trivially identifies “break-away” cells outside the brain boundary as being far from plaques. Finally—and most consequentially for downstream modeling—the tree draws a clear boundary between (i) coarser, more homogeneous regions around the diencephalon and (ii) finer-grained segmentation around the hippocampus and isocortex. This qualitative shift in granularity is consistent with plaques being more uniformly spaced in the diencephalon, in contrast to the more structured, regionally heterogeneous grouping observed in the hippocampus and isocortex.
+We begin by interrogating the brain-region segmentation implicitly learned by our decision tree when it is trained to reconstruct the plaque-distance field. Concretely, we approximate the murine brain with a 200×200 grid of spatial tiles and, within each tile, compute the average distance to the nearest plaque (which is then visualized as a colored field across the tissue). When comparing the inferred decision surface to the ground-truth plaque-distance field, several salient behaviors become apparent. First, the model recovers a prominent large-distance region in the ventricular area.Second, it trivially identifies “break-away” cells outside the brain boundary as being far from plaques. Finally-and most consequentially for downstream modeling-the tree draws a clear boundary between (i) coarser, more homogeneous regions around the diencephalon and (ii) finer-grained segmentation around the hippocampus and isocortex. This qualitative shift in granularity is consistent with plaques being more uniformly spaced in the diencephalon, in contrast to the more structured, regionally heterogeneous grouping observed in the hippocampus and isocortex.
 
 <p align="center">
   <!-- This was obtained with plot_true_vs_pred_heatmaps in results.ipynb -->
@@ -714,7 +714,7 @@ Within this framework, we compare out-of-fold (OOF) performance for a multi-moda
   <br><em>Figure 34. Mean relative leakage gap (%) between random and spatial block cross-validation (log-scaled).</em>
 </p>
 
-Having established that spatial context matters—and that its impact is highly gene-dependent—we next introduce a non-linear interaction between plaque distance and the local transcriptional context of surrounding PIGs. Specifically, we define the **neighbor signature** (or **signature** for short) as the average expression level of “Other PIGs” in the neighborhood, and we examine average target expression across joint bins of distance and signature. Distance is discretized into five bins (D1–D5 from closest to farthest), and the signature is discretized into five bins (S1–S5 from lowest to highest). Across these distance/signature groups, expression varies substantially, indicating that meaningful information is encoded jointly in proximity to plaques and local neighborhood state for essentially all genes—except *Cxcl10*, where extreme zero inflation limits interpretability. This motivates an interaction-aware formulation: by inspecting per-gene distance–signature interaction maps (log1p-transformed and normalized per gene), we can distinguish smoothly varying gradients (consistent with gradual spatial structure) from localized peaks (suggesting gene-specific regimes in which neighborhood composition modulates distance-dependent effects).
+Having established that spatial context matters-and that its impact is highly gene-dependent-we next introduce a non-linear interaction between plaque distance and the local transcriptional context of surrounding PIGs. Specifically, we define the **neighbor signature** (or **signature** for short) as the average expression level of “Other PIGs” in the neighborhood, and we examine average target expression across joint bins of distance and signature. Distance is discretized into five bins (D1–D5 from closest to farthest), and the signature is discretized into five bins (S1–S5 from lowest to highest). Across these distance/signature groups, expression varies substantially, indicating that meaningful information is encoded jointly in proximity to plaques and local neighborhood state for essentially all genes-except *Cxcl10*, where extreme zero inflation limits interpretability. This motivates an interaction-aware formulation: by inspecting per-gene distance–signature interaction maps (log1p-transformed and normalized per gene), we can distinguish smoothly varying gradients (consistent with gradual spatial structure) from localized peaks (suggesting gene-specific regimes in which neighborhood composition modulates distance-dependent effects).
 
 <p align="center">
   <!-- This was obtained with plot_dist_signature_heatmaps_grid in results.ipynb -->
@@ -750,7 +750,7 @@ Because the neighbor-based model is unexpectedly strong under spatial-block eval
   <br><em>Figure 39. Tile-level summary of permutation-induced residual shifts.</em>
 </p>
 
-In the second mode of ablation, we replace the 100 nearest neighbors with the 100 farthest neighbors—an intervention that should more aggressively remove biologically and spatially relevant context than within-tile permutation. As expected, this induces an even larger deterioration: using average expression over the 100 farthest neighbors yields an 86.4% drop in spatial-block OOF performance (significant at the 95% confidence level), reinforcing that the predictive signal is predominantly local. This ranking of neighborhood quality is also visible when comparing prediction–observation agreement across the three neighborhood constructions (100 farthest neighbors, 100 permuted neighbors within tile, bona fide 100 closest neighbors): the correspondence increases monotonically as neighborhoods become more local and correctly aligned. When aggregating across 16 genes, this progression is reflected both in mean R² (0.018 for farthest, 0.045 for permuted, 0.115 for closest) and in the fitted calibration slopes (0.05, 0.11, and 0.26, rcvespectively). Notably, despite these large differences in predictive strength, residuals remain effectively uncorrelated with plaque distance in all three cases (near-zero fitted trends), suggesting that the models are not leaving a systematic distance-dependent bias unmodeled; instead, remaining error appears as distance-agnostic variability and heteroscedastic spread.
+In the second mode of ablation, we replace the 100 nearest neighbors with the 100 farthest neighbors-an intervention that should more aggressively remove biologically and spatially relevant context than within-tile permutation. As expected, this induces an even larger deterioration: using average expression over the 100 farthest neighbors yields an 86.4% drop in spatial-block OOF performance (significant at the 95% confidence level), reinforcing that the predictive signal is predominantly local. This ranking of neighborhood quality is also visible when comparing prediction–observation agreement across the three neighborhood constructions (100 farthest neighbors, 100 permuted neighbors within tile, bona fide 100 closest neighbors): the correspondence increases monotonically as neighborhoods become more local and correctly aligned. When aggregating across 16 genes, this progression is reflected both in mean R² (0.018 for farthest, 0.045 for permuted, 0.115 for closest) and in the fitted calibration slopes (0.05, 0.11, and 0.26, rcvespectively). Notably, despite these large differences in predictive strength, residuals remain effectively uncorrelated with plaque distance in all three cases (near-zero fitted trends), suggesting that the models are not leaving a systematic distance-dependent bias unmodeled; instead, remaining error appears as distance-agnostic variability and heteroscedastic spread.
 
 <p align="center">
   <!-- This was obtained with plot_true_vs_fake_far_neighbors_across_genes in results.ipynb -->
@@ -773,16 +773,16 @@ In the second mode of ablation, we replace the 100 nearest neighbors with the 10
 
 ---
 
-## 5. Age- and Genotype-Aware Signatures
+## 5. Age and Genotype specific patterns
 
-## 5.a RQ5 — How does the gene expression change with age for each cell type and mouse group?
+## 5.a RQ5 - How does the gene expression change with age for each cell type and mouse group?
 Because spatial-only prediction is dominated by conserved anatomy, we pivot to gene-expression-anchored, age-aware analyses. This shift is motivated by three constraints:
 
 1. Plaque-induced transcriptional responses are **cell-state specific** (microglia, astrocytes, and some oligodendrocyte populations can change strongly near plaques in ways spatial position alone cannot resolve).  
 2. Direct normalization across mice is unreliable: orientation, capture area, imaging depth, and detection efficiency create batch-like distortions, and global scaling/quantile matching can suppress real gradients or introduce artifacts.  
-3. Common harmonization methods (Harmony, MNN, scVI) are ill-suited here: the panel is sparse, cell count is very large, and plaque-associated variance is biological signal—not batch noise to be removed.
+3. Common harmonization methods (Harmony, MNN, scVI) are ill-suited here: the panel is sparse, cell count is very large, and plaque-associated variance is biological signal-not batch noise to be removed.
 
-### 5.b. Disease specificity (Tg vs WT) by cluster and gene ranking 
+### 5.b Disease specificity (Tg vs WT) by cell type
 To avoid cross-mouse normalization pitfalls while isolating cell-type-specific signals, we construct within-cluster and within-gene z-normalized signatures, then average z-scores across the **16 PIGs** to obtain a single **plaque-induced gene activation score** per cluster.
 
 <p align="center">
@@ -795,7 +795,7 @@ With this framework, we analyze two biological dimensions:
 - Disease status: **Tg vs WT**  
 - Age progression: **2 → 5 → 17 months**
 
-For each Leiden cluster, we compute a disease-specific activation score that highlights genes strongly expressed in Tg mice but minimally expressed in WT controls—capturing plaque-linked induction rather than baseline glial identity or general aging. We then rank clusters by the mean disease specificity across genes.
+For each Leiden cluster, we compute a disease-specific activation score that highlights genes strongly expressed in Tg mice but minimally expressed in WT controls-capturing plaque-linked induction rather than baseline glial identity or general aging. We then rank clusters by the mean disease specificity across genes.
 
 <p align="center">
   <!-- This was obtained with plot_volcano; usage in results.ipynb -->
@@ -809,7 +809,7 @@ For each Leiden cluster, we compute a disease-specific activation score that hig
   <br><em>*Figure 45. Per-cluster age progression.*</em>
 </p>
 
-### 5.c Age trajectories: Tg (2→5→17 months) vs WT stability 
+### 5.c Age trajectories for Tg and WT at (2, 5, 13+ months)
 A complementary perspective is to view the PCA structure within each cluster: WT and Tg cells separate within the same cluster, with WT occupying the bulk and Tg pushed toward the periphery. This indicates anomalous expression patterns even after conditioning on cell type.
 
 <p align="center">
@@ -848,7 +848,7 @@ Finally, age trajectories show divergence:
   <br><em>*Figure 48. Age progression trajectories of cluster-level activation for WT vs Tg, showing AD-specific, age-progressive glial activation in Tg animals.*</em>
 </p>
 
-Taken together, RQ6 supports a coherent synthesis: specific glial clusters—particularly microglia (cluster 8) and astrocytes (cluster 18)—undergo robust and progressive transcriptional activation driven by amyloid pathology. These signatures intensify with age in Tg mice but remain absent in age-matched WT animals. Compared to spatial-only modeling, this gene-level, age-resolved approach yields a more stable and pathology-driven understanding of how glial states evolve around Aβ plaques.
+Taken together, RQ6 supports a coherent synthesis: specific glial clusters-particularly microglia (cluster 8) and astrocytes (cluster 18)-undergo robust and progressive transcriptional activation driven by amyloid pathology. These signatures intensify with age in Tg mice but remain absent in age-matched WT animals. Compared to spatial-only modeling, this gene-level, age-resolved approach yields a more stable and pathology-driven understanding of how glial states evolve around Aβ plaques.
 
 ---
 
@@ -868,7 +868,7 @@ Across analyses spanning composition, differential expression, and predictive mo
 8. **Local neighborhood context carries substantial predictive signal beyond coarse spatial location.** Under spatial-block cross-validation, models that use neighborhood-derived summaries (e.g., average expression of other PIGs in neighboring cells, summarized as a “neighbor signature”) remain surprisingly strong, indicating that local microenvironment encodes information relevant to gene expression beyond what is explained by distance alone. Introducing an explicit distance×signature interaction improves mean performance, but the gain over a signature-only model is not statistically significant at the 95% level, suggesting that much of the interaction’s predictive value is already captured by the neighbor signature itself.  
 9. **What we cannot conclude robustly is fine-scale causal structure or single-cell–level spatial effects below the resolution of our alignment and sampling.** Even when residuals show no systematic distance-dependent trend after accounting for modeled neighborhood signal, this does not imply that all plaque-distance effects have been “explained”; rather, it indicates that remaining errors are dominated by distance-agnostic variability and heteroscedasticity. Similarly, association patterns do not establish whether plaques drive the local state, whether vulnerable regions drive plaque accumulation, or whether both are shaped by upstream processes.
 
-Taken together, the paper supports a locally coherent narrative: plaques sit within a spatially heterogeneous brain substrate, and the observed plaque-proximal gene programs and composition shifts are embedded within region-dependent plaque topology and microenvironmental structure. The modeling results are best interpreted as quantifying *how much* of the expression signal is recoverable from distance, anatomy, and neighborhood state under stringent spatial generalization—not as definitive mechanistic attribution.
+Taken together, the paper supports a locally coherent narrative: plaques sit within a spatially heterogeneous brain substrate, and the observed plaque-proximal gene programs and composition shifts are embedded within region-dependent plaque topology and microenvironmental structure. The modeling results are best interpreted as quantifying *how much* of the expression signal is recoverable from distance, anatomy, and neighborhood state under stringent spatial generalization-not as definitive mechanistic attribution.
 
 ---
 
@@ -880,7 +880,7 @@ Taken together, the paper supports a locally coherent narrative: plaques sit wit
 - **Spatial leakage and evaluation dependence:** random cross-validation can substantially inflate performance because nearby cells share context (spatial autocorrelation). The tile-based spatial block CV (391 tiles with 78 held out, ~20%) provides a more stringent estimate, and the large gene-to-gene variability in leakage gaps (e.g., *Ctst*, *Nrep*) implies that any single pooled performance metric can obscure which genes are truly transferable out-of-region.  
 - **Neighborhood features can still encode location:** although neighborhood summaries are biologically motivated, they can act as proxies for local tissue identity. Ablations in Section 4.c partially address this by breaking neighborhood correspondence: within-tile permutation causes a 62.9% drop in spatial-block OOF performance (no overlap in 95% CIs), and substituting 100 nearest neighbors with 100 farthest neighbors causes an 86.4% drop. These results support a real dependence on local structure, but they do not eliminate the possibility that some neighborhood signal reflects regional identity rather than plaque-specific mechanisms.  
 - **Sensitivity to spatial discretization and neighbor definitions:** tile size, the number of neighbors (e.g., 100), and the precise definition of “neighbor” can change the balance between microenvironmental signal and coarse spatial averaging. This is particularly important in anatomically complex regions (hippocampal formation, isocortex) and near tissue boundaries.  
-- **Boundary artifacts and “break-away” cells:** detached or peripheral cells can be trivially far from plaques and can disproportionately influence segmentation, residual maps, and permutation behavior—especially when tiles mix “continental” (main tissue mass) and “island” (detached) cells.  
+- **Boundary artifacts and “break-away” cells:** detached or peripheral cells can be trivially far from plaques and can disproportionately influence segmentation, residual maps, and permutation behavior-especially when tiles mix “continental” (main tissue mass) and “island” (detached) cells.  
 - **Cross-mouse comparability:** batch-like distortions make global cross-mouse normalization risky; the chosen within-cluster z-score approach mitigates but does not eliminate all comparability concerns, particularly for genes with strong regional specificity.  
 - **Causal direction and latent variables:** composition shifts, PIG expression, plaque distance, and neighborhood state co-occur. Regression, ablations, and spatial CV help decompose predictive contributions, but they do not establish causality, nor do they rule out unmeasured covariates (e.g., local damage state, vascular microstructure, technical capture variation) that could drive both plaques and transcriptional programs.
 

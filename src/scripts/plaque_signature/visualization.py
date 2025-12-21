@@ -188,7 +188,7 @@ def plot_spatial_mouse(all_preds, name, cmap="viridis"):
     plt.scatter(df["x_centroid"], df["y_centroid"], c=pred, s=4, cmap=cmap, alpha=0.6)
     plt.gca().invert_yaxis()
     plt.colorbar(label="Predicted Plaque Proximity (HGB Spatial-Only)")
-    plt.title(f"Spatial Prediction Map — {name}")
+    plt.title(f"Spatial Prediction Map - {name}")
     plt.xlabel("X")
     plt.ylabel("Y")
     plt.tight_layout()
@@ -364,16 +364,16 @@ def compute_and_plot_umap(
 
     if color == "prediction":
         cvals = pred
-        title = f"{name} — UMAP Colored by Prediction"
+        title = f"{name} - UMAP Colored by Prediction"
     elif color == "x":
         cvals = df["x_centroid"]
-        title = f"{name} — UMAP Colored by X"
+        title = f"{name} - UMAP Colored by X"
     elif color == "y":
         cvals = df["y_centroid"]
-        title = f"{name} — UMAP Colored by Y"
+        title = f"{name} - UMAP Colored by Y"
     elif color == "none":
         cvals = None
-        title = f"{name} — UMAP (No color)"
+        title = f"{name} - UMAP (No color)"
     else:
         raise ValueError(f"Unknown color option {color}")
 

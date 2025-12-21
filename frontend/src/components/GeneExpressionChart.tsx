@@ -39,7 +39,7 @@ const GeneExpressionChart = () => {
               </figcaption>
             </figure>
 
-            {/* TEXTE — PAS de max-w */}
+            {/* TEXTE - PAS de max-w */}
             <p className="text-lg text-muted-foreground leading-relaxed">
               We are dealing with a spatial transcriptomics dataset which contains single cell gene
               expression measurements of 347 genes. The gene expression matrix tends to be sparse.

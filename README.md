@@ -74,7 +74,7 @@ In this project, we explore the following research questions (RQs).
 ## Timeline and contributions
 
 ```
-Milestone P3 — Analyses, Ownership, and Due-Point 2025 Timeline 
+Milestone P3 - Analyses, Ownership, and Due-Point 2025 Timeline 
   [P2]                                           [P3]
     │                                              │
   ├─────────┬─────────┬─────────┬─────────┬─────────┤►

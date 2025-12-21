@@ -12,63 +12,63 @@ type CorrRow = {
 
 const CORR_ROWS: CorrRow[] = [
   {
-    idLabel: '07 — “Corticothalamic, Gluta”',
+    idLabel: '07 - “Corticothalamic, Gluta”',
     description: "Near-projecting corticothalamic layer 6b glutamatergic neurons",
     sign: "Negative",
     rho: "−1.00",
     pigs: "Core 14 PIGs",
   },
   {
-    idLabel: '08 — “Immune”',
+    idLabel: '08 - “Immune”',
     description: "Immune cells (microglia, macrophages, etc.)",
     sign: "Positive",
     rho: "+1.00",
     pigs: "Core 14 PIGs",
   },
   {
-    idLabel: '10 — “Hypothalamic medial, Gluta”',
+    idLabel: '10 - “Hypothalamic medial, Gluta”',
     description: "Hypothalamic medial mammillary glutamatergic neurons",
     sign: "Negative",
     rho: "−1.00",
     pigs: "Core 14 PIGs",
   },
   {
-    idLabel: '12 — “Cerebral LGE, GABA”',
+    idLabel: '12 - “Cerebral LGE, GABA”',
     description: "Cerebral nuclei LGE-derived GABAergic neurons",
     sign: "Negative",
     rho: "−1.00",
     pigs: "Core 14 PIGs",
   },
   {
-    idLabel: '14 — “Dentate, Gluta”',
+    idLabel: '14 - “Dentate, Gluta”',
     description: "Dentate gyrus immature neurons (glutamatergic)",
     sign: "Negative",
     rho: "−1.00",
     pigs: "Core 14 PIGs",
   },
   {
-    idLabel: '15 — “Hypothalamic Gnrh1, Gluta”',
+    idLabel: '15 - “Hypothalamic Gnrh1, Gluta”',
     description: "Hypothalamic GnRH1-expressing glutamatergic neurons",
     sign: "Negative",
     rho: "−1.00",
     pigs: "Core 14 PIGs",
   },
   {
-    idLabel: '16 — “Olfactory bulb, Gluta”',
+    idLabel: '16 - “Olfactory bulb, Gluta”',
     description: "Olfactory bulb Cajal–Retzius glutamatergic neurons",
     sign: "Negative",
     rho: "−1.00",
     pigs: "Core 14 PIGs",
   },
   {
-    idLabel: '17 — “Medulla, GABA”',
+    idLabel: '17 - “Medulla, GABA”',
     description: "Medulla GABAergic neurons",
     sign: "Negative",
     rho: "−1.00",
     pigs: "Core 14 PIGs",
   },
   {
-    idLabel: '03 — “Intra/Extratelencephalic, Gluta”',
+    idLabel: '03 - “Intra/Extratelencephalic, Gluta”',
     description: "Intratelencephalic–Extratelencephalic glutamatergic neurons",
     sign: "Positive",
     rho: "+1.00",
@@ -307,19 +307,19 @@ const Chapter6 = () => {
 
               <p className="text-lg text-muted-foreground leading-relaxed">
                 We identify 9 <span className="font-medium text-foreground">cell types</span> with significant correlations to PIG expression. Notably:
-            </p>
-                              <ul className="space-y-3 text-muted-foreground">
-                                <li className="flex items-start gap-2">
-                                  <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
-                                  <span className="font-medium text-foreground">8/9</span> are strongly correlated with a <span className="font-medium text-foreground">core set of 14 PIGs</span>.
-                                </li>
-              
-                                <li className="flex items-start gap-2">
-                                  <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
-                                  The remaining cell type is strongly correlated with <span className="font-medium text-foreground">Nrep</span> alone, suggesting a complementary pattern rather than redundancy with the core PIG set.
-                                </li>
-                              </ul>
-                        
+              </p>
+              <ul className="space-y-3 text-muted-foreground">
+                <li className="flex items-start gap-2">
+                  <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
+                  <span className="font-medium text-foreground">8/9</span> are strongly correlated with a <span className="font-medium text-foreground">core set of 14 PIGs</span>.
+                </li>
+
+                <li className="flex items-start gap-2">
+                  <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
+                  The remaining cell type is strongly correlated with <span className="font-medium text-foreground">Nrep</span> alone, suggesting a complementary pattern rather than redundancy with the core PIG set.
+                </li>
+              </ul>
+
 
 
               <p className="text-lg text-muted-foreground leading-relaxed">
@@ -358,11 +358,11 @@ const Chapter6 = () => {
               </div>
 
               <div className="space-y-6">
-                    <CorrTable />
-                    <DirectionTable />
-                </div>
+                <CorrTable />
+                <DirectionTable />
+              </div>
 
-              
+
             </div>
           </div>
 

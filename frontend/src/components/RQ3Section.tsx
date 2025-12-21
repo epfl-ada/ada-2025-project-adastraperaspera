@@ -41,7 +41,7 @@ function PigNeighborCorrTable() {
         </table>
       </div>
 
-      
+
       <ul className="mt-3 space-y-3 text-sm text-muted-foreground">
         <li>
           <p className="text-lg text-muted-foreground leading-relaxed">
@@ -88,7 +88,7 @@ const RQ3Section = () => {
           {/* Main analysis */}
           <div className="space-y-12">
             {/* =========================
-                SECTION 1 — Mean PIG expression
+                SECTION 1 - Mean PIG expression
                ========================= */}
             <div id="rq3-mean" className="space-y-4">
               <h3 className="text-2xl font-bold text-foreground">
@@ -98,7 +98,7 @@ const RQ3Section = () => {
                 Distance-binned means, confidence intervals, and ANOVA
               </h4>
 
-              
+
               <ul className="space-y-3 text-muted-foreground">
                 <li>
                   <p className="text-lg text-muted-foreground leading-relaxed">
@@ -140,7 +140,7 @@ const RQ3Section = () => {
                 caption="Distance-binned mean expression of all 16 PIGs with 95% C, showing consistent plaque-proximal elevation for glial/immune markers.."
               />
 
-              
+
               <ul className="space-y-3 text-muted-foreground">
                 <li>
                   <p className="text-lg text-muted-foreground leading-relaxed">
@@ -213,7 +213,7 @@ const RQ3Section = () => {
             </div>
 
             {/* =========================
-                SECTION 2 — Regression analysis
+                SECTION 2 - Regression analysis
                ========================= */}
             <div id="rq3-regression" className="space-y-4">
               <h4 className="text-xl font-semibold text-foreground">
@@ -287,7 +287,7 @@ const RQ3Section = () => {
                 <span className="font-medium text-foreground">0</span> plaques within 61 µm,
                 while the remainder have up to{" "}
                 <span className="font-medium text-foreground">21</span> plaques within that
-                radius—indicating a usable local density signal.
+                radius-indicating a usable local density signal.
               </p>
 
               <PlotFrame
@@ -305,7 +305,7 @@ const RQ3Section = () => {
                 <span className="font-medium text-foreground">k = 100 nearest neighbors</span>.
               </p>
 
-              
+
               <ul className="space-y-3 text-muted-foreground">
                 <li>
                   <p className="text-lg text-muted-foreground leading-relaxed">
@@ -340,7 +340,7 @@ const RQ3Section = () => {
 
               <PigNeighborCorrTable />
 
-              
+
               <ul className="mt-3 space-y-3 text-sm text-muted-foreground">
                 <li>
                   <p className="text-lg text-muted-foreground leading-relaxed">
@@ -390,7 +390,7 @@ const RQ3Section = () => {
                 caption="Mean adjusted R² across PIGs for each nested model, including min/max ranges, showing which feature groups add meaningful predictive value."
               />
 
-              
+
               <p className="text-lg text-muted-foreground leading-relaxed">
                 Key findings:
               </p>

@@ -1,5 +1,5 @@
 import PlotFrame from "@/components/PlotFrame";
-import { Brain,CircleChevronRight} from 'lucide-react'
+import { Brain, CircleChevronRight } from 'lucide-react'
 
 const base = import.meta.env.BASE_URL;
 
@@ -13,63 +13,63 @@ type CorrRow = {
 
 const CORR_ROWS: CorrRow[] = [
   {
-    idLabel: '07 — “Corticothalamic, Gluta”',
+    idLabel: '07 - “Corticothalamic, Gluta”',
     description: "Near-projecting corticothalamic layer 6b glutamatergic neurons",
     sign: "Negative",
     rho: "−1.00",
     pigs: "Core 14 PIGs",
   },
   {
-    idLabel: '08 — “Immune”',
+    idLabel: '08 - “Immune”',
     description: "Immune cells (microglia, macrophages, etc.)",
     sign: "Positive",
     rho: "+1.00",
     pigs: "Core 14 PIGs",
   },
   {
-    idLabel: '10 — “Hypothalamic medial, Gluta”',
+    idLabel: '10 - “Hypothalamic medial, Gluta”',
     description: "Hypothalamic medial mammillary glutamatergic neurons",
     sign: "Negative",
     rho: "−1.00",
     pigs: "Core 14 PIGs",
   },
   {
-    idLabel: '12 — “Cerebral LGE, GABA”',
+    idLabel: '12 - “Cerebral LGE, GABA”',
     description: "Cerebral nuclei LGE-derived GABAergic neurons",
     sign: "Negative",
     rho: "−1.00",
     pigs: "Core 14 PIGs",
   },
   {
-    idLabel: '14 — “Dentate, Gluta”',
+    idLabel: '14 - “Dentate, Gluta”',
     description: "Dentate gyrus immature neurons (glutamatergic)",
     sign: "Negative",
     rho: "−1.00",
     pigs: "Core 14 PIGs",
   },
   {
-    idLabel: '15 — “Hypothalamic Gnrh1, Gluta”',
+    idLabel: '15 - “Hypothalamic Gnrh1, Gluta”',
     description: "Hypothalamic GnRH1-expressing glutamatergic neurons",
     sign: "Negative",
     rho: "−1.00",
     pigs: "Core 14 PIGs",
   },
   {
-    idLabel: '16 — “Olfactory bulb, Gluta”',
+    idLabel: '16 - “Olfactory bulb, Gluta”',
     description: "Olfactory bulb Cajal–Retzius glutamatergic neurons",
     sign: "Negative",
     rho: "−1.00",
     pigs: "Core 14 PIGs",
   },
   {
-    idLabel: '17 — “Medulla, GABA”',
+    idLabel: '17 - “Medulla, GABA”',
     description: "Medulla GABAergic neurons",
     sign: "Negative",
     rho: "−1.00",
     pigs: "Core 14 PIGs",
   },
   {
-    idLabel: '03 — “Intra/Extratelencephalic, Gluta”',
+    idLabel: '03 - “Intra/Extratelencephalic, Gluta”',
     description: "Intratelencephalic–Extratelencephalic glutamatergic neurons",
     sign: "Positive",
     rho: "+1.00",
@@ -309,21 +309,21 @@ const RQ2Section = () => {
             <div id="rq2-motivation" className="space-y-4">
               <h3 className="text-2xl font-bold text-foreground">RQ2 : How are the cell type composition, PIG expression, and plaque distance related?</h3>
 
-               <p className="text-lg text-muted-foreground leading-relaxed">
+              <p className="text-lg text-muted-foreground leading-relaxed">
                 Cluster-level marker enrichment shows that some clusters exhibit strong over- or under-expression of specific genes. For example:
               </p>
               {/*<div className="rounded-2xl border border-border bg-card p-5">*/}
-                <ul className="space-y-3 text-muted-foreground">
-                 <li className="flex items-start gap-2">
-                    <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
-                    Cluster 8 (immune) over-expresses <span className="font-medium text-foreground">Hexb</span> (z-score ~4). 
-                  </li>
+              <ul className="space-y-3 text-muted-foreground">
+                <li className="flex items-start gap-2">
+                  <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
+                  Cluster 8 (immune) over-expresses <span className="font-medium text-foreground">Hexb</span> (z-score ~4).
+                </li>
 
-                  <li className="flex items-start gap-2">
-                    <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
-                    Cluster 14 (dentate gyrus immature glutamatergic) under-expresses <span className="font-medium text-foreground">Cst3</span> (z-score ~−2).
-                  </li>
-                </ul>
+                <li className="flex items-start gap-2">
+                  <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
+                  Cluster 14 (dentate gyrus immature glutamatergic) under-expresses <span className="font-medium text-foreground">Cst3</span> (z-score ~−2).
+                </li>
+              </ul>
               {/*</div>*/}
 
               <p className="text-lg text-muted-foreground leading-relaxed">
@@ -343,33 +343,33 @@ const RQ2Section = () => {
               <h4 className="text-xl font-semibold text-foreground">Correlation: cell-type proportions vs mean PIG expression</h4>
 
               {/*<div className="rounded-2xl border border-border bg-card p-5">*/}
-                <ul className="space-y-3 text-muted-foreground">
-                  <p className="text-lg text-muted-foreground leading-relaxed">
-                We test whether distance-dependent PIG expression could be explained by changing cell-type composition. Concretely:
-              </p>
-                  <li className="flex items-start gap-2">
-                    <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
-                     Bin cells by plaque distance. 
-                  </li>
+              <ul className="space-y-3 text-muted-foreground">
+                <p className="text-lg text-muted-foreground leading-relaxed">
+                  We test whether distance-dependent PIG expression could be explained by changing cell-type composition. Concretely:
+                </p>
+                <li className="flex items-start gap-2">
+                  <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
+                  Bin cells by plaque distance.
+                </li>
 
-                  <li className="flex items-start gap-2">
-                    <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
-                    For each bin, compute <span className="font-medium text-foreground">cell-type proportions</span> and <span className="font-medium text-foreground">mean PIG expression</span>. 
-                  </li>
+                <li className="flex items-start gap-2">
+                  <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
+                  For each bin, compute <span className="font-medium text-foreground">cell-type proportions</span> and <span className="font-medium text-foreground">mean PIG expression</span>.
+                </li>
 
-                  <li className="flex items-start gap-2">
-                    <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
-                    Compute a <span className="font-medium text-foreground">Spearman rank correlation matrix</span> between cell-type proportions and PIG expression across bins.  
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
-                     Use Spearman (rather than Pearson) to accommodate plausible non-linear/step-like behaviors.  
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
-                    Perform significance testing with multiple-testing correction per gene–cell-type pair.
-                  </li>
-                </ul>
+                <li className="flex items-start gap-2">
+                  <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
+                  Compute a <span className="font-medium text-foreground">Spearman rank correlation matrix</span> between cell-type proportions and PIG expression across bins.
+                </li>
+                <li className="flex items-start gap-2">
+                  <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
+                  Use Spearman (rather than Pearson) to accommodate plausible non-linear/step-like behaviors.
+                </li>
+                <li className="flex items-start gap-2">
+                  <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
+                  Perform significance testing with multiple-testing correction per gene–cell-type pair.
+                </li>
+              </ul>
               {/*</div>*/}
               <PlotFrame
                 src={`${base}plots/PIG_type_spearman.html`}
@@ -380,18 +380,18 @@ const RQ2Section = () => {
 
               <p className="text-lg text-muted-foreground leading-relaxed">
                 We identify 9 <span className="font-medium text-foreground">cell types</span> with significant correlations to PIG expression. Notably:
-                </p>
-                <ul className="space-y-3 text-muted-foreground">
-                  <li className="flex items-start gap-2">
-                    <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
-                    <span className="font-medium text-foreground">8/9</span> are strongly correlated with a <span className="font-medium text-foreground">core set of 14 PIGs</span>.
-                  </li>
+              </p>
+              <ul className="space-y-3 text-muted-foreground">
+                <li className="flex items-start gap-2">
+                  <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
+                  <span className="font-medium text-foreground">8/9</span> are strongly correlated with a <span className="font-medium text-foreground">core set of 14 PIGs</span>.
+                </li>
 
-                  <li className="flex items-start gap-2">
-                    <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
-                    The remaining cell type is strongly correlated with <span className="font-medium text-foreground">Nrep</span> alone, suggesting a complementary pattern rather than redundancy with the core PIG set.
-                  </li>
-                </ul>
+                <li className="flex items-start gap-2">
+                  <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
+                  The remaining cell type is strongly correlated with <span className="font-medium text-foreground">Nrep</span> alone, suggesting a complementary pattern rather than redundancy with the core PIG set.
+                </li>
+              </ul>
               {/*</div>*/}
 
               <div className="space-y-6">
@@ -401,25 +401,25 @@ const RQ2Section = () => {
               <p className="text-lg text-muted-foreground leading-relaxed">
                 Interpreted biologically, the core PIGs are most aligned with immune enrichment and neuronal depletion, consistent with a glial activation signature that strengthens in plaque-proximal bins.
               </p>
-          </div>
+            </div>
 
             <div id="rq2-linear" className="space-y-4">
               <h4 className="text-xl font-semibold text-foreground">Joint regression (Apoe) </h4>
 
-                <ul className="space-y-3 text-muted-foreground">
-                  <p className="text-lg text-muted-foreground leading-relaxed">
-                To quantify how much cell composition explains PIG expression gradients, we fit a joint linear regression predicting PIG expression from:
+              <ul className="space-y-3 text-muted-foreground">
+                <p className="text-lg text-muted-foreground leading-relaxed">
+                  To quantify how much cell composition explains PIG expression gradients, we fit a joint linear regression predicting PIG expression from:
                 </p>
-                  <li className="flex items-start gap-2">
-                    <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
-                    Broad cell type (with <span className="font-medium text-foreground">Vascular Endothelial Pericyte</span> as the baseline) 
-                  </li>
+                <li className="flex items-start gap-2">
+                  <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
+                  Broad cell type (with <span className="font-medium text-foreground">Vascular Endothelial Pericyte</span> as the baseline)
+                </li>
 
-                  <li className="flex items-start gap-2">
-                    <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
-                    Distance to the nearest plaque
-                  </li>
-                </ul>
+                <li className="flex items-start gap-2">
+                  <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
+                  Distance to the nearest plaque
+                </li>
+              </ul>
 
               {/*}
               <p className="text-lg text-muted-foreground leading-relaxed">
@@ -431,13 +431,13 @@ const RQ2Section = () => {
               </p>
 
               <p className="text-lg text-muted-foreground leading-relaxed">
-               Coefficients:
+                Coefficients:
               </p>
-              
+
               <RegressionCoefTable />
 
               <p className="text-lg text-muted-foreground leading-relaxed">
-               These results reinforce two earlier observations. Apoe expression is elevated in astrocytic and immune populations and reduced in neuronal populations, particularly glutamatergic neurons. Moreover, even after accounting for cell type, a significant negative distance effect persists, consistent with a true plaque-centered expression gradient
+                These results reinforce two earlier observations. Apoe expression is elevated in astrocytic and immune populations and reduced in neuronal populations, particularly glutamatergic neurons. Moreover, even after accounting for cell type, a significant negative distance effect persists, consistent with a true plaque-centered expression gradient
               </p>
 
             </div>

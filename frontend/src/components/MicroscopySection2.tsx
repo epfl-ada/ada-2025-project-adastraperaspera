@@ -80,7 +80,7 @@ const MicroscopySection2 = () => {
             <div className="rounded-2xl bg-card border border-border">
               <div className="p-8 space-y-16">
                 {/* =========================
-                    SECTION 1 — Study design + alignment
+                    SECTION 1 - Study design + alignment
                    ========================= */}
                 <section id="microscopy-study" className="scroll-mt-24">
                   <div className="flex items-center gap-3 mb-6">
@@ -127,7 +127,7 @@ const MicroscopySection2 = () => {
                 <hr className="border-border" />
 
                 {/* =========================
-                    SECTION 2 — WT vs TG spatial overview
+                    SECTION 2 - WT vs TG spatial overview
                    ========================= */}
                 <section id="microscopy-wt-tg" className="scroll-mt-24">
                   <div className="flex items-center gap-3 mb-6">
@@ -161,7 +161,7 @@ const MicroscopySection2 = () => {
                 <hr className="border-border" />
 
                 {/* =========================
-                    SECTION 3 — Plaque detection & transformation
+                    SECTION 3 - Plaque detection & transformation
                    ========================= */}
                 <section id="microscopy-plaques" className="scroll-mt-24">
                   <div className="flex items-center gap-3 mb-6">
@@ -196,7 +196,7 @@ const MicroscopySection2 = () => {
                 <hr className="border-border" />
 
                 {/* =========================
-                    SECTION 4 — Cell-to-plaque distances
+                    SECTION 4 - Cell-to-plaque distances
                    ========================= */}
                 <section id="microscopy-distances" className="scroll-mt-24">
                   <div className="flex items-center gap-3 mb-6">
@@ -243,7 +243,7 @@ const MicroscopySection2 = () => {
               <p className="text-muted-foreground leading-relaxed">
                 We can see that the maximum distance from any plaque is 457 µm; however, over 99% of all cells are located at
                 most 200 µm from the nearest plaque, with the median being 61 µm. The standard deviation is very significant at
-                44.4 µm. This is supported by the previous figure showing the brain regions by distance to nearest plaque—some
+                44.4 µm. This is supported by the previous figure showing the brain regions by distance to nearest plaque-some
                 regions are very close, and some are very far. Further, we can observe that the distribution of cell-to-plaque
                 distances is right-skewed, with a long tail of infrequent cells which are very far from the nearest plaque.
               </p>

@@ -3213,7 +3213,7 @@ def plot_bivariate_resid_distance_spatial_interactive(
     )
 
     fig.update_layout(
-        title=f"{model_name}: Residual bin × distance bin (bivariate) — spatial map",
+        title=f"{model_name}: Residual bin × distance bin (bivariate) - spatial map",
         width=fig_width,
         height=fig_height,
         template="simple_white",
