@@ -873,17 +873,11 @@ We also acknowledge our limitations:
 
 ### 6.b Confounding and interpretation risks
 
-- **Anatomical confounding:** plaque density varies by region; any model using coordinates (and, more broadly, any feature correlated with anatomy) must be treated as potentially learning anatomy rather than pathology. Section 4.c further shows that models can implicitly encode regional structure even when trained on biologically relevant targets (e.g., plaque-distance fields), emphasizing the need to separate “anatomy learning” from “pathology learning.”
-
-
-
-- **Spatial leakage and evaluation dependence:** random cross-validation can substantially inflate performance because nearby cells share context (spatial autocorrelation). The tile-based spatial block CV (391 tiles with 78 held out, ~20%) provides a more stringent estimate, and the large gene-to-gene variability in leakage gaps (e.g., *Ctst*, *Nrep*) implies that any single pooled performance metric can obscure which genes are truly transferable out-of-region.
-
-- **Neighborhood features can still encode location:** although neighborhood summaries are biologically motivated, they can act as proxies for local tissue identity. Ablations in Section 4.c partially address this by breaking neighborhood correspondence: within-tile permutation causes a 62.9% drop in spatial-block OOF performance (no overlap in 95% CIs), and substituting 100 nearest neighbors with 100 farthest neighbors causes an 86.4% drop. These results support a real dependence on local structure, but they do not eliminate the possibility that some neighborhood signal reflects regional identity rather than plaque-specific mechanisms.
-
-- **Boundary artifacts and “break-away” cells:** detached or peripheral cells can be trivially far from plaques and can disproportionately influence segmentation, residual maps, and permutation behavior-especially when tiles mix “continental” (main tissue mass) and “island” (detached) cells.
-
-- **Zero inflation and sparsity:** genes like *Cxcl10* illustrate that statistical significance can coexist with minimal practical effect size due to near-all-zero distributions; zero inflation also complicates interaction visualizations and can mask structured effects present in nonzero subsets.
+- **Anatomical confounding**. Plaque density varies by brain region. Thus, any model using coordinates can learn spurious correlation with brain anatomy.
+- **Spatial leakage and evaluation dependence**. Random cross-validation (CV) can inflate performance because nearby cells share context. The tile-based spatial block cross-validation (391 tiles with 78 held out) provides a more strict estimate of generalization capability since sizeable chunks of the brain are hidden at train time. The observed gene-to-gene variability in the spatial block/random CV performance gap implies that we may over-estimate our current generalization capabilities.
+- **Neighborhood features can encode location**. Neighborhood gene expression levels can act as proxies for local tissue identity and thus the location in the brain. Our ablation study (Section 4.c) partially addresses this. Within-tile permutation results in a 62.9% drop in spatial-block OOF performance. Further, substituting 100 nearest neighbors with 100 farthest neighbors causes an 86.4% drop. These results support a real dependence on local structure. However, we have not fully eliminated the possibility of neighborhood gene expression covertly revealing coordinates.
+- **Boundary artifacts and break-away cells**. The cells which appear detached from the brain and peripheral cells are often trivially far from plaques and can disproportionately influence segmentation, residual maps, and permutation behavior. This is especially apparent when tiles mix "continental" (main brain mass) and "island" (detached) cells.
+- **Zero inflation**. Genes like *Cxcl10* illustrate that statistically significant findings can fail to be practical due to flat near-all-zero expression patterns.
 
 ---
 
@@ -891,7 +885,7 @@ We also acknowledge our limitations:
 
 Our findings reveal that plaques are accumulated in a brain-region-specific way and radiate a multi-modal influence into the surrounding tissue. Plaques re-model cell types and result in niches dominated by vascular and immune cells while being devoid of neurons. Further, plaques activate distinct transcriptional programs, with different genes affected at different distances.
 
-When considering genes as AD therapy targets, it is crucial to ensure that plaque/gene association is specific to transgenic mice, is robust to spatial block cross validation, and persists across realistic distances from vasculature. In other words, the drug interventions should focus on near-plaque, cell-type-specific transcriptional programs that show a clear progression with age.
+When considering genes as AD therapy targets, it is crucial to ensure that plaque/gene association is specific to transgenic mice, is robust to spatial block cross validation, and persists across realistic distances from vasculature. In other words, the drug interventions should focus on near-plaque, non-sparse, cell-type-specific transcriptional programs that show a clear progression with age.
 
 
 ---
