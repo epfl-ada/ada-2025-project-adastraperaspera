@@ -139,10 +139,10 @@ const RQ1Section = () => {
               />
             </div>
 
-            <p className="text-lg text-muted-foreground leading-relaxed">
+            {/*<p className="text-lg text-muted-foreground leading-relaxed">
                 Overall, the results show a clear composition shift near plaques:
             </p>
-            {/*<div className="rounded-2xl border border-border bg-card p-5">*/}
+            <div className="rounded-2xl border border-border bg-card p-5">
                     <ul className="space-y-3 text-muted-foreground">
                       <li className="flex items-start gap-2">
                         <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
@@ -161,13 +161,11 @@ const RQ1Section = () => {
                         <span className="font-medium text-foreground">enriched</span>{" "}
                         at the smallest distances.
                       </li>
-                    </ul>
+                    </ul>*/}
             {/*</div>*/}
 
             <p className="text-lg text-muted-foreground leading-relaxed">
-              This aligns with known AD mechanisms: plaques are associated with neuronal
-              degeneration, reactive astrocytosis and microglial activation, and vascular
-              remodeling.
+              Overall, plaque proximity is associated with a pronounced shift in cell-type composition. <span className="font-medium text-foreground">Neuronal populations are generally depleted near plaques</span>, whereas <span className="font-medium text-foreground">immune, vascular, and astrocytic cells are enriched at the smallest distances</span>. This pattern is consistent across multiple clusters and distance modeling approaches. These findings align with established Alzheimer’s disease pathology, in which amyloid plaques are linked to neuronal loss, reactive astrocytosis, microglial activation, and vascular remodeling
             </p>
 
             <p className="text-lg text-muted-foreground leading-relaxed">
@@ -208,7 +206,7 @@ const RQ1Section = () => {
               />
 
               
-                {/*<div className="rounded-2xl border border-border bg-card p-5">*/}
+                {/*<div className="rounded-2xl border border-border bg-card p-5">
                 
                       <ul className="space-y-3 text-muted-foreground">
                         <p className="text-lg text-muted-foreground leading-relaxed">
@@ -241,11 +239,11 @@ const RQ1Section = () => {
                           <span className="font-medium text-foreground">Cluster 8 (immune)</span>{" "}
                           drops sharply after the first bin, then levels off.
                         </li>
-                      </ul>
+                      </ul>*/}
 
                 {/*</div>*/}
                 <p className="text-lg text-muted-foreground leading-relaxed">
-                  These non-linearities motivate correlation and regression analyses that do not assume strict linear response across distance.
+                  Several cell-type clusters exhibit <span className="font-medium text-foreground">nonlinear distance responses</span>, with changes occurring primarily at extreme distances rather than as smooth gradients. <span className="font-medium text-foreground">Cluster 0</span> (oligodendrocyte lineage) shows a monotonic increase with distance from plaques, indicating relative depletion near plaque surfaces. <span className="font-medium text-foreground">Cluster 15</span> increases sharply only beyond approximately <span className="font-medium text-foreground">113 µm</span>, while <span className="font-medium text-foreground">cluster 14</span> shows an abrupt decline after approximately <span className="font-medium text-foreground">138 µm</span>. In contrast, <span className="font-medium text-foreground">cluster 8</span> (immune cells) decreases sharply in the closest distance bin and then plateaus. These threshold-like behaviors motivate downstream analyses that do not assume a strictly linear relationship between plaque distance and cellular composition.
                 </p>
 
             </div>
