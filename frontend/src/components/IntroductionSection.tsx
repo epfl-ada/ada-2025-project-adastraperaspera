@@ -23,7 +23,7 @@ const IntroductionSection = () => {
             </h3>
 
             <p className="text-lg text-muted-foreground leading-relaxed">
-              Amyloid beta plaques (Aβ) are a known hallmark of Alzheimer's disease (AD)
+              Amyloid beta plaques (Aβ) are a known hallmark of AlzheimerAlzheimer&apos;s disease (AD)
               with known effects including changes in gene expression, glial activation
               and neuronal death. However, the bulk of the existing research only examines
               this influence across rough distance bins. Building a finer model of
