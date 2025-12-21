@@ -1,5 +1,5 @@
 import PlotFrame from "@/components/PlotFrame";
-import { Grid2x2Check, CircleChevronRight } from 'lucide-react'
+import { Grid2x2Check, CircleChevronRight  } from 'lucide-react'
 import ImageGridPlot from "./ImageGridFrame";
 
 const base = import.meta.env.BASE_URL;
@@ -21,7 +21,7 @@ function GeneWeirdnessTable({
   title?: string;
   rows?: { gene: string; zero_frac: string; weird_score: string }[];
 }) {
-  return (
+  return ( 
     <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
       <div className="flex items-center justify-between gap-3 mb-4">
         <h4 className="text-base font-semibold text-foreground">{title}</h4>
@@ -59,66 +59,66 @@ const PreprocessingSection = () => {
       <div className="container mx-auto px-6 max-w-6xl">
         {/* Layout: sticky left panel + scrollable content right */}
         <div className="grid gap-10 lg:grid-cols-[320px_1fr] items-start">
-          <aside className="lg:sticky lg:top-24">
-            <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
-              {/* Header (same pattern as GeneExpression / Microscopy) */}
-              <div className="flex items-start gap-3">
-                <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
-                  <Grid2x2Check className="w-5 h-5 text-primary" />
-                </div>
-                <div>
-                  <div className="text-sm font-semibold text-foreground">
-                    Dataset Preprocessing pipeline
-                  </div>
+            <aside className="lg:sticky lg:top-24">
+                <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+                    {/* Header (same pattern as GeneExpression / Microscopy) */}
+                    <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+                        <Grid2x2Check  className="w-5 h-5 text-primary" />
+                    </div>
+                    <div>
+                        <div className="text-sm font-semibold text-foreground">
+                        Dataset Preprocessing pipeline
+                        </div>
+                        
+                    </div>
+                    </div>
 
-                </div>
-              </div>
-
-              {/* Navigation (identical hover / spacing / typography) */}
-              <nav className="mt-6 space-y-2 text-sm">
-                {/* 
+                    {/* Navigation (identical hover / spacing / typography) */}
+                    <nav className="mt-6 space-y-2 text-sm">
+                    {/* 
                     <a
                         href="#xenium-data"
                         className="block rounded-xl px-3 py-2 text-muted-foreground hover:text-foreground hover:bg-muted/50 transition"
                     >
                         Xenium AD dataset
-                    </a>*/}
+                    </a>*/}  
 
-                <a
-                  href="#plaque-detection"
-                  className="block rounded-xl px-3 py-2 text-muted-foreground hover:text-foreground hover:bg-muted/50 transition"
-                >
-                  Plaque detection & coordinates
-                </a>
+                    <a
+                        href="#plaque-detection"
+                        className="block rounded-xl px-3 py-2 text-muted-foreground hover:text-foreground hover:bg-muted/50 transition"
+                    >
+                        Plaque detection & coordinates
+                    </a>
 
-                <a
-                  href="#plaque-dist"
-                  className="block rounded-xl px-3 py-2 text-muted-foreground hover:text-foreground hover:bg-muted/50 transition"
-                >
-                  Distances
-                </a>
+                    <a
+                        href="#plaque-dist"
+                        className="block rounded-xl px-3 py-2 text-muted-foreground hover:text-foreground hover:bg-muted/50 transition"
+                    >
+                        Distances
+                    </a>
 
-                <a
-                  href="#gene-comp"
-                  className="block rounded-xl px-3 py-2 text-muted-foreground hover:text-foreground hover:bg-muted/50 transition"
-                >
-                  Gene composition & sparsity
-                </a>
-                <a
-                  href="#cell-clustering"
-                  className="block rounded-xl px-3 py-2 text-muted-foreground hover:text-foreground hover:bg-muted/50 transition"
-                >
-                  Cell clustering
-                </a>
+                    <a
+                        href="#gene-comp"
+                        className="block rounded-xl px-3 py-2 text-muted-foreground hover:text-foreground hover:bg-muted/50 transition"
+                    >
+                        Gene composition & sparsity
+                    </a>
+                    <a
+                        href="#cell-clustering"
+                        className="block rounded-xl px-3 py-2 text-muted-foreground hover:text-foreground hover:bg-muted/50 transition"
+                    >
+                        Cell clustering
+                    </a>
 
-              </nav>
+                    </nav>
 
-              {/* Footer hint */}
-              <div className="mt-6 text-xs text-muted-foreground">
-                Tip: scroll or use the navigation above.
-              </div>
-            </div>
-          </aside>
+                    {/* Footer hint */}
+                    <div className="mt-6 text-xs text-muted-foreground">
+                    Tip: scroll or use the navigation above.
+                    </div>
+                </div>
+            </aside>
 
           {/* Analysis content */}
           <div className="space-y-12">
@@ -131,7 +131,7 @@ const PreprocessingSection = () => {
                 To obtain plaque coordinates, we hand-labeled <span className="font-medium text-foreground">11 plaque-free regions</span> and <span className="font-medium text-foreground">9 plaques</span> across a range of sizes, then trained a <span className="font-medium text-foreground">random forest classifier</span> to segment the remaining plaques in the IF image.
               </p>
               <p className="text-lg text-muted-foreground leading-relaxed">
-                Next, plaque coordinates were transformed from IF-image space to morphology-image space using a <span className="font-medium text-foreground">RANSAC-based transformation</span> trained on <span className="font-medium text-foreground">26 visually aligned landmark pairs</span>. After alignment, we achieved <span className="font-medium text-foreground">RMSE = 3.2 µm</span>, which is small relative to the <span className="font-medium text-foreground">median cell-to-plaque distance (61 µm)</span>-supporting that alignment error is unlikely to dominate distance-based trends.
+                Next, plaque coordinates were transformed from IF-image space to morphology-image space using a <span className="font-medium text-foreground">RANSAC-based transformation</span> trained on <span className="font-medium text-foreground">26 visually aligned landmark pairs</span>. After alignment, we achieved <span className="font-medium text-foreground">RMSE = 3.2 µm</span>, which is small relative to the <span className="font-medium text-foreground">median cell-to-plaque distance (61 µm)</span>—supporting that alignment error is unlikely to dominate distance-based trends.
               </p>
               <p className="text-lg text-muted-foreground leading-relaxed">
                 After alignment, we performed plaque post-processing to improve biological plausibility and robustness: we merged intersecting plaques, removed plaques outside the brain boundary, and filtered plaques below the 5th percentile in area. This produced <span className="font-medium text-foreground">1,736 Aβ plaques</span>, visualized below.
@@ -148,17 +148,15 @@ const PreprocessingSection = () => {
               </p>
 
               <p className="text-lg text-muted-foreground leading-relaxed">
-              Alignment accuracy was high (<span className="font-medium text-foreground">RMSE = 3.2 µm</span>), small relative to the <span className="font-medium text-foreground">median cell–plaque distance (61 µm)</span>, supporting reliable distance-based analysis.              
+                This yields a final set of <span className="font-medium text-foreground">1,736</span> plaques that define the “lesion map” of the sick brain.
               </p>
 
-
-              
               <PlotFrame
-                src={`${base}plots/plaque_geometries.html`}
-                title="Detected Aβ plaques after transformation"
-                size="md"
-              />
-
+                    src={`${base}plots/plaque_geometries.html`}
+                    title="Detected Aβ plaques after transformation"
+                    size="md"
+                  />
+                
             </div>
 
             {/* Distance to plaque analysis */}
@@ -173,33 +171,37 @@ const PreprocessingSection = () => {
                 Plaque pathology is expected to be strongest close to plaques, so the key variable is distance to plaque. For each cell, we compute distance to the nearest plaque boundary (not the plaque centroid). This makes proximity a direct geometric measure of the cell’s relationship to the plaque surfac
               </p>
               
-
-        
               <PlotFrame
                       src={`${base}plots/cell_to_plaque_distance_map.html`}
                       title="Brain regions by distance to nearest plaque"
                       size="md"
                     />
+                
+                <p className="text-lg text-muted-foreground leading-relaxed">
+                  A critical technical step is coordinate alignment. Plaque coordinates are transformed from IF space to morphology space using a RANSAC-based transformation trained on <span className="font-medium text-foreground">26 landmarks</span>, achieving <span className="font-medium text-foreground">RMSE = 3.2 µm</span>. This is small relative to the <span className="font-medium text-foreground">median cell–plaque distance (61 µm)</span>, supporting that distance-based trends reflect biology rather than misregistration.
+                </p>
 
                 {/*<div className="rounded-2xl border border-border bg-card p-6">*/}
                     <p className="text-lg text-muted-foreground leading-relaxed">
-                    Distances are spatially heterogeneous but concentrated near plaques:
+                    We then visualize plaque proximity as a tissue-wide field and summarize the distribution of distances:
                     </p>
                     <ul className="space-y-3 text-muted-foreground">
-                        <li className="flex items-start gap-2"><CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" /> <span className="font-medium text-foreground">99%</span> of cells lie within <span className="font-medium text-foreground">200 µm</span> of a plaque </li>
-                        <li className="flex items-start gap-2"><CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" /> Distances are right-skewed, with a long tail of plaque-distant cells</li>
+                      <li className="flex items-start gap-2"><CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" /> Maximum distances: <span className="font-medium text-foreground">457 µm</span></li>
+                      <li className="flex items-start gap-2"><CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" /> <span className="font-medium text-foreground">99%</span> of cells lie within <span className="font-medium text-foreground">200 µm</span> of a plaque </li>
+                        <li className="flex items-start gap-2"><CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" /> Median:  <span className="font-medium text-foreground">61 µm</span> , SD: <span className="font-medium text-foreground">44.4 µm</span> </li>
+                        <li className="flex items-start gap-2"><CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" /> Right-skew with a long tail</li>
                     </ul>
                 {/*</div>*/}
 
-              <PlotFrame
-                src={`${base}plots/cell_to_plaque_distance_distribution.html`}
-                title="Cell-to-plaque distance distribution (linear scale)"
-                size="md"
-              />
-
-              <p className="text-lg text-muted-foreground leading-relaxed">
-                This confirms that plaque influence is widespread at the tissue scale.
-              </p>
+                <PlotFrame
+                      src={`${base}plots/cell_to_plaque_distance_distribution.html`}
+                      title="Cell-to-plaque distance distribution (linear scale)"
+                      size="md"
+                    />
+                
+                <p className="text-lg text-muted-foreground leading-relaxed">
+                  This confirms that plaque influence is widespread at the tissue scale.
+                </p>
 
             </div>
 
@@ -214,7 +216,7 @@ const PreprocessingSection = () => {
                         <li className="flex items-start gap-2"><CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" /> <span className="font-medium text-foreground">302/347 genes</span> have zero median expression  </li>
                         <li className="flex items-start gap-2"><CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" /> Many plaque-induced genes (PIGs) show extreme zero inflation </li>
                     </ul>
-                {/*</div>*/}
+                </div>*/}
 
               {/*<figure className="space-y-2">
                   <img
@@ -226,6 +228,14 @@ const PreprocessingSection = () => {
                     Spatial distribution of individual cells (points) across all mice, colored by a clustering-derived component to illustrate spatial organization and local heterogeneity.
                   </figcaption>
                 </figure>*/}
+
+                <p className="text-lg text-muted-foreground leading-relaxed">
+                  The Xenium panel measures <span className="font-medium text-foreground">347 genes</span>, but expression is sparse. In the most AD-advanced sample (Tg 17.9 months), 
+                  <span className="font-medium text-foreground">302/347 genes have zero median transcript count</span>. 
+                  Across genes, transcript counts are right-skewed and the fraction of nonzero cells varies widely. 
+                  This means signal exists, but it is unevenly detectable and often concentrated in subsets of cells.
+                </p>
+
                 <ImageGridPlot
                   files={{
                     "wt-2": `${base}images_grid_gold/full/wt-2.webp`,
@@ -249,22 +259,26 @@ const PreprocessingSection = () => {
                   cellSize={180}
                 />
             
-                <p className="text-lg text-muted-foreground leading-relaxed">
+                {/*<p className="text-lg text-muted-foreground leading-relaxed">
                     We next compare the distribution of <span className="font-medium text-foreground">log1p-transformed</span> transcript counts for the <span className="font-medium text-foreground">16 PIGs</span> against the typical distribution across all 347 genes, focusing on the <span className="font-medium text-foreground">17.9-month transgenic mouse</span> to study advanced pathology. We plot histograms (B = 50 bins) and (for PIGs) Gaussian KDE curves.
+                </p>*/}
+
+                <p className="text-lg text-muted-foreground leading-relaxed">
+                  We focus on <span className="font-medium text-foreground">16 plaque-induced genes (PIGs)</span> curated from prior literature. Their expression distributions show a consistent pattern: <span className="font-medium text-foreground">13/16 PIGs have a mode at zero</span>, followed by long tails at higher expression. This indicates plaque-linked activation is strong in some microenvironments but absent in most cells.
                 </p>
 
-              <PlotFrame
-                src={`${base}plots/expression_distribution.html`}
-                title="Distribution of distances from each cell centroid to the nearest plaque boundary, showing strong right skew and a long tail of plaque-distant cells."
-                size="lg"
-                fit="contain"
-              />
+                <PlotFrame
+                    src={`${base}plots/expression_distribution.html`}
+                    title="Distribution of distances from each cell centroid to the nearest plaque boundary, showing strong right skew and a long tail of plaque-distant cells."
+                    size="lg"
+                    fit="contain"
+                />
 
-                <p className="text-lg text-muted-foreground leading-relaxed">
+               {/* <p className="text-lg text-muted-foreground leading-relaxed">
                     Among the <span className="font-medium text-foreground">16 PIGs</span>, <span className="font-medium text-foreground">13 have a mode at zero</span>, indicating activation in restricted subsets of cells or neighborhoods.
                 </p>
                 
-                {/*<p className="text-lg text-muted-foreground leading-relaxed">
+                <p className="text-lg text-muted-foreground leading-relaxed">
                     A consistent pattern emerges: for <span className="font-medium text-foreground">13/16 PIGs</span>, the distribution has a <span className="font-medium text-foreground">mode at zero</span>, followed by gradual density decay at higher counts. Different PIGs decay at different rates, indicating heterogeneous activation intensity and/or cell-state specificity.
                 </p>
                 <p className="text-lg text-muted-foreground leading-relaxed">
@@ -279,15 +293,15 @@ const PreprocessingSection = () => {
                 </p>
 
 
-              <GeneWeirdnessTable title="Weird genes (QC)" />
+                <GeneWeirdnessTable title="Weird genes (QC)" />
 
-              <p className="text-lg text-muted-foreground leading-relaxed">
-                Two genes <em>Cxcl10</em> and <em>Cd74</em> are particularly sparse and show minimal dynamic range, despite statistical significance.
-              </p>
+                <p className="text-lg text-muted-foreground leading-relaxed">
+                 Two genes <em>Cxcl10</em> and <em>Cd74</em> are particularly sparse and show minimal dynamic range, despite statistical significance.
+                </p>
 
-              <p className="text-lg text-muted-foreground leading-relaxed">
-                This sparsity constrains downstream modeling and interpretation.
-              </p>
+                <p className="text-lg text-muted-foreground leading-relaxed">
+                  This sparsity constrains downstream modeling and interpretation.
+                </p>
 
             </div>
 
@@ -308,7 +322,7 @@ const PreprocessingSection = () => {
                 />
             
                 <p className="text-lg text-muted-foreground leading-relaxed">
-                    When mapped back onto tissue, clusters aligned closely with anatomical structures.
+                    The key observation is that clusters are not arbitrary. When projected back onto the tissue, they align with anatomical regions, indicating that gene expression encodes anatomical structure and cell identity.
                 </p>
 
                 <PlotFrame
@@ -318,64 +332,64 @@ const PreprocessingSection = () => {
               caption="Spatial coordinates colored by Leiden clusters (interactive)."
                 />
 
-              {/*<div className="rounded-2xl border border-border bg-card p-6">*/}
               <p className="text-lg text-muted-foreground leading-relaxed">
-                Representative cluster interpretations include:
+                This matters because plaques do not occur uniformly across the brain. Any plaque-distance trend can partly reflect <span className="font-medium text-foreground">which cell types and brain regions are near plaques</span>, so later analyses must consider composition and anatomy explicitly.
               </p>
-              <ul className="space-y-3 text-muted-foreground">
-                <li className="flex items-start gap-2">
-                  <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
-                  <span>
-                    <span className="font-medium text-foreground">Cluster 6 (vascular cells)</span>{" "}
-                    is concentrated near the outer rim, consistent with epidural space localization.
-                  </span>
-                </li>
 
-                <li className="flex items-start gap-2">
-                  <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
-                  <span>
-                    <span className="font-medium text-foreground">Cluster 14</span>{" "}
-                    traces hippocampal formation and follows the dentate gyrus shape; inferred as{" "}
-                    <span className="font-medium text-foreground">
-                      dentate gyrus immature glutamatergic neurons
-                    </span>.
-                  </span>
-                </li>
+                {/*<div className="rounded-2xl border border-border bg-card p-6">*/}
+                    <p className="text-lg text-muted-foreground leading-relaxed">
+                Representative cluster interpretations include:
+                </p>
+                    <ul className="space-y-3 text-muted-foreground">
+                      <li className="flex items-start gap-2">
+                        <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
+                        <span>
+                          <span className="font-medium text-foreground">Cluster 6 (vascular cells)</span>{" "}
+                          is concentrated near the outer rim, consistent with epidural space localization.
+                        </span>
+                      </li>
 
-                <li className="flex items-start gap-2">
-                  <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
-                  <span>
-                    <span className="font-medium text-foreground">Cluster 10</span>{" "}
-                    dominates the amygdala/hypothalamus region; inferred as{" "}
-                    <span className="font-medium text-foreground">
-                      hypothalamic medial mammillary glutamatergic neurons
-                    </span>.
-                  </span>
-                </li>
+                      <li className="flex items-start gap-2">
+                        <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
+                        <span>
+                          <span className="font-medium text-foreground">Cluster 14</span>{" "}
+                          traces hippocampal formation and follows the dentate gyrus shape; inferred as{" "}
+                          <span className="font-medium text-foreground">
+                            dentate gyrus immature glutamatergic neurons
+                          </span>.
+                        </span>
+                      </li>
 
-                <li className="flex items-start gap-2">
-                  <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
-                  <span>
-                    Ventricular cavities show a distinct lining cluster{" "}
-                    (<span className="font-medium text-foreground">cluster 15</span>), inferred as{" "}
-                    <span className="font-medium text-foreground">
-                      hypothalamic GnRH1-expressing glutamatergic neurons
-                    </span>, consistent with hypothalamic contributions to the third ventricle walls.
-                  </span>
-                </li>
-              </ul>
+                      <li className="flex items-start gap-2">
+                        <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
+                        <span>
+                          <span className="font-medium text-foreground">Cluster 10</span>{" "}
+                          dominates the amygdala/hypothalamus region; inferred as{" "}
+                          <span className="font-medium text-foreground">
+                            hypothalamic medial mammillary glutamatergic neurons
+                          </span>.
+                        </span>
+                      </li>
+
+                      <li className="flex items-start gap-2">
+                        <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
+                        <span>
+                          Ventricular cavities show a distinct lining cluster{" "}
+                          (<span className="font-medium text-foreground">cluster 15</span>), inferred as{" "}
+                          <span className="font-medium text-foreground">
+                            hypothalamic GnRH1-expressing glutamatergic neurons
+                          </span>, consistent with hypothalamic contributions to the third ventricle walls.
+                        </span>
+                      </li>
+                    </ul>
 
                 {/*</div>*/}
                 
-                <p className="text-lg text-muted-foreground leading-relaxed">
-                    This anatomical correspondence is critical: plaque proximity effects must be interpreted in the context of non-uniform cell-type and regional distributions.
-                </p>
-                
             </div>
 
+                
 
-
-          </div>
+            </div>
         </div>
       </div>
     </section>
