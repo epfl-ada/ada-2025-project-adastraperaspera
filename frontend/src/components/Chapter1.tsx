@@ -1,5 +1,6 @@
 import { Droplets } from "lucide-react";
 import PlotFrame from "@/components/PlotFrame";
+const base = import.meta.env.BASE_URL;
 
 const Chapter1 = () => {
   return (
@@ -108,7 +109,7 @@ const Chapter1 = () => {
                     title="Detected Aβ plaques after transformation"
                     size="md"
                   />
-                  
+
               </div>
             </div>
           </div>
