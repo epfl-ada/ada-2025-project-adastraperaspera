@@ -727,21 +727,21 @@ const RQ4Section = () => {
             <PlotFrame
                 src={`${base}plots/variance_spatial.html`}
                 title=""
-                size="md"
+                size="sm"
                 caption="Variance explained by the spatial model, illustrating the model's ability to capture both proximal and distal gradients."
               />
 
             <PlotFrame
                 src={`${base}plots/relative_variance_gap.html`}
                 title=""
-                size="md"
+                size="sm"
                 caption="Relative variance gap between random cross-validation and spatial block cross-validation, illustrating the model's ability to capture both proximal and distal gradients."
               />
 
               <PlotFrame
                 src={`${base}plots/interaction_model.html`}
                 title=""
-                size="md"
+                size="lg"
                 caption="Performance of the interaction model, illustrating the model's ability to capture both proximal and distal gradients."
               />
 
