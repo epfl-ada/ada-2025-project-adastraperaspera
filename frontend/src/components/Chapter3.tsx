@@ -141,7 +141,7 @@ const Chapter3 = () => {
                 Two genes (<span className="italic text-foreground">Cxcl10</span>,{" "}
                 <span className="italic text-foreground">Cd74</span>) are almost
                 entirely silent across cells, so silent that even when they
-                matter statistically, they barely move in practice. Your{" "}
+                matter statistically, they barely move in practice. Our{" "}
                 <span className="font-semibold text-foreground">
                   weirdness score
                 </span>{" "}
