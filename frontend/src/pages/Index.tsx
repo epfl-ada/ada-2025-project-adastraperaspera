@@ -21,6 +21,7 @@ import RQ5Section from "@/components/RQ5Section";
 import DiscussionSection from "@/components/DiscussionSection";
 import DiscussionSection2 from "@/components/DiscussionSection2";
 import Chapter1 from "@/components/Chapter1";
+import Chapter2 from "@/components/Chapter2";
 
 const Index = () => {
   return (
@@ -46,6 +47,7 @@ const Index = () => {
       <DiscussionSection2/>
       <IntroductionSection2/>
       <Chapter1 />
+      <Chapter2 />
       <Footer />
     </main>
   );
