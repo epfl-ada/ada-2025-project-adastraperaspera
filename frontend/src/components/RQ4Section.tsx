@@ -709,7 +709,7 @@ const RQ4Section = () => {
               </h4>
 
               <p className="text-lg text-muted-foreground leading-relaxed">
-                We begin by interrogating the brain-region segmentation implicitly learned by our decision tree when it is trained to reconstruct the plaque-distance field. Concretely, we approximate the murine brain with a 200×200 grid of spatial tiles and, within each tile, compute the average distance to the nearest plaque (which is then visualized as a colored field across the tissue). When comparing the inferred decision surface to the ground-truth plaque-distance field, several salient behaviors become apparent. First, the model recovers a prominent large-distance region in the ventricular area.
+                We begin by investigating the brain-region segmentation learned by our decision tree trained to predict plaque-distance from coordinates. For visualization, we approximate the murine brain with a 200×200 grid of spatial tiles and, within each tile, compute the average distance to the nearest plaque. This average distance is then visualized with color
               </p>
 
               <p className="text-lg text-muted-foreground leading-relaxed">
