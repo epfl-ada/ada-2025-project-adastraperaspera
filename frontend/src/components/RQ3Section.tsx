@@ -92,16 +92,16 @@ const RQ3Section = () => {
                ========================= */}
             <div id="rq3-mean" className="space-y-4">
               <h3 className="text-2xl font-bold text-foreground">
-                RQ3 : How does the Plaque Induced Gene (PIG) expression change in plaque proximity?
+                RQ3 : How does the PIG expression change in plaque proximity?
               </h3>
               <h4 className="text-xl font-semibold text-foreground">
                 Distance-binned means, confidence intervals, and ANOVA
               </h4>
 
               <p className="text-lg text-muted-foreground leading-relaxed">
-                  We quantify plaque-induced gene behavior directly by binning cells into <span className="font-medium text-foreground">five equal-count distance bins</span> and computing mean log1p expression with uncertainty estimates. 
-                  ANOVA confirms that <span className="font-medium text-foreground">all 16 PIGs differ significantly across distance bins</span>.
-                  
+                We quantify plaque-induced gene behavior directly by binning cells into <span className="font-medium text-foreground">five equal-count distance bins</span> and computing mean log1p expression with uncertainty estimates.
+                ANOVA confirms that <span className="font-medium text-foreground">all 16 PIGs differ significantly across distance bins</span>.
+
               </p>
 
               <p className="text-lg text-muted-foreground leading-relaxed">
@@ -153,119 +153,6 @@ const RQ3Section = () => {
                 size="md"
                 caption="Interactive: d₁/₂ per PIG computed from regression slopes."
               />
-
-
-              {/*<ul className="space-y-3 text-muted-foreground">
-                <li>
-                  <p className="text-lg text-muted-foreground leading-relaxed">
-                    We group cells into{" "}
-                    <span className="font-medium text-foreground">
-                      5 equal-count distance bins
-                    </span>{" "}
-                    and compute, for each PIG:
-                  </p>
-                </li>
-
-                <li className="flex items-start gap-2">
-                  <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
-                  mean{" "}
-                  <span className="font-medium text-foreground">log1p-normalized</span>{" "}
-                  transcript count per bin
-                </li>
-
-                <li className="flex items-start gap-2">
-                  <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
-                  95% confidence interval (SEM-based)
-                </li>
-              </ul>
-
-              <p className="text-lg text-muted-foreground leading-relaxed">
-                An ANOVA confirms that{" "}
-                <span className="font-medium text-foreground">all 16 PIGs</span> have
-                significant differences in mean expression across distance bins at{" "}
-                <span className="font-medium text-foreground">
-                  Bonferroni-corrected FDR = 0.01
-                </span>
-                .
-              </p>
-
-              <PlotFrame
-                src={`${base}plots/PIG_expression_vs_distance.html`}
-                title="Expression of PIGs vs. distance to plaque"
-                size="xl"
-                caption="Distance-binned mean expression of all 16 PIGs with 95% C, showing consistent plaque-proximal elevation for glial/immune markers.."
-              />
-
-
-              <ul className="space-y-3 text-muted-foreground">
-                <li>
-                  <p className="text-lg text-muted-foreground leading-relaxed">
-                    <span>
-                      A prominent example is{" "}
-                      <span className="font-medium text-foreground">Gfap</span>, which shows
-                      the largest proximal-to-distal mean difference on the log1p scale:
-                    </span>
-                  </p>
-                </li>
-
-                <li className="flex items-start gap-2">
-                  <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
-                  <span>
-                    Δ(log1p mean) ≈{" "}
-                    <span className="font-medium text-foreground">0.72</span> between
-                    closest and farthest bins
-                  </span>
-                </li>
-
-                <li className="flex items-start gap-2">
-                  <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
-                  <span>
-                    SEM ≈ <span className="font-medium text-foreground">0.01</span> (with{" "}
-                    <span className="font-medium text-foreground">10,779 cells per bin</span>)
-                  </span>
-                </li>
-
-                <li className="flex items-start gap-2">
-                  <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
-                  <span>
-                    On the natural scale: exp(0.72) ≈{" "}
-                    <span className="font-medium text-foreground">2.05×</span> higher
-                    expression near plaques
-                  </span>
-                </li>
-
-                <li>
-                  <p className="text-lg text-muted-foreground leading-relaxed">
-                    <span>Across genes, the most consistent gradients include:</span>
-                  </p>
-                </li>
-
-                <li className="flex items-start gap-2">
-                  <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
-                  <span>
-                    Microglial markers (e.g.,{" "}
-                    <span className="font-medium text-foreground">Hexb</span>,{" "}
-                    <span className="font-medium text-foreground">Ctsd</span>,{" "}
-                    <span className="font-medium text-foreground">Cst3</span>,{" "}
-                    <span className="font-medium text-foreground">Apoe</span>)
-                  </span>
-                </li>
-
-                <li className="flex items-start gap-2">
-                  <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
-                  <span>
-                    Astrocytic markers (e.g.,{" "}
-                    <span className="font-medium text-foreground">Gfap</span>,{" "}
-                    <span className="font-medium text-foreground">Serpina3n</span>,{" "}
-                    <span className="font-medium text-foreground">Vim</span>)
-                  </span>
-                </li>
-              </ul>
-
-              <p className="text-lg text-muted-foreground leading-relaxed">
-                Collectively, tissue within ~0–29 µm of plaques shows elevated glial/immune
-                signatures that fade with distance.
-              </p>*/}
             </div>
 
             {/* =========================
@@ -275,45 +162,6 @@ const RQ3Section = () => {
               <h4 className="text-xl font-semibold text-foreground">
                 Per-gene regression slopes and “distance-to-half-expression”
               </h4>
-
-              {/*<p className="text-lg text-muted-foreground leading-relaxed">
-                To summarize gradients continuously, we regress log1p-normalized transcript
-                count against distance for each PIG and apply Benjamini–Hochberg FDR
-                correction across the 16 regressions.
-              </p>
-
-              <p className="text-lg text-muted-foreground leading-relaxed">
-                All 16 PIGs exhibit a statistically significant negative slope at the 0.01
-                FDR level, but slopes vary considerably. The smallest and largest absolute
-                slopes correspond to Cxcl10 and Gfap, respectively. Translating slopes into
-                an intuitive distance scale, we compute the distance required to halve
-                expression (d₁/₂).
-              </p>
-
-              <p className="text-lg text-muted-foreground leading-relaxed">
-                Given the mouse brain diameter (~6,000 µm), Cxcl10’s gradient is effectively
-                flat, consistent with its extreme zero inflation (low absolute expression
-                variation across distance).
-              </p>
-
-              <PlotFrame
-                src={`${base}plots/distances_to_halve_expression.html`}
-                title="Distances to halve expression for the 16 PIGs"
-                size="md"
-                caption="Interactive: d₁/₂ per PIG computed from regression slopes."
-              /> */}
-
-              {/*<p className="text-lg text-muted-foreground leading-relaxed">
-                To increase explanatory power (R²), reduce heteroscedasticity, and test
-                whether plaque shape contributes to local responses, we compute geometric
-                properties of the nearest plaque for each cell:{" "}
-                <span className="font-medium text-foreground">
-                  area, perimeter, major axis length and orientation
-                </span>
-                .
-              </p>*/}
-
-              
 
               <p className="text-lg text-muted-foreground leading-relaxed">
                 Nearest-plaque distance captures proximity to <em>one</em> plaque, but local
@@ -355,37 +203,10 @@ const RQ3Section = () => {
                 caption="Histogram and CDF of local plaque density (Count within R = 61 µm), validating that multi-plaque proximity provides informative variation beyond nearest-plaque distance."
               />
 
-              {/*<p className="text-lg text-muted-foreground leading-relaxed">
-                To capture local cell–cell context and spatial signaling, we compute
-                neighborhood mean expression features: for each cell and each PIG, we
-                summarize the expression of the{" "}
-                <span className="font-medium text-foreground">15 other PIGs</span> across its{" "}
-                <span className="font-medium text-foreground">k = 100 nearest neighbors</span>.
-              </p>*/}
+
               <p className="text-lg text-muted-foreground leading-relaxed">
                 Plaque-associated transcriptional responses are not purely cell-autonomous and may reflect local microenvironmental context. To quantify this, we computed neighborhood expression summaries by averaging the expression of the other <span className="font-medium text-foreground">15 PIGs</span> across each cell’s <span className="font-medium text-foreground">100 nearest neighbors</span>. This neighborhood size balances locality with statistical stability, avoiding excessive noise from very small neighborhoods and oversmoothing from very large ones. Given typical cell diameters (~10 µm) and tissue density, this choice corresponds to an interaction scale on the order of <span className="font-medium text-foreground">~100 µm</span>, which is relevant for cell–cell signaling and coordinated glial responses. These neighborhood features allow us to model collective plaque-associated activation rather than isolated single-cell effects.
-               </p>
-
-
-              {/*<ul className="space-y-3 text-muted-foreground">
-                <li>
-                  <p className="text-lg text-muted-foreground leading-relaxed">
-                    Motivation for k = 100:
-                  </p>
-                </li>
-
-                <li className="flex items-start gap-2">
-                  <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
-                  balances locality with stability (not too small, not too large)
-                </li>
-
-                <li className="flex items-start gap-2">
-                  <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
-                  approximates neighborhood effects at a scale relevant to cell–cell
-                  communication (~100 µm radius depending on density, assuming ~10 µm cell
-                  diameter and relatively dense cell packing)
-                </li>
-              </ul>*/}
+              </p>
 
               <PlotFrame
                 src={`${base}plots/pigs_coexpression.html`}
@@ -394,58 +215,13 @@ const RQ3Section = () => {
                 caption="Histogram and CDF of local plaque density (Count within R = 61 µm), validating that multi-plaque proximity provides informative variation beyond nearest-plaque distance."
               />
 
-              {/*<p className="text-lg text-muted-foreground leading-relaxed">
-                The matrix is not symmetric because target/neighbor roles are not
-                commutative. The strongest relationships are:
-              </p>*/}
 
               <PigNeighborCorrTable />
 
               <p className="text-lg text-muted-foreground leading-relaxed">
                 To quantify the contribution of different spatial and contextual features to PIG prediction, we evaluated a series of <span className="font-medium text-foreground">nested linear models</span> separately for each PIG. The baseline model included <span className="font-medium text-foreground">distance to the nearest plaque</span> only, followed by successive additions of <span className="font-medium text-foreground">plaque geometry and local multi-plaque proximity </span>features. We then augmented this model with neighborhood transcriptional context, adding the top <span className="font-medium text-foreground">1, 2, 4, 8, or 15</span> correlated neighboring PIG features. Neighbor PIGs were ranked by their correlation strength with the target gene. This nested design allows direct assessment of the incremental explanatory value of each feature group.
               </p>
-              {/*<ul className="mt-3 space-y-3 text-sm text-muted-foreground">
-                <li>
-                  
-                    We systematically quantify how each feature group improves PIG prediction
-                    using nested linear models for each PIG:
-                  </p>
-                </li>
 
-                <li className="flex items-start gap-2">
-                  <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
-                  <span>
-                    <span className="font-medium text-foreground">Model 0:</span> distance only
-                  </span>
-                </li>
-
-                <li className="flex items-start gap-2">
-                  <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
-                  <span>
-                    <span className="font-medium text-foreground">Model 1:</span> distance +
-                    plaque geometry
-                  </span>
-                </li>
-
-                <li className="flex items-start gap-2">
-                  <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
-                  <span>
-                    <span className="font-medium text-foreground">Model 2:</span> distance +
-                    plaque geometry + multi-plaque proximity
-                  </span>
-                </li>
-
-                <li className="flex items-start gap-2">
-                  <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
-                  <span>
-                    <span className="font-medium text-foreground">
-                      Models 3₁, 3₂, 3₄, 3₈, 3₁₅:
-                    </span>{" "}
-                    Model 2 + neighborhood PIG context features using the top 1 / 2 / 4 / 8 /
-                    15 neighbor PIGs (ranked by correlation)
-                  </span>
-                </li>
-              </ul>*/}
 
               <PlotFrame
                 src={`${base}plots/pig_trajectories.html`}

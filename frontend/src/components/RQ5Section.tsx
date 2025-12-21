@@ -44,10 +44,6 @@ const RQ5Section = () => {
             </div>
 
 
-
-
-
-
             {/* =========================
                 Disease status 
                ========================= */}
@@ -67,29 +63,7 @@ const RQ5Section = () => {
                 caption="Mean PIG activation score per mouse (and cluster context), derived from within-cluster, within-gene z-normalization to enable robust across-mouse comparisons."
               />
 
-            {/*<ul className="space-y-3 text-muted-foreground">
-                <li>
-                  <p className="text-lg text-muted-foreground leading-relaxed">
-                    <span>
-                      With this framework, we analyze two biological dimensions:
-                    </span>
-                  </p>
-                </li>
 
-                <li className="flex items-start gap-2">
-                  <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
-                  <span>
-                    Disease status: <span className="font-medium text-foreground">Tg vs WT</span>
-                  </span>
-                </li>
-
-                <li className="flex items-start gap-2">
-                  <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
-                  <span>
-                    Age progression: <span className="font-medium text-foreground">2 → 5 → 17 months</span>
-                  </span>
-                </li>
-              </ul> */}
 
               <p className="text-lg text-muted-foreground leading-relaxed">
                 We will now analyze more closely how exactly the gene expression signature changes with genotype (Tg/Wt) and with age. This framework reveals plaque-induced changes in expression since it operates with general Wt aging as the baseline.
@@ -125,9 +99,6 @@ const RQ5Section = () => {
                 caption="Per-cluster age progression."
               />
 
-              
-
-
             </div>
 
             {/* =========================
@@ -147,38 +118,6 @@ const RQ5Section = () => {
                 caption="Age progression trajectories of cluster-level activation for WT vs Tg, showing AD-specific, age-progressive glial activation in Tg animals"
               />
 
-              {/*<ul className="space-y-3 text-muted-foreground">
-                <li>
-                  <p className="text-lg text-muted-foreground leading-relaxed">
-                    <span>
-                      Our analysis identifies:
-                    </span>
-                  </p>
-                </li>
-
-                <li className="flex items-start gap-2">
-                  <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
-                  <span>
-                    <span className="font-medium text-foreground">Cluster 8 (microglia)</span> as the strongest AD-specific activation cluster
-                  </span>
-                </li>
-
-                <li className="flex items-start gap-2">
-                  <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
-                  <span>
-                    <span className="font-medium text-foreground">Cluster 18 (astrocytes)</span> as the next strongest
-                  </span>
-                </li>
-              </ul>
-
-              <p className="text-lg text-muted-foreground leading-relaxed">
-                In these clusters, disease-specific genes such as <span className="font-medium text-foreground">Syngr1, Gfap, and Sparcl1</span> show large positive specificity scores (high in Tg, mostly silent in WT), consistent with glial reactivity, complement/inflammatory remodeling, and plaque-associated activation programs.
-              </p>
-
-              <p className="text-lg text-muted-foreground leading-relaxed">
-                To ensure signals are not simply driven by differences in cell-type abundance, we incorporate Tg vs WT differential expression and age progression comparisons. Tg − WT effect sizes confirm that microglia and astrocytes exhibit the largest positive shifts in PIG expression.
-              </p>*/}
-              
               <p className="text-lg text-muted-foreground leading-relaxed">
                 Examining the heatmap of AD-specific genes, we can see that <span className="font-medium text-foreground">Cluster 15 (Hypothalamic Gnrh1, Glutaergic)</span> is the strongest AD-specific activation cluster with <span className="font-medium text-foreground">Cluster 6 (vascular)</span> as the next strongest. In these clusters, disease-specific genes such as <span className="font-medium text-foreground">Syngr1, and Sparcl1</span> show large positive specificity scores (high in Tg, mostly silent in WT). This matches the existing knowledge on inflammatory remodeling pathways in AD as well as plaque-induced gene expression programs.
               </p>
@@ -201,7 +140,7 @@ const RQ5Section = () => {
                 caption="Top differential genes per glial cluster (logFC), highlighting microglial and astrocytic programs most altered in Tg relative to WT."
               />
 
-              
+
 
               <p className="text-lg text-muted-foreground leading-relaxed">
                 Overall, our findings demonstrate that clusters 6 and 15 undergo progressive changes in gene expression patterns as a result of amyloid pathology. These signatures become increasingly more pronounced with age in Tg mice but not in the age-matched Wt mice.

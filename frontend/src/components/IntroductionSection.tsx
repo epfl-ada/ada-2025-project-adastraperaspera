@@ -96,12 +96,12 @@ const IntroductionSection = () => {
 
                 <a href="#rq-2" className={RQ_LINK_CLASS}>
                   <span className="font-semibold text-foreground">RQ2:</span>{" "}
-                  How are the cell type composition, PIG expression, and plaque distance related?
+                  How are the cell type composition, Plaque Induced Gene (PIG) expression, and plaque distance related?
                 </a>
 
                 <a href="#rq-3" className={RQ_LINK_CLASS}>
                   <span className="font-semibold text-foreground">RQ3:</span>{" "}
-                  How does the Plaque Induced Gene (PIG) expression change in plaque proximity?
+                  How does the PIG expression change in plaque proximity?
                 </a>
 
                 <a href="#rq-4" className={RQ_LINK_CLASS}>

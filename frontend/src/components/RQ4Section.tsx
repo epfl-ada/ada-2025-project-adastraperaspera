@@ -387,9 +387,7 @@ const RQ4Section = () => {
               <ResidualByClusterTable />
 
               <p className="text-lg text-muted-foreground leading-relaxed">
-                Top predictive genes are mostly consistent across models. Notably, <span className="font-medium text-foreground">Gfap</span> and 
-                <span className="font-medium text-foreground">Spag16</span> appear in the top 5 across all models, and three of four models rank <span className="font-medium text-foreground">Gfap</span> as
-                the single most important predictor. This reinforces our earlier findings that Gfap peaks near plaques and quickly decays with distance. Other highly ranked genes include <span className="font-medium text-foreground">Lyz2</span> (with association to immune and glial cells) and <span className="font-medium text-foreground">Igf2</span>, which shows an opposite plaque-distal enrichment. Namely, it peakes around ~270 µm and declinines toward plaques..
+                Top predictive genes are mostly consistent across models. Notably, <span className="font-medium text-foreground">Gfap</span> and <span className="font-medium text-foreground">Spag16</span> appear in the top 5 across all models, and three of four models rank <span className="font-medium text-foreground">Gfap</span> as the single most important predictor. This reinforces our earlier findings that Gfap peaks near plaques and quickly decays with distance. Other highly ranked genes include <span className="font-medium text-foreground">Lyz2</span> (with association to immune and glial cells) and <span className="font-medium text-foreground">Igf2</span>, which shows an opposite plaque-distal enrichment. Namely, it peakes around ~270 µm and declinines toward plaques..
               </p>
 
               <FeatureRankTable />

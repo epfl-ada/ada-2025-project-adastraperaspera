@@ -1,5 +1,5 @@
 import PlotFrame from "@/components/PlotFrame";
-import { Brain, CircleChevronRight} from 'lucide-react'
+import { Brain, CircleChevronRight } from 'lucide-react'
 
 const base = import.meta.env.BASE_URL;
 
@@ -76,7 +76,7 @@ const RQ1Section = () => {
       <div className="container mx-auto px-6 max-w-6xl">
         {/* Layout: sticky left panel + scrollable content right */}
         <div className="grid gap-10 lg:grid-cols-[1fr_320px] items-start">
-          
+
           {/* Analysis content */}
           <div className="space-y-12">
             {/* Intro / method */}
@@ -84,37 +84,36 @@ const RQ1Section = () => {
               <h3 className="text-2xl font-bold text-foreground">RQ1 : How does cell type composition change in plaque proximity?</h3>
               <h4 className="text-xl font-semibold text-foreground">Depletion & enrichment by cluster</h4>
               <p className="text-lg text-muted-foreground leading-relaxed">
-                We model the relationship between <span className="font-medium text-foreground">cluster membership</span> and distance to the nearest plaque using logistic regression. 
+                We model the relationship between <span className="font-medium text-foreground">cluster membership</span> and distance to the nearest plaque using logistic regression.
                 With Bonferroni control, <span className="font-medium text-foreground">14 of 19</span> clusters show significant distance dependence.
               </p>
             </div>
-            
-             {/*<div className="rounded-2xl border border-border bg-card p-5">*/}
-              <ul className="space-y-3 text-muted-foreground">
-                <p className="text-lg text-muted-foreground leading-relaxed">
+
+            <ul className="space-y-3 text-muted-foreground">
+              <p className="text-lg text-muted-foreground leading-relaxed">
                 To make coefficients interpretable, we translate them into:
-                </p>
-                <li className="flex items-start gap-2">
-                  <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
-                  <span className="font-medium text-foreground">p(0):</span>{" "}
-                  baseline probability of observing a cluster at the plaque surface
-                </li>
+              </p>
+              <li className="flex items-start gap-2">
+                <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
+                <span className="font-medium text-foreground">p(0):</span>{" "}
+                baseline probability of observing a cluster at the plaque surface
+              </li>
 
-                <li className="flex items-start gap-2">
-                  <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
-                  <span className="font-medium text-foreground">p(100):</span>{" "}
-                  probability of observing a cluster at{" "}
-                  <span className="font-medium text-foreground">100 µm</span> from the plaque
-                </li>
+              <li className="flex items-start gap-2">
+                <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
+                <span className="font-medium text-foreground">p(100):</span>{" "}
+                probability of observing a cluster at{" "}
+                <span className="font-medium text-foreground">100 µm</span> from the plaque
+              </li>
 
-                <li className="flex items-start gap-2">
-                  <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
-                  <span className="font-medium text-foreground">p(100) − p(0):</span>{" "}
-                  relative change over{" "}
-                  <span className="font-medium text-foreground">100 µm</span> away from the plaque
-                </li>
-              </ul>
-             {/*</div>*/}
+              <li className="flex items-start gap-2">
+                <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
+                <span className="font-medium text-foreground">p(100) − p(0):</span>{" "}
+                relative change over{" "}
+                <span className="font-medium text-foreground">100 µm</span> away from the plaque
+              </li>
+            </ul>
+            {/*</div>*/}
             <p className="text-lg text-muted-foreground leading-relaxed">
               Key effects (selected):
             </p>
@@ -139,30 +138,7 @@ const RQ1Section = () => {
               />
             </div>
 
-            {/*<p className="text-lg text-muted-foreground leading-relaxed">
-                Overall, the results show a clear composition shift near plaques:
-            </p>
-            <div className="rounded-2xl border border-border bg-card p-5">
-                    <ul className="space-y-3 text-muted-foreground">
-                      <li className="flex items-start gap-2">
-                        <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
-                        <span className="font-medium text-foreground">
-                          Neuronal cell types are generally depleted
-                        </span>{" "}
-                        around plaques.
-                      </li>
 
-                      <li className="flex items-start gap-2">
-                        <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
-                        <span className="font-medium text-foreground">
-                          Immune, vascular, and astrocytic
-                        </span>{" "}
-                        populations are{" "}
-                        <span className="font-medium text-foreground">enriched</span>{" "}
-                        at the smallest distances.
-                      </li>
-                    </ul>*/}
-            {/*</div>*/}
 
             <p className="text-lg text-muted-foreground leading-relaxed">
               Overall, plaque proximity is associated with a pronounced shift in cell-type composition. <span className="font-medium text-foreground">Neuronal populations are generally depleted near plaques</span>, whereas <span className="font-medium text-foreground">immune, vascular, and astrocytic cells are enriched at the smallest distances</span>. This pattern is consistent across multiple clusters and distance modeling approaches. These findings align with established Alzheimer’s disease pathology, in which amyloid plaques are linked to neuronal loss, reactive astrocytosis, microglial activation, and vascular remodeling
@@ -205,111 +181,56 @@ const RQ1Section = () => {
                 caption="Distance to plaque vs % of cells in each bin (interactive)."
               />
 
-              
-                {/*<div className="rounded-2xl border border-border bg-card p-5">
-                
-                      <ul className="space-y-3 text-muted-foreground">
-                        <p className="text-lg text-muted-foreground leading-relaxed">
-                            Several clusters show changes primarily at extreme distances rather than gradual shifts
-                        </p>
-                        <li className="flex items-start gap-2">
-                          <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
-                          <span className="font-medium text-foreground">
-                            Cluster 0 (oligodendrocyte lineage)
-                          </span>{" "}
-                          shows a clear upward trend away from plaques.
-                        </li>
 
-                        <li className="flex items-start gap-2">
-                          <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
-                          <span className="font-medium text-foreground">Cluster 15</span>{" "}
-                          increases sharply only after{" "}
-                          <span className="font-medium text-foreground">~113 µm</span>.
-                        </li>
-
-                        <li className="flex items-start gap-2">
-                          <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
-                          <span className="font-medium text-foreground">Cluster 14</span>{" "}
-                          declines sharply after{" "}
-                          <span className="font-medium text-foreground">~138 µm</span>.
-                        </li>
-
-                        <li className="flex items-start gap-2">
-                          <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
-                          <span className="font-medium text-foreground">Cluster 8 (immune)</span>{" "}
-                          drops sharply after the first bin, then levels off.
-                        </li>
-                      </ul>*/}
-
-                {/*</div>*/}
-                <p className="text-lg text-muted-foreground leading-relaxed">
-                  Several cell-type clusters exhibit <span className="font-medium text-foreground">nonlinear distance responses</span>, with changes occurring primarily at extreme distances rather than as smooth gradients. <span className="font-medium text-foreground">Cluster 0</span> (oligodendrocyte lineage) shows a monotonic increase with distance from plaques, indicating relative depletion near plaque surfaces. <span className="font-medium text-foreground">Cluster 15</span> increases sharply only beyond approximately <span className="font-medium text-foreground">113 µm</span>, while <span className="font-medium text-foreground">cluster 14</span> shows an abrupt decline after approximately <span className="font-medium text-foreground">138 µm</span>. In contrast, <span className="font-medium text-foreground">cluster 8</span> (immune cells) decreases sharply in the closest distance bin and then plateaus. These threshold-like behaviors motivate downstream analyses that do not assume a strictly linear relationship between plaque distance and cellular composition.
-                </p>
+              <p className="text-lg text-muted-foreground leading-relaxed">
+                Several cell-type clusters exhibit <span className="font-medium text-foreground">nonlinear distance responses</span>, with changes occurring primarily at extreme distances rather than as smooth gradients. <span className="font-medium text-foreground">Cluster 0</span> (oligodendrocyte lineage) shows a monotonic increase with distance from plaques, indicating relative depletion near plaque surfaces. <span className="font-medium text-foreground">Cluster 15</span> increases sharply only beyond approximately <span className="font-medium text-foreground">113 µm</span>, while <span className="font-medium text-foreground">cluster 14</span> shows an abrupt decline after approximately <span className="font-medium text-foreground">138 µm</span>. In contrast, <span className="font-medium text-foreground">cluster 8</span> (immune cells) decreases sharply in the closest distance bin and then plateaus. These threshold-like behaviors motivate downstream analyses that do not assume a strictly linear relationship between plaque distance and cellular composition.
+              </p>
 
             </div>
 
-            {/* Marker enrichment heatmap 
-            <div id="rq1-markers" className="space-y-4">
-              <h3 className="text-xl font-semibold text-foreground">Marker gene enrichment</h3>
 
-              <p className="text-lg text-muted-foreground leading-relaxed">
-                Looking at the marker gene enrichment diagram, we see strong over- and under-expression patterns that reflect
-                the relationship between brain morphology and gene expression programs.
-              </p>
-
-              <PlotFrame
-                src={`${base}plots/expression_per_cluster.html`}
-                title="Marker gene enrichment (z-scored across clusters)"
-                size="lg"
-                caption="Z-scored marker expression per cluster (interactive)."
-              />
-
-
-
-
-            </div>*/}
           </div>
 
           <aside className="lg:sticky lg:top-24">
-                <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
-                    {/* Header (same pattern as GeneExpression / Microscopy) */}
-                    <div className="flex items-start gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
-                        <Brain className="w-5 h-5 text-primary" />
-                    </div>
-                    <div>
-                        <div className="text-sm font-semibold text-foreground">
-                        Research Question 1
-                        </div>
-                        <div className="text-xs text-muted-foreground">
-                        How does cell type composition change in plaque proximity?
-                        </div>
-                    </div>
-                    </div>
-
-                    {/* Navigation (identical hover / spacing / typography) */}
-                    <nav className="mt-6 space-y-2 text-sm">
-                    <a
-                        href="#rq1-cluster-dist"
-                        className="block rounded-xl px-3 py-2 text-muted-foreground hover:text-foreground hover:bg-muted/50 transition"
-                    >
-                        Depletion & enrichment by cluster
-                    </a>
-
-                    <a
-                        href="#rq1-frequency"
-                        className="block rounded-xl px-3 py-2 text-muted-foreground hover:text-foreground hover:bg-muted/50 transition"
-                    >
-                        Frequency vs distance
-                    </a>
-                    </nav>
-
-                    {/* Footer hint */}
-                    <div className="mt-6 text-xs text-muted-foreground">
-                    Tip: scroll or use the navigation above.
-                    </div>
+            <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+              {/* Header (same pattern as GeneExpression / Microscopy) */}
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+                  <Brain className="w-5 h-5 text-primary" />
                 </div>
-            </aside>
+                <div>
+                  <div className="text-sm font-semibold text-foreground">
+                    Research Question 1
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    How does cell type composition change in plaque proximity?
+                  </div>
+                </div>
+              </div>
+
+              {/* Navigation ( hover / spacing / typography) */}
+              <nav className="mt-6 space-y-2 text-sm">
+                <a
+                  href="#rq1-cluster-dist"
+                  className="block rounded-xl px-3 py-2 text-muted-foreground hover:text-foreground hover:bg-muted/50 transition"
+                >
+                  Depletion & enrichment by cluster
+                </a>
+
+                <a
+                  href="#rq1-frequency"
+                  className="block rounded-xl px-3 py-2 text-muted-foreground hover:text-foreground hover:bg-muted/50 transition"
+                >
+                  Frequency vs distance
+                </a>
+              </nav>
+
+              {/* Footer hint */}
+              <div className="mt-6 text-xs text-muted-foreground">
+                Tip: scroll or use the navigation above.
+              </div>
+            </div>
+          </aside>
 
         </div>
       </div>
