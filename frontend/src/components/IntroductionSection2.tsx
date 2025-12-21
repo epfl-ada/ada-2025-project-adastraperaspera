@@ -1,3 +1,7 @@
+import PlotFrame from "@/components/PlotFrame";
+import { Grid2x2Check, CircleChevronRight  } from 'lucide-react'
+import ImageGridPlot from "./ImageGridFrame";
+
 const IntroductionSection2 = () => {
   return (
     <section id="introduction" className="py-24 bg-background">
@@ -30,6 +34,29 @@ const IntroductionSection2 = () => {
             alone.
           </p>
         </div>
+
+        <ImageGridPlot
+                          files={{
+                            "wt-2": `${base}images_grid_bw/full/wt-2.webp`,
+                            "wt-5": `${base}images_grid_bw/full/wt-5.webp`,
+                            "wt-13": `${base}images_grid_bw/full/wt-13.webp`,
+                            "tg-2": `${base}images_grid_bw/full/tg-2.webp`,
+                            "tg-5": `${base}images_grid_bw/full/tg-5.webp`,
+                            "tg-17": `${base}images_grid_bw/full/tg-17.webp`,
+                          }}
+                          keyToPos={{
+                            "wt-2": [0, 0],
+                            "wt-5":  [0, 1],
+                            "wt-13": [0, 2],
+                            "tg-2": [1, 0],
+                            "tg-5": [1, 1],
+                            "tg-17": [1, 2],
+                          }}
+                          colTicks={["2", "5.7", "13+"]}
+                          rowTicks={["Wild Type", "Transgenic"]}
+                          caption="Morphology images of Wt and transgenic mice across ages."
+                          cellSize={180}
+                        />
 
       </div>
     </section>
