@@ -3991,3 +3991,1993 @@ def make_cluster_frequency_distance_to_plaque_plotly(
     )
 
     return fig
+
+def plot_resid_vs_distance_combined_plotly(models, dist_col, title):
+    """
+    Interactive Plotly version of plot_resid_vs_distance_combined.
+
+    Writes:
+      frontend/public/plots/residual_v_dist_true_perm_fake.html
+    """
+
+    out_html = Path("frontend/public/plots/residual_v_dist_true_perm_fake.html")
+    out_html.parent.mkdir(parents=True, exist_ok=True)
+
+    fig = go.Figure()
+
+    # Matplotlib default color cycle
+    mpl_colors = plt.rcParams["axes.prop_cycle"].by_key().get(
+        "color", ["C0", "C1", "C2", "C3"]
+    )
+
+    for i, m in enumerate(models):
+        name = m["name"]
+        dfi = m["df"]
+
+        if dist_col not in dfi.columns:
+            raise ValueError(f"Model '{name}' df missing '{dist_col}'. Have: {list(dfi.columns)}")
+        if "oof_resid" not in dfi.columns:
+            raise ValueError(f"Model '{name}' df missing 'oof_resid'. Have: {list(dfi.columns)}")
+
+        x = dfi[dist_col].to_numpy(dtype=float)
+        y = dfi["oof_resid"].to_numpy(dtype=float)
+
+        color = mpl_colors[i % len(mpl_colors)]
+
+        # scatter
+        fig.add_trace(
+            go.Scattergl(
+                x=x,
+                y=y,
+                mode="markers",
+                name=name,
+                marker=dict(size=6, color=color, opacity=0.6),
+                hovertemplate=(
+                    f"{dist_col}=%{{x:.3f}}<br>"
+                    "Residual=%{y:.3f}"
+                    "<extra></extra>"
+                ),
+            )
+        )
+
+        # linear fit (like _plot_scatter_with_fit)
+        mask = np.isfinite(x) & np.isfinite(y)
+        if mask.sum() >= 2:
+            coef = np.polyfit(x[mask], y[mask], 1)
+            xfit = np.array([x[mask].min(), x[mask].max()])
+            yfit = coef[0] * xfit + coef[1]
+
+            fig.add_trace(
+                go.Scatter(
+                    x=xfit,
+                    y=yfit,
+                    mode="lines",
+                    line=dict(color=color, width=2),
+                    showlegend=False,
+                    hoverinfo="skip",
+                )
+            )
+
+    # layout: transparent background + matplotlib-like axes
+    fig.update_layout(
+        title=title,
+        xaxis_title=dist_col,
+        yaxis_title="OOF Residual (mean obs - mean pred)",
+        legend=dict(bgcolor="rgba(0,0,0,0)", borderwidth=0),
+        margin=dict(l=70, r=40, t=70, b=60),
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+        width = 900,
+        autosize = True
+    )
+
+    fig.update_xaxes(showline=True, mirror=False, linecolor="black", zeroline=False)
+    fig.update_yaxes(showline=True, mirror=False, linecolor="black", zeroline=False)
+
+    pio.write_html(
+        fig,
+        file=str(out_html),
+        full_html=True,
+        include_plotlyjs="cdn",
+        config=dict(responsive=True, displayModeBar=True, displaylogo=False),
+        auto_open=False,
+    )
+
+    return fig
+
+def plot_pred_vs_obs_combined_plotly(models, target_gene=None, title=""):
+    out_html = Path("frontend/public/plots/true_permitted_fake_pred_vs_obs.html")
+    out_html.parent.mkdir(parents=True, exist_ok=True)
+
+    fig = go.Figure()
+
+    mpl_colors = plt.rcParams["axes.prop_cycle"].by_key().get(
+        "color", ["C0", "C1", "C2", "C3"]
+    )
+
+    for i, m in enumerate(models):
+        name = m["name"]
+        dfi = m["df"]
+        r2 = m.get("r2", None)
+
+        if "oof_pred" not in dfi.columns:
+            raise ValueError(f"Model '{name}' df is missing required column 'oof_pred'. Have: {list(dfi.columns)}")
+
+        y_col = target_gene if (target_gene is not None and target_gene in dfi.columns) else "y"
+        if y_col not in dfi.columns:
+            raise ValueError(f"Model '{name}' df is missing y column '{y_col}'. Have: {list(dfi.columns)}")
+
+        obs = dfi[y_col].to_numpy(dtype=float)
+        pred = dfi["oof_pred"].to_numpy(dtype=float)
+
+        color = mpl_colors[i % len(mpl_colors)]
+        label = name if r2 is None else f"{name} (mean R²={r2:.3f})"
+
+        # scatter
+        fig.add_trace(
+            go.Scattergl(
+                x=obs,
+                y=pred,
+                mode="markers",
+                name=label,
+                marker=dict(size=6, color=color, opacity=0.6),
+                hovertemplate="Observed=%{x:.3f}<br>Predicted=%{y:.3f}<extra></extra>",
+            )
+        )
+
+        # fit line
+        mask = np.isfinite(obs) & np.isfinite(pred)
+        if mask.sum() >= 2:
+            coef = np.polyfit(obs[mask], pred[mask], 1)
+            xfit = np.array([obs[mask].min(), obs[mask].max()])
+            yfit = coef[0] * xfit + coef[1]
+
+            fig.add_trace(
+                go.Scatter(
+                    x=xfit,
+                    y=yfit,
+                    mode="lines",
+                    line=dict(color=color, width=2),
+                    showlegend=False,
+                    hoverinfo="skip",
+                )
+            )
+
+    fig.update_layout(
+        title=title,
+        xaxis_title="Observed (mean across genes)",
+        yaxis_title="OOF Predicted (mean across genes)",
+        # Plotly-compatible legend styling (matplotlib-like, no box)
+        legend=dict(
+            bgcolor="rgba(0,0,0,0)",
+            bordercolor="rgba(0,0,0,0)",
+            borderwidth=0,
+        ),
+        margin=dict(l=70, r=40, t=70, b=60),
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+        width=900
+    )
+
+    fig.update_xaxes(showline=True, mirror=True, linecolor="black", zeroline=False)
+    fig.update_yaxes(showline=True, mirror=True, linecolor="black", zeroline=False)
+
+    pio.write_html(
+        fig,
+        file=str(out_html),
+        full_html=True,
+        include_plotlyjs="cdn",
+        config=dict(responsive=True, displayModeBar=True, displaylogo=False),
+        auto_open=False,
+    )
+
+    return fig
+
+
+def plot_tile_heatmap_plotly(df_in, x_col, y_col, val_col, title, n_tiles_x=10, n_tiles_y=10):
+    """
+    Interactive Plotly version of plot_tile_heatmap.
+    Same call signature as original.
+    Writes: frontend/public/plots/perm_vs_true_tiles.html
+    """
+
+    # --- compute tile ids (expects your existing tile_ids helper) ---
+    tx, ty = tile_ids(df_in, x_col, y_col, n_tiles_x, n_tiles_y)
+
+    tmp = df_in.copy()
+    tmp["tx"] = tx
+    tmp["ty"] = ty
+
+    # mean per tile
+    mat = tmp.groupby(["ty", "tx"])[val_col].mean().unstack("tx")
+
+    # Ensure full tile grid exists (fill missing tiles with NaN for consistent shape)
+    mat = mat.reindex(index=range(n_tiles_y), columns=range(n_tiles_x))
+
+    Z = mat.to_numpy(dtype=float)
+
+    out_html = Path("frontend/public/plots/perm_vs_true_tiles.html")
+    out_html.parent.mkdir(parents=True, exist_ok=True)
+
+    fig = go.Figure(
+        data=go.Heatmap(
+            z=Z,
+            colorscale="Viridis",  # close to matplotlib imshow default look
+            colorbar=dict(title=f"mean({val_col})"),
+            hovertemplate=(
+                "tile x=%{x}<br>"
+                "tile y=%{y}<br>"
+                f"mean({val_col})=%{{z:.4g}}"
+                "<extra></extra>"
+            ),
+        )
+    )
+
+    # Match matplotlib-ish axes/labels
+    fig.update_layout(
+        title=title,
+        xaxis_title="tile x",
+        yaxis_title="tile y",
+        margin=dict(l=70, r=40, t=70, b=60),
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+        width=900,
+        autosize=True
+    )
+
+    # Make it look like imshow (cells are pixels, y increasing downward in image)
+    # If you prefer origin="lower" behavior, remove autorange="reversed".
+    fig.update_yaxes(autorange="reversed")
+
+    # Visible axis lines like matplotlib
+    fig.update_xaxes(showline=True, mirror=False, linecolor="black", zeroline=False)
+    fig.update_yaxes(showline=True, mirror=False, linecolor="black", zeroline=False)
+
+    pio.write_html(
+        fig,
+        file=str(out_html),
+        full_html=True,
+        include_plotlyjs="cdn",
+        config=dict(responsive=True, displayModeBar=True, displaylogo=False),
+        auto_open=False,
+    )
+
+    return fig
+
+def plot_spatial_scatter_plotly(
+    df_base,
+    x_col,
+    y_col,
+    val_col,
+    title,
+    s=6,
+    *,
+    out_html: str | Path = "frontend/public/plots/permuted_neighbors_spatial.html",
+    show: bool = False,
+):
+    """
+    Interactive Plotly version of plot_spatial_scatter.
+
+    Preserves:
+      - scatter coloring by val_col
+      - colorbar
+      - transparent background
+      - matplotlib-like default style
+    """
+
+    fig = go.Figure()
+
+    fig.add_trace(
+        go.Scattergl(
+            x=df_base[x_col],
+            y=df_base[y_col],
+            mode="markers",
+            marker=dict(
+                size=s,
+                color=df_base[val_col],
+                colorscale="Viridis",  # matplotlib default-like
+                showscale=True,
+                colorbar=dict(title=val_col),
+            ),
+            hovertemplate=(
+                f"{x_col}=%{{x:.3f}}<br>"
+                f"{y_col}=%{{y:.3f}}<br>"
+                f"{val_col}=%{{marker.color:.3f}}"
+                "<extra></extra>"
+            ),
+        )
+    )
+
+    fig.update_layout(
+        title=title,
+        xaxis_title="Permuted minus true closest",
+        yaxis_title=y_col,
+        margin=dict(l=70, r=40, t=70, b=60),
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+        width= 900,
+        autosize=True
+    )
+
+    fig.update_xaxes(
+        showline=True,
+        mirror=False,
+        linecolor="black",
+        zeroline=False,
+    )
+    fig.update_yaxes(
+        showline=True,
+        mirror=False,
+        linecolor="black",
+        zeroline=False,
+        scaleanchor="x",   # preserves aspect if coordinates are spatial
+        scaleratio=1,
+    )
+
+    out_html = Path(out_html)
+    out_html.parent.mkdir(parents=True, exist_ok=True)
+
+    pio.write_html(
+        fig,
+        file=str(out_html),
+        full_html=True,
+        include_plotlyjs="cdn",
+        config=dict(responsive=True, displayModeBar=True, displaylogo=False),
+        auto_open=False,
+    )
+
+    if show:
+        fig.show()
+
+    return fig
+
+
+def plot_true_vs_fake_far_neighbors_across_genes(
+    df,
+    *,
+    target_genes,
+    groups,
+    x_col,
+    y_col,
+    dist_col,
+    optional_covs,
+    neigh_cols,
+    k_far=100,
+    n_splits=5,
+    alpha=1.0,
+    confidence=0.95,
+    maroon="maroon",
+    capsize=6,
+    figsize=(9, 6),
+    pct_eps=1e-12,
+    # ---- new ----
+    out_html: str | Path = "frontend/public/plots/fake_neighbors.html",
+    show: bool = False,
+):
+    """
+    Plotly interactive version of plot_true_vs_fake_far_neighbors_across_genes.
+
+    Produces:
+      - res_per_gene
+      - res_summary
+      - interactive bar plot with CI + min/max gene annotations
+    """
+
+    # ------------------------------------------------------------------
+    # Build fake features ONCE
+    # ------------------------------------------------------------------
+    df_fake, fake_all_cols = build_fake_far_neighbor_means(
+        df, x_col, y_col, neigh_cols, k=k_far
+    )
+
+    true2fake = {
+        c: f"fake_far_neigh_mean_{c.replace('neigh_mean_', '')}"
+        for c in neigh_cols
+    }
+
+    missing_fake = [true2fake[c] for c in neigh_cols if true2fake[c] not in df_fake.columns]
+    if missing_fake:
+        raise RuntimeError(f"Missing fake columns in df_fake: {missing_fake[:10]}")
+
+    # ------------------------------------------------------------------
+    # Per-gene OOF R²
+    # ------------------------------------------------------------------
+    rows = []
+    for gene in target_genes:
+        current_true_neighbors = [c for c in neigh_cols if gene not in c]
+        current_fake_neighbors = [true2fake[c] for c in current_true_neighbors]
+
+        feats_true = [dist_col] + list(optional_covs) + current_true_neighbors
+        feats_fake = [dist_col] + list(optional_covs) + current_fake_neighbors
+
+        r2_true, _ = _oof_r2_spatial_blocks_ridge(
+            df, gene, feats_true, groups,
+            n_splits=n_splits, alpha=alpha
+        )
+        r2_fake, _ = _oof_r2_spatial_blocks_ridge(
+            df_fake, gene, feats_fake, groups,
+            n_splits=n_splits, alpha=alpha
+        )
+
+        rows.append(
+            dict(
+                gene=gene,
+                R2_true_neighbors=float(r2_true),
+                R2_fake_far_neighbors=float(r2_fake),
+                gap_true_minus_fake=100.0 * (r2_true - r2_fake) / (abs(r2_true) + pct_eps),
+            )
+        )
+
+    res_per_gene = pd.DataFrame(rows)
+
+    # ------------------------------------------------------------------
+    # Summary (mean ± CI)
+    # ------------------------------------------------------------------
+    m_true, lo_true, hi_true = mean_ci_t(
+        res_per_gene["R2_true_neighbors"].to_numpy(), confidence=confidence
+    )
+    m_fake, lo_fake, hi_fake = mean_ci_t(
+        res_per_gene["R2_fake_far_neighbors"].to_numpy(), confidence=confidence
+    )
+
+    avg_gap = float(res_per_gene["gap_true_minus_fake"].mean())
+
+    res_summary = pd.DataFrame(
+        [
+            dict(condition="true_neighbors", mean_R2=m_true,
+                 ci95_low=lo_true, ci95_high=hi_true, n_genes=len(res_per_gene)),
+            dict(condition="fake_far_neighbors", mean_R2=m_fake,
+                 ci95_low=lo_fake, ci95_high=hi_fake, n_genes=len(res_per_gene)),
+        ]
+    )
+
+    # ------------------------------------------------------------------
+    # Plotly plotting
+    # ------------------------------------------------------------------
+    BLUE = "#1f77b4"    # matplotlib tab:blue
+    ORANGE = "#ff7f0e"  # matplotlib tab:orange
+
+    labels = [
+        "100 closest neighbors",
+        f"100 farthest neighbors (avg drop = {avg_gap:.1f})",
+    ]
+
+    means = np.array([m_true, m_fake])
+    err_plus = np.array([hi_true - m_true, hi_fake - m_fake])
+    err_minus = np.array([m_true - lo_true, m_fake - lo_fake])
+    x = np.array([0.0, 1.0])
+
+    fig = go.Figure()
+
+    # Bars + CI
+    fig.add_trace(
+        go.Bar(
+            x=x,
+            y=means,
+            width=0.65,
+            marker=dict(color=[BLUE, BLUE]),
+            showlegend=False,
+            error_y=dict(
+                type="data",
+                symmetric=False,
+                array=err_plus,
+                arrayminus=err_minus,
+                color="black",
+                thickness=2,
+                width=capsize,
+                visible=True,
+            ),
+            hovertemplate="mean=%{y:.4f}<extra></extra>",
+        )
+    )
+
+    # ------------------------------------------------------------------
+    # Min / max gene points (maroon)
+    # ------------------------------------------------------------------
+    def _minmax(col, xi):
+        sub = res_per_gene[["gene", col]]
+        imin = sub[col].idxmin()
+        imax = sub[col].idxmax()
+        idxs = [imin, imax] if imin != imax else [imin]
+
+        xs, ys, txt = [], [], []
+        for i in idxs:
+            g = sub.loc[i, "gene"]
+            r2 = float(sub.loc[i, col])
+            xs.append(xi)
+            ys.append(r2)
+            txt.append(f"{g} ({ceil_to_decimals(r2, 2):.2f})")
+        return xs, ys, txt
+
+    x0, y0, t0 = _minmax("R2_true_neighbors", 0.0)
+    x1, y1, t1 = _minmax("R2_fake_far_neighbors", 1.0)
+
+    fig.add_trace(
+        go.Scatter(
+            x=x0 + x1,
+            y=y0 + y1,
+            mode="markers+text",
+            marker=dict(color=maroon, size=10),
+            text=t0 + t1,
+            textposition="top right",
+            textfont=dict(color=maroon, size=9),
+            hovertemplate="%{text}<extra></extra>",
+            showlegend=False,
+        )
+    )
+
+    # Axes & layout
+    fig.update_xaxes(
+        tickmode="array",
+        tickvals=x,
+        ticktext=labels,
+        tickangle=20,
+        showline=True,
+        mirror=True,
+        linecolor="black",
+        zeroline=False,
+        range=[-0.6, 1.6],
+    )
+
+    fig.update_yaxes(
+        title=f"OOF R² (spatial-block GroupKFold), mean across {len(res_per_gene)} genes",
+        showgrid=True,
+        gridcolor="rgba(0,0,0,0.25)",
+        showline=True,
+        mirror=True,
+        linecolor="black",
+        zeroline=False,
+    )
+
+    fig.update_layout(
+        title=f"Closest vs farthest-neighbor features (mean ± {int(confidence*100)}% CI)",
+        margin=dict(l=80, r=30, t=80, b=160),
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+        width=int(figsize[0] * 90),
+        height=int(figsize[1] * 90),
+    )
+
+    out_html = Path(out_html)
+    out_html.parent.mkdir(parents=True, exist_ok=True)
+    pio.write_html(
+        fig,
+        file=str(out_html),
+        full_html=True,
+        include_plotlyjs="cdn",
+        config=dict(responsive=True, displayModeBar=True, displaylogo=False),
+        auto_open=False,
+    )
+
+    if show:
+        fig.show()
+
+    return res_per_gene, res_summary
+
+
+def plot_permutation_effect_across_genes(
+    df,
+    target_genes,
+    groups,
+    *,
+    dist_col,
+    neigh_cols,
+    optional_covs=None,
+    seed=0,
+    n_splits=5,
+    alpha=1.0,
+    confidence=0.95,
+    maroon="maroon",
+    capsize=6,
+    figsize=(9, 6),
+    pct_eps=1e-12,
+    # --- new: output ---
+    out_html: str | Path = "frontend/public/plots/full_model_neighbor_permute.html",
+    show: bool = False,
+):
+    """
+    Drop-in replacement with Plotly output.
+
+    Returns:
+      - res_per_gene
+      - res_summary
+    And writes:
+      - frontend/public/plots/full_model_neighbor_permute.html
+    """
+
+    if optional_covs is None:
+        optional_covs = []
+
+    # --- local helper: pooled OOF R^2 under GroupKFold ---
+    def _oof_r2_spatial_blocks_ridge(df_in, target, feature_cols, groups_in, *, n_splits, alpha):
+        from sklearn.model_selection import GroupKFold
+        from sklearn.pipeline import Pipeline
+        from sklearn.preprocessing import StandardScaler
+        from sklearn.linear_model import Ridge
+        from sklearn.metrics import r2_score
+
+        if len(groups_in) != len(df_in):
+            raise ValueError("groups must be aligned with df rows (same length)")
+
+        use = df_in[[target] + list(feature_cols)].copy()
+        use["__group__"] = np.asarray(groups_in)
+
+        use = use.dropna()
+        if len(use) == 0:
+            raise ValueError(f"No rows left after dropna for target={target} and features={feature_cols}")
+
+        y = use[target].to_numpy(dtype=float)
+        X = use[list(feature_cols)].to_numpy(dtype=float)
+        g = use["__group__"].to_numpy()
+
+        n_groups = len(np.unique(g))
+        if n_groups < n_splits:
+            raise ValueError(
+                f"Not enough unique groups for GroupKFold: n_groups={n_groups} < n_splits={n_splits}"
+            )
+
+        gkf = GroupKFold(n_splits=n_splits)
+
+        oof_pred = np.full(len(use), np.nan, dtype=float)
+        fold_r2s = []
+
+        for tr, te in gkf.split(X, y, groups=g):
+            model = Pipeline([
+                ("scaler", StandardScaler(with_mean=True, with_std=True)),
+                ("ridge", Ridge(alpha=alpha, random_state=0)),
+            ])
+            model.fit(X[tr], y[tr])
+            pred = model.predict(X[te])
+
+            oof_pred[te] = pred
+            fold_r2s.append(r2_score(y[te], pred))
+
+        if not np.isfinite(oof_pred).all():
+            raise RuntimeError("OOF predictions contain NaNs; check data, groups, and split coverage.")
+
+        r2_oof = r2_score(y, oof_pred)
+        return float(r2_oof), fold_r2s
+
+    # permute once (same permuted dataset used for all genes)
+    df_perm = permute_within_groups(df, neigh_cols, groups, seed=seed)
+
+    rows = []
+    for gene in target_genes:
+        # exclude any neighbor columns that correspond to the current gene
+        current_neighbors = [c for c in neigh_cols if gene not in c]
+        full_feats = [dist_col] + list(optional_covs) + current_neighbors
+
+        r2_true, _ = _oof_r2_spatial_blocks_ridge(
+            df, gene, full_feats, groups, n_splits=n_splits, alpha=alpha
+        )
+        r2_perm, _ = _oof_r2_spatial_blocks_ridge(
+            df_perm, gene, full_feats, groups, n_splits=n_splits, alpha=alpha
+        )
+
+        pct_drop = 100.0 * (r2_true - r2_perm) / (np.abs(r2_true) + pct_eps)
+
+        rows.append({
+            "gene": gene,
+            "R2_true": float(r2_true),
+            "R2_permuted": float(r2_perm),
+            "drop_abs": float(r2_true - r2_perm),
+            "drop_pct": float(pct_drop),
+        })
+
+    res_per_gene = pd.DataFrame(rows)
+
+    # summaries + CI across genes
+    m_true, lo_true, hi_true = mean_ci_t(res_per_gene["R2_true"].to_numpy(), confidence=confidence)
+    m_perm, lo_perm, hi_perm = mean_ci_t(res_per_gene["R2_permuted"].to_numpy(), confidence=confidence)
+
+    avg_pct_drop = float(np.mean(res_per_gene["drop_pct"].to_numpy()))
+
+    res_summary = pd.DataFrame([
+        {"condition": "true_neighbors",     "mean_R2": m_true, "ci95_low": lo_true, "ci95_high": hi_true, "n_genes": len(res_per_gene)},
+        {"condition": "permuted_neighbors", "mean_R2": m_perm, "ci95_low": lo_perm, "ci95_high": hi_perm, "n_genes": len(res_per_gene)},
+    ])
+
+    # ---------- Plotly plotting ----------
+    # Preserve matplotlib default bar colors: tab:blue then tab:orange
+    BLUE = "#1f77b4"
+    ORANGE = "#ff7f0e"
+
+    labels = [
+        "true neighbors",
+        f"permuted within a tile (avg drop = {avg_pct_drop:.1f}%)",
+    ]
+
+    means = np.array([m_true, m_perm], dtype=float)
+    ci_lows = np.array([lo_true, lo_perm], dtype=float)
+    ci_highs = np.array([hi_true, hi_perm], dtype=float)
+
+    err_plus = ci_highs - means
+    err_minus = means - ci_lows
+
+    x = np.array([0.0, 1.0], dtype=float)
+
+    fig = go.Figure()
+
+    fig.add_trace(
+        go.Bar(
+            x=x,
+            y=means,
+            width=0.65,
+            marker=dict(color=[BLUE, BLUE]),
+            showlegend=False,
+            hovertemplate="mean=%{y:.4f}<extra></extra>",
+            error_y=dict(
+                type="data",
+                symmetric=False,
+                array=err_plus,
+                arrayminus=err_minus,
+                color="black",
+                thickness=2,
+                width=capsize,  # approximates matplotlib capsize in px
+                visible=True,
+            ),
+        )
+    )
+
+    # maroon min/max per condition, with labels
+    def _minmax_points(condition_col: str, xi: float):
+        sub = res_per_gene[["gene", condition_col]].copy()
+        imin = sub[condition_col].idxmin()
+        imax = sub[condition_col].idxmax()
+        idxs = [imin, imax] if imax != imin else [imin]
+
+        pts_x, pts_y, pts_text = [], [], []
+        for idx in idxs:
+            gene = sub.loc[idx, "gene"]
+            r2 = float(sub.loc[idx, condition_col])
+            r2_disp = float(ceil_to_decimals(r2, 2))
+            pts_x.append(xi)
+            pts_y.append(r2)
+            pts_text.append(f"{gene} ({r2_disp:.2f})")
+        return pts_x, pts_y, pts_text
+
+    x0, y0, t0 = _minmax_points("R2_true", 0.0)
+    x1, y1, t1 = _minmax_points("R2_permuted", 1.0)
+
+    sx = x0 + x1
+    sy = y0 + y1
+    st = t0 + t1
+
+    if len(sx):
+        fig.add_trace(
+            go.Scatter(
+                x=sx,
+                y=sy,
+                mode="markers+text",
+                marker=dict(color=maroon, size=10),
+                text=st,
+                textposition="top right",
+                textfont=dict(color=maroon, size=9),
+                hovertemplate="%{text}<extra></extra>",
+                showlegend=False,
+            )
+        )
+
+    fig.update_xaxes(
+        tickmode="array",
+        tickvals=x,
+        ticktext=labels,
+        tickangle=20,
+        showline=True,
+        mirror=True,
+        linecolor="black",
+        zeroline=False,
+        range=[-0.6, 1.6],
+    )
+
+    fig.update_yaxes(
+        title=f"OOF R² (spatial-block GroupKFold), mean across {len(res_per_gene)} genes",
+        showgrid=True,
+        gridcolor="rgba(0,0,0,0.25)",
+        showline=True,
+        mirror=True,
+        linecolor="black",
+        zeroline=False,
+    )
+
+    fig.update_layout(
+        title=f"Permutation test within tiles (OOF R² mean ± {int(confidence*100)}% CI)",
+        margin=dict(l=80, r=30, t=80, b=160),
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+        width=int(figsize[0] * 90),
+        height=int(figsize[1] * 90),
+    )
+
+    out_html = Path(out_html)
+    out_html.parent.mkdir(parents=True, exist_ok=True)
+    pio.write_html(
+        fig,
+        file=str(out_html),
+        full_html=True,
+        include_plotlyjs="cdn",
+        config={"responsive": True, "displayModeBar": True, "displaylogo": False},
+        auto_open=False,
+    )
+
+    if show:
+        fig.show()
+
+    return res_per_gene, res_summary
+
+def mean_ci_t(x: np.ndarray, confidence: float = 0.95) -> tuple[float, float, float]:
+    """
+    Mean and two-sided t-based CI for the mean.
+    Returns (mean, lo, hi).
+    """
+    x = np.asarray(x, dtype=float)
+    x = x[np.isfinite(x)]
+    n = x.size
+    if n == 0:
+        return (np.nan, np.nan, np.nan)
+    m = float(np.mean(x))
+    if n == 1:
+        return (m, m, m)
+    sem = stats.sem(x)
+    df = n - 1
+    tcrit = stats.t.ppf((1 + confidence) / 2, df)
+    half = float(tcrit * sem)
+    return (m, m - half, m + half)
+
+
+def ceil_to_decimals(x: float, decimals: int = 2) -> float:
+    p = 10**decimals
+    return float(np.ceil(x * p) / p)
+
+
+def plot_model_comparison_with_extremes(
+    res_per_gene: pd.DataFrame,
+    confidence: float = 0.95,
+    figsize=(10, 6),
+    bar_alpha: float = 1.0,
+    capsize: int = 6,
+    point_color: str = "maroon",
+    annotate: bool = True,
+    annotate_fontsize: int = 9,
+    text_dx: float = 0.02,
+    text_dy: float = 0.002,
+    # output (added, but optional; call style still matches original)
+    out_html: str | Path = "frontend/public/plots/interaction_model_performance.html",
+    show: bool = False,
+):
+    """
+    Plotly interactive version.
+
+    res_per_gene must contain columns:
+      - gene
+      - model
+      - R2_spatialBlockCV
+
+    Produces:
+      - res_summary dataframe (mean across genes + t-based CI)
+      - bar plot with black error bars
+      - scatter points for min/max gene per model, annotated
+      - transparent background
+      - writes to interaction_model_performance.html
+    """
+    required = {"gene", "model", "R2_spatialBlockCV"}
+    missing = required - set(res_per_gene.columns)
+    if missing:
+        raise ValueError(f"res_per_gene missing columns: {missing}")
+
+    # ---- summary across genes with t-based CI ----
+    summary_rows = []
+    for model_name, sub in res_per_gene.groupby("model"):
+        gene_vals = sub["R2_spatialBlockCV"].to_numpy()
+        m, lo, hi = mean_ci_t(gene_vals, confidence=confidence)
+        summary_rows.append(
+            dict(
+                model=model_name,
+                mean_R2_across_genes=m,
+                ci95_low=lo,
+                ci95_high=hi,
+                n_genes=len(gene_vals),
+            )
+        )
+
+    res_summary = (
+        pd.DataFrame(summary_rows)
+        .sort_values("mean_R2_across_genes", ascending=False)
+        .reset_index(drop=True)
+    )
+
+    # ---- min/max gene per model ----
+    extremes = {}
+    for model_name in res_summary["model"]:
+        sub = res_per_gene[res_per_gene["model"] == model_name].copy()
+        i_min = sub["R2_spatialBlockCV"].idxmin()
+        i_max = sub["R2_spatialBlockCV"].idxmax()
+        rows = [sub.loc[i_min]]
+        if i_max != i_min:
+            rows.append(sub.loc[i_max])
+        extremes[model_name] = rows
+
+    # ---- plot (numeric x like matplotlib) ----
+    n = len(res_summary)
+    x = np.arange(n, dtype=float)
+
+    means = res_summary["mean_R2_across_genes"].to_numpy(dtype=float)
+    lo = res_summary["ci95_low"].to_numpy(dtype=float)
+    hi = res_summary["ci95_high"].to_numpy(dtype=float)
+
+    err_plus = hi - means
+    err_minus = means - lo
+
+    # preserve matplotlib default blue
+    BAR_COLOR = "#1f77b4"
+
+    fig = go.Figure()
+
+    # Bars
+    fig.add_trace(
+        go.Bar(
+            x=x,
+            y=means,
+            marker=dict(color=BAR_COLOR),
+            opacity=bar_alpha,
+            width=0.7,
+            showlegend=False,
+            hovertemplate="mean=%{y:.4f}<extra></extra>",
+        )
+    )
+
+    # Error bars (black, like mpl errorbar)
+    # Plotly error bars support width/thickness; capsize in px is approximated via 'width'
+    fig.update_traces(
+        error_y=dict(
+            type="data",
+            symmetric=False,
+            array=err_plus,
+            arrayminus=err_minus,
+            color="black",
+            thickness=2,
+            width=capsize,   # approximate capsize
+            visible=True,
+        ),
+        selector=dict(type="bar"),
+    )
+
+    # Extremes points + annotations
+    px, py, ptext = [], [], []
+    for xi, model_name in enumerate(res_summary["model"]):
+        for row in extremes[model_name]:
+            gene = row["gene"]
+            r2 = float(row["R2_spatialBlockCV"])
+            r2_disp = float(ceil_to_decimals(r2, 2))
+
+            px.append(float(xi))
+            py.append(r2)
+            ptext.append(f"{gene} ({r2_disp:.2f})")
+
+    if px:
+        fig.add_trace(
+            go.Scatter(
+                x=px,
+                y=py,
+                mode=("markers+text" if annotate else "markers"),
+                marker=dict(color=point_color, size=10),
+                text=ptext if annotate else None,
+                textposition="top right",
+                textfont=dict(size=annotate_fontsize, color=point_color),
+                hovertemplate="%{text}<extra></extra>",
+                showlegend=False,
+            )
+        )
+
+    # X tick labels (rotated)
+    fig.update_xaxes(
+        tickmode="array",
+        tickvals=x,
+        ticktext=res_summary["model"].tolist(),
+        tickangle=25,
+        showline=True,
+        mirror=True,
+        linecolor="black",
+        zeroline=False,
+    )
+
+    n_genes_hint = int(res_summary["n_genes"].iloc[0]) if len(res_summary) else 0
+
+    fig.update_yaxes(
+        title=f"OOF R² (spatial-block CV), mean across {n_genes_hint} genes",
+        showgrid=True,
+        gridcolor="rgba(0,0,0,0.25)",
+        showline=True,
+        mirror=True,
+        linecolor="black",
+        zeroline=False,
+    )
+
+    fig.update_layout(
+        title=f"Model comparison across genes (OOF R² mean ± {int(confidence*100)}% CI) + min/max gene points",
+        margin=dict(l=70, r=30, t=80, b=140),
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+        width=int(figsize[0] * 90),
+        height=int(figsize[1] * 90),
+    )
+
+    out_html = Path(out_html)
+    out_html.parent.mkdir(parents=True, exist_ok=True)
+    pio.write_html(
+        fig,
+        file=str(out_html),
+        full_html=True,
+        include_plotlyjs="cdn",
+        config={"responsive": True, "displayModeBar": True, "displaylogo": False},
+        auto_open=False,
+    )
+
+    if show:
+        fig.show()
+
+    return res_summary
+
+def _apply_color_scale(A: np.ndarray, *, color_scale: str, eps: float, symlog_linthresh: float) -> np.ndarray:
+    A = np.asarray(A, dtype=float)
+
+    if color_scale == "linear":
+        return A
+
+    if color_scale == "log1p":
+        return np.log1p(A)
+
+    if color_scale == "log10":
+        return np.log10(A + eps)
+
+    if color_scale == "lognorm":
+        # For display, LogNorm is effectively log scaling.
+        # We'll use log10(A+eps) as a close visual analogue.
+        return np.log10(A + eps)
+
+    if color_scale == "symlognorm":
+        # SymLog-like: linear near 0, log further out
+        # Here A is non-negative (counts), so it's basically log-like with a linear region.
+        # We mimic by: log10(1 + A/linthresh)
+        return np.log10(1.0 + (A / symlog_linthresh))
+
+    raise ValueError("color_scale must be one of: linear, log1p, log10, lognorm, symlognorm")
+
+
+def plot_dist_signature_heatmaps_grid_plotly(
+    df,
+    dist_col,
+    sig_col,
+    y_cols,                 # list of 16 gene columns
+    q=5,
+    y_is_log1p=True,        # your current y: log1p(count)
+    aggfunc="mean",
+    nrows=4,
+    ncols=4,
+    figsize=(18, 14),
+    cmap="viridis",
+    # --- knobs ---
+    color_scale="log1p",    # {"linear", "log1p", "log10", "lognorm", "symlognorm"}
+    norm_scope="per_gene",  # {"per_gene", "global"}
+    share_colorbar=False,   # if True, forces norm_scope="global"
+    eps=1e-6,
+    symlog_linthresh=0.1,
+    # --- annotation ---
+    annotate=True,
+    annot_decimals=2,
+    annot_fontsize=7,
+    label_mode="index",     # {"index", "interval"}
+    # --- output ---
+    out_html: str | Path = "frontend/public/plots/interaction_model.html",
+    show: bool = False,
+):
+    """
+    Interactive Plotly version of the matplotlib function.
+    Writes a single HTML with a 4x4 grid of heatmaps.
+    Background is transparent.
+    """
+
+    if len(y_cols) != nrows * ncols:
+        raise ValueError(f"Expected {nrows*ncols} genes, got {len(y_cols)}")
+
+    if share_colorbar:
+        norm_scope = "global"
+
+    # ---- 1) Compute common bin edges once ----
+    base = df[[dist_col, sig_col]].dropna()
+    _, dist_edges = pd.qcut(base[dist_col], q=q, duplicates="drop", retbins=True)
+    _, sig_edges = pd.qcut(base[sig_col], q=q, duplicates="drop", retbins=True)
+
+    dist_cats = pd.cut(base[dist_col], bins=dist_edges, include_lowest=True).cat.categories
+    sig_cats = pd.cut(base[sig_col], bins=sig_edges, include_lowest=True).cat.categories
+
+    if label_mode == "interval":
+        xlabels = [str(c) for c in dist_cats]
+        ylabels = [str(c) for c in sig_cats]
+    elif label_mode == "index":
+        xlabels = [f"D{i+1}" for i in range(len(dist_cats))]
+        ylabels = [f"S{i+1}" for i in range(len(sig_cats))]
+    else:
+        raise ValueError("label_mode must be 'index' or 'interval'")
+
+    # ---- 2) Build mean tables (natural scale) + colored arrays ----
+    mean_tables: list[pd.DataFrame] = []
+    colored_arrays: list[np.ndarray] = []
+
+    for gene in y_cols:
+        tmp = df[[dist_col, sig_col, gene]].dropna().copy()
+        tmp["dist_bin"] = pd.cut(tmp[dist_col], bins=dist_edges, include_lowest=True)
+        tmp["sig_bin"] = pd.cut(tmp[sig_col], bins=sig_edges, include_lowest=True)
+
+        y_nat = np.expm1(tmp[gene].to_numpy()) if y_is_log1p else tmp[gene].to_numpy()
+        tmp["_y_nat"] = y_nat
+
+        mean_tbl = tmp.pivot_table(
+            index="sig_bin",
+            columns="dist_bin",
+            values="_y_nat",
+            aggfunc=aggfunc,
+            observed=True,
+        ).reindex(index=sig_cats, columns=dist_cats)
+
+        mean_tables.append(mean_tbl)
+
+        A = mean_tbl.to_numpy(dtype=float)
+        A_col = _apply_color_scale(A, color_scale=color_scale, eps=eps, symlog_linthresh=symlog_linthresh)
+        colored_arrays.append(A_col)
+
+    # ---- 3) normalization (global vs per gene) ----
+    global_cmin = global_cmax = None
+    if norm_scope == "global":
+        stacked = np.concatenate([a.ravel() for a in colored_arrays])
+        stacked = stacked[np.isfinite(stacked)]
+        if stacked.size == 0:
+            global_cmin, global_cmax = 0.0, 1.0
+        else:
+            global_cmin, global_cmax = float(stacked.min()), float(stacked.max())
+            if global_cmin == global_cmax:
+                global_cmax = global_cmin + 1e-12
+
+    # ---- 4) plotly subplot grid ----
+    # viridis: use plotly's built-in viridis colorscale
+    colorscale = pc.sequential.Viridis if str(cmap).lower() == "viridis" else pc.sequential.Viridis
+
+    subplot_titles = list(y_cols)
+    fig = make_subplots(
+        rows=nrows,
+        cols=ncols,
+        subplot_titles=subplot_titles,
+        horizontal_spacing=0.03,
+        vertical_spacing=0.07,
+    )
+
+    # We'll show a single shared colorbar only if share_colorbar=True.
+    show_scale_first = bool(share_colorbar)
+
+    n_x = len(dist_cats)
+    n_y = len(sig_cats)
+
+    for idx, (gene, mean_tbl, A_col) in enumerate(zip(y_cols, mean_tables, colored_arrays)):
+        r = idx // ncols + 1
+        c = idx % ncols + 1
+
+        # per-gene scaling
+        if norm_scope == "per_gene":
+            finite = A_col[np.isfinite(A_col)]
+            if finite.size == 0:
+                cmin, cmax = 0.0, 1.0
+            else:
+                cmin, cmax = float(finite.min()), float(finite.max())
+                if cmin == cmax:
+                    cmax = cmin + 1e-12
+        else:
+            cmin, cmax = global_cmin, global_cmax
+
+        # Provide hover in natural scale (mean_tbl), while coloring uses A_col
+        V_nat = mean_tbl.to_numpy(dtype=float)
+
+        # customdata holds natural values for hover
+        customdata = V_nat
+
+        heat = go.Heatmap(
+            z=A_col,
+            zmin=cmin,
+            zmax=cmax,
+            colorscale=colorscale,
+            showscale=(show_scale_first and idx == 0),
+            colorbar=dict(
+                title=(
+                    f"{aggfunc}(mean count)" if color_scale == "linear"
+                    else f"{color_scale}({aggfunc}(mean count))"
+                ),
+                len=0.85,
+            ) if (show_scale_first and idx == 0) else None,
+            customdata=customdata,
+            hovertemplate=(
+                "Dist=%{x}<br>"
+                "Sig=%{y}<br>"
+                f"{gene}=%{{customdata:.{annot_decimals}f}}<extra></extra>"
+            ),
+        )
+        fig.add_trace(heat, row=r, col=c)
+
+        # Axes ticks / labels
+        fig.update_xaxes(
+            tickmode="array",
+            tickvals=list(range(n_x)),
+            ticktext=xlabels,
+            tickangle=45,
+            row=r,
+            col=c,
+            showgrid=False,
+            zeroline=False,
+            showline=True,
+            mirror=True,
+            linecolor="rgba(0,0,0,0.65)",
+        )
+        fig.update_yaxes(
+            tickmode="array",
+            tickvals=list(range(n_y)),
+            ticktext=ylabels,
+            row=r,
+            col=c,
+            showgrid=False,
+            zeroline=False,
+            showline=True,
+            mirror=True,
+            linecolor="rgba(0,0,0,0.65)",
+            autorange="reversed",  # match imshow default top-to-bottom index order? (if you want origin="lower", remove)
+        )
+
+        # ---- cell gridlines (minor-grid look) as shapes (on top) ----
+        # Draw lines at cell boundaries: -0.5, 0.5, ..., n-0.5
+        # This mimics your dashed minor grid (Plotly doesn't do dashed cell grid perfectly)
+        # Keeping alpha low like mpl (0.25).
+        for xx in np.arange(-0.5, n_x, 1.0):
+            fig.add_shape(
+                type="line",
+                x0=xx, x1=xx,
+                y0=-0.5, y1=n_y - 0.5,
+                xref=f"x{idx+1}" if idx > 0 else "x",
+                yref=f"y{idx+1}" if idx > 0 else "y",
+                line=dict(color="rgba(0,0,0,0.25)", width=1),
+                layer="above",
+            )
+        for yy in np.arange(-0.5, n_y, 1.0):
+            fig.add_shape(
+                type="line",
+                x0=-0.5, x1=n_x - 0.5,
+                y0=yy, y1=yy,
+                xref=f"x{idx+1}" if idx > 0 else "x",
+                yref=f"y{idx+1}" if idx > 0 else "y",
+                line=dict(color="rgba(0,0,0,0.25)", width=1),
+                layer="above",
+            )
+
+        # ---- annotations (numbers) ----
+        if annotate:
+            for i in range(n_y):
+                for j in range(n_x):
+                    val = V_nat[i, j]
+                    if not np.isfinite(val):
+                        continue
+                    fig.add_annotation(
+                        x=j,
+                        y=i,
+                        xref=f"x{idx+1}" if idx > 0 else "x",
+                        yref=f"y{idx+1}" if idx > 0 else "y",
+                        text=f"{val:.{annot_decimals}f}",
+                        showarrow=False,
+                        font=dict(size=annot_fontsize, color="black"),
+                    )
+
+    # ---- global labels + title + transparent bg ----
+    fig.update_layout(
+        title=dict(
+            text=f"Interaction maps (color_scale={color_scale}, norm_scope={norm_scope}, q={q})",
+            x=0.5,
+            y=0.98,
+        ),
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+        margin=dict(l=60, r=40, t=90, b=70),
+        width=int(figsize[0] * 90),   # inches -> px rough
+        height=int(figsize[1] * 90),
+    )
+
+    # "supxlabel"/"supylabel" equivalents as figure annotations
+    fig.add_annotation(
+        text="Distance bin",
+        x=0.5, y=-0.02, xref="paper", yref="paper",
+        showarrow=False,
+        font=dict(size=14),
+    )
+    fig.add_annotation(
+        text="Signature bin",
+        x=0.02, y=0.5, xref="paper", yref="paper",
+        showarrow=False,
+        textangle=-90,
+        font=dict(size=14),
+    )
+
+    out_html = Path(out_html)
+    out_html.parent.mkdir(parents=True, exist_ok=True)
+
+    pio.write_html(
+        fig,
+        file=str(out_html),
+        full_html=True,
+        include_plotlyjs="cdn",
+        config={"responsive": True, "displayModeBar": True, "displaylogo": False},
+        auto_open=False,
+    )
+
+    if show:
+        fig.show()
+
+    return dist_edges, sig_edges
+
+    # ---------- helpers (same idea as before, with target_gene support) ----------
+
+def _guess_col(df: pd.DataFrame, candidates: list[str], what: str) -> str:
+    for c in candidates:
+        if c in df.columns:
+            return c
+    raise ValueError(f"Couldn't find {what} column. Tried {candidates}. Have {list(df.columns)}")
+
+
+def extremes_by_model(
+    leakage_all: pd.DataFrame,
+    model_order: list[str],
+    value_col: str,
+) -> pd.DataFrame:
+    model_col = _guess_col(
+        leakage_all,
+        ["model", "model_name", "estimator", "method", "regressor", "classifier"],
+        "model",
+    )
+    gene_col = _guess_col(
+        leakage_all,
+        [
+            "gene", "gene_name", "gene_id", "symbol", "ensg", "ENSG", "Gene", "GeneID",
+            "target_gene", "target", "y_gene",
+        ],
+        "gene",
+    )
+    if value_col not in leakage_all.columns:
+        raise ValueError(f"leakage_all must contain '{value_col}'. Have {list(leakage_all.columns)}")
+
+    rows = []
+    for m in model_order:
+        sub = leakage_all.loc[leakage_all[model_col] == m, [gene_col, value_col]].dropna()
+        if sub.empty:
+            rows.append((m, np.nan, np.nan, np.nan, np.nan))
+            continue
+        imin = sub[value_col].idxmin()
+        imax = sub[value_col].idxmax()
+        rows.append(
+            (
+                m,
+                sub.loc[imin, gene_col], float(sub.loc[imin, value_col]),
+                sub.loc[imax, gene_col], float(sub.loc[imax, value_col]),
+            )
+        )
+
+    return (
+        pd.DataFrame(rows, columns=["model", "min_gene", "min_value", "max_gene", "max_value"])
+        .set_index("model")
+    )
+
+
+# ---------- symlog-like transform for Plotly (workaround) ----------
+
+def _symlog_forward(y: np.ndarray, linthresh: float = 1.0) -> np.ndarray:
+    """
+    Map y -> symlog space:
+      sign(y) * ( log10(|y|/linthresh + 1) )
+    Linear-ish around 0; log away from 0.
+    """
+    y = np.asarray(y, dtype=float)
+    s = np.sign(y)
+    a = np.abs(y)
+    return s * np.log10(a / linthresh + 1.0)
+
+
+def _symlog_ticks(linthresh: float, y_min: float, y_max: float) -> tuple[list[float], list[str]]:
+    """
+    Build tick positions in symlog-space, labeled with original y values.
+    """
+    # candidate ticks in original space (symmetric)
+    # include 0, +/- linthresh, and log decades beyond linthresh
+    candidates = [0.0, -linthresh, linthresh]
+
+    # add decades up to max magnitude
+    max_mag = max(abs(y_min), abs(y_max), linthresh)
+    if max_mag > linthresh:
+        top_dec = int(np.ceil(np.log10(max_mag)))
+        # generate 1, 10, 100... * linthresh
+        for p in range(0, top_dec + 1):
+            v = (10**p) * linthresh
+            candidates.extend([-v, v])
+
+    # filter to range and unique-sort
+    candidates = sorted(set([v for v in candidates if y_min <= v <= y_max]))
+    tickvals = [_symlog_forward(v, linthresh) for v in candidates]
+    ticktext = [f"{v:g}" for v in candidates]
+    return tickvals, ticktext
+
+
+def _symlog_limits_with_padding(values: list[float], linthresh: float, upper_mult: float = 2.2, lower_mult: float = 2.2):
+    v = np.asarray([x for x in values if np.isfinite(x)], dtype=float)
+    if v.size == 0:
+        return (-1.0, 1.0), (-1.0, 1.0)
+
+    lo = float(v.min())
+    hi = float(v.max())
+
+    # pad multiplicatively in absolute space (like your helper intent)
+    # ensure we don't collapse when near 0
+    lo_pad = lo * lower_mult if lo < 0 else lo / lower_mult
+    hi_pad = hi * upper_mult if hi > 0 else hi / upper_mult
+
+    # if all values are positive/negative, keep 0 in view a bit
+    if lo >= 0:
+        lo_pad = min(0.0, lo_pad)
+    if hi <= 0:
+        hi_pad = max(0.0, hi_pad)
+
+    # convert to symlog space for plot axis range
+    return (lo_pad, hi_pad), (_symlog_forward(lo_pad, linthresh), _symlog_forward(hi_pad, linthresh))
+
+
+# ---------- main plot (call signature matches original) ----------
+
+def plot_mean_relative_gap_with_extremes(
+    agg: pd.DataFrame,
+    leakage_all: pd.DataFrame,
+    model_order: list[str],
+    *,
+    rel_gap_col: str = "Relative leakage gap, %",
+    title: str = "Relative leakage gap, averaged over PIGs",
+    yscale: str = "symlog",
+    symlog_linthresh: float = 1.0,
+    annotate_extremes: bool = True,
+    fontsize: int = 8,
+    figsize=(12, 5),
+    out_html: str | Path = "frontend/public/plots/relative_variance_gap.html",
+    show: bool = False,
+):
+    models = list(model_order)
+    n = len(models)
+    x = np.arange(n, dtype=float)
+
+    # Align agg to model order
+    if agg.index.name is None and "model" in agg.columns:
+        agg2 = agg.set_index("model")
+    else:
+        agg2 = agg.copy()
+    agg2 = agg2.reindex(models)
+
+    if "rel_gap_pct_mean" not in agg2.columns or "rel_gap_pct_sem" not in agg2.columns:
+        raise ValueError(
+            "agg must contain columns ['rel_gap_pct_mean','rel_gap_pct_sem'] "
+            f"but has {list(agg2.columns)}"
+        )
+
+    mean = agg2["rel_gap_pct_mean"].to_numpy(dtype=float)
+    sem = agg2["rel_gap_pct_sem"].to_numpy(dtype=float)
+
+    # Matplotlib default bar color (tab:blue)
+    BAR_COLOR = "#1f77b4"
+    SCATTER_COLOR = "black"
+
+    # y-limits include mean±sem and extremes
+    y_for_limits = []
+    y_for_limits += list(mean - sem)
+    y_for_limits += list(mean + sem)
+
+    # extremes
+    annotations = []
+    ex_gap = None
+    if annotate_extremes:
+        ex_gap = extremes_by_model(leakage_all, models, rel_gap_col)
+        y_for_limits += list(ex_gap["min_value"].to_numpy())
+        y_for_limits += list(ex_gap["max_value"].to_numpy())
+
+    fig = go.Figure()
+
+    # Choose y mapping depending on scale
+    if yscale == "log":
+        if np.any(mean <= 0):
+            raise ValueError("yscale='log' requires strictly positive mean relative gaps. Use yscale='symlog' instead.")
+        y_plot = mean
+        yerr_plot = sem
+        yaxis_type = "log"
+        tickvals = None
+        ticktext = None
+        y_range = None  
+        hover_y = mean
+
+    elif yscale == "symlog":
+        # transform mean and (mean±sem) into symlog space; errorbars become asymmetric
+        yaxis_type = "linear"  # we are in transformed space
+        lo = mean - sem
+        hi = mean + sem
+        y_plot = _symlog_forward(mean, symlog_linthresh)
+        yerr_plus = _symlog_forward(hi, symlog_linthresh) - y_plot
+        yerr_minus = y_plot - _symlog_forward(lo, symlog_linthresh)
+
+        # axis limits + ticks computed in original space then mapped
+        (ymin0, ymax0), (ymin_t, ymax_t) = _symlog_limits_with_padding(
+            y_for_limits, symlog_linthresh, upper_mult=2.2, lower_mult=2.2
+        )
+        y_range = [ymin_t, ymax_t]
+        tickvals, ticktext = _symlog_ticks(symlog_linthresh, ymin0, ymax0)
+        hover_y = mean
+
+    else:
+        raise ValueError("yscale must be one of {'log','symlog'}.")
+
+    # Bars with error bars
+    if yscale == "symlog":
+        error_y = dict(
+            type="data",
+            symmetric=False,
+            array=yerr_plus,
+            arrayminus=yerr_minus,
+            visible=True,
+            thickness=1.2,
+            width=6,
+        )
+    else:
+        error_y = dict(type="data", array=yerr_plot, visible=True, thickness=1.2, width=6)
+
+    fig.add_trace(
+        go.Bar(
+            x=x,
+            y=y_plot,
+            width=0.6,
+            marker=dict(color=BAR_COLOR),
+            error_y=error_y,
+            name="Mean relative leakage gap",
+            customdata=np.stack([hover_y], axis=1),
+            hovertemplate="mean=%{customdata[0]:.3g}%<extra></extra>",
+            showlegend=False,
+        )
+    )
+
+    # Extremes points + annotations (plotted in same y-space)
+    if annotate_extremes and ex_gap is not None:
+        px, py, ptxt = [], [], []
+        for i, m in enumerate(models):
+            for which in ("min", "max"):
+                v = ex_gap.loc[m, f"{which}_value"]
+                g = ex_gap.loc[m, f"{which}_gene"]
+                if pd.notna(v):
+                    px.append(float(x[i]))
+                    if yscale == "symlog":
+                        py.append(float(_symlog_forward(v, symlog_linthresh)))
+                    else:
+                        py.append(float(v))
+                    ptxt.append(f"{g}, {float(v):.1f}")
+
+                    annotations.append(
+                        dict(
+                            x=float(x[i]),
+                            y=(float(_symlog_forward(v, symlog_linthresh)) if yscale == "symlog" else float(v)),
+                            xref="x",
+                            yref="y",
+                            text=f"{g}, {float(v):.1f}",
+                            showarrow=True,
+                            arrowhead=2,
+                            arrowsize=1,
+                            arrowwidth=1,
+                            ax=0,
+                            ay=-20 if which == "max" else 20,
+                            font=dict(size=fontsize, color="black"),
+                            bgcolor="rgba(255,255,255,0.70)",
+                            bordercolor="rgba(0,0,0,0.25)",
+                            borderwidth=1,
+                        )
+                    )
+
+        if px:
+            fig.add_trace(
+                go.Scatter(
+                    x=px,
+                    y=py,
+                    mode="markers",
+                    marker=dict(size=7, color=SCATTER_COLOR),
+                    showlegend=False,
+                    customdata=np.array(ptxt, dtype=object),
+                    hovertemplate="%{customdata}<extra></extra>",
+                )
+            )
+
+    # Layout / axes styling (matplotlib-ish)
+    fig.update_layout(
+        title=title,
+        margin=dict(l=70, r=30, t=70, b=150),
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+        annotations=annotations,
+        width=int(figsize[0] * 90),
+        height=int(figsize[1] * 90),
+    )
+
+    # X ticks
+    fig.update_xaxes(
+        tickmode="array",
+        tickvals=x,
+        ticktext=models,
+        tickangle=25,
+        showline=True,
+        mirror=True,
+        linecolor="black",
+        zeroline=False,
+        range=[-0.6, (n - 1) + 0.6],
+    )
+
+    # Y axis
+    yaxis_kwargs = dict(
+        title="Mean relative leakage gap (%)",
+        showgrid=True,
+        gridcolor="rgba(0,0,0,0.25)",
+        showline=True,
+        mirror=True,
+        linecolor="black",
+        zeroline=False,
+        type=yaxis_type,
+    )
+    if yscale == "symlog":
+        yaxis_kwargs["range"] = y_range
+        yaxis_kwargs["tickmode"] = "array"
+        yaxis_kwargs["tickvals"] = tickvals
+        yaxis_kwargs["ticktext"] = ticktext
+
+    fig.update_yaxes(**yaxis_kwargs)
+
+    # Write HTML
+    out_html = Path(out_html)
+    out_html.parent.mkdir(parents=True, exist_ok=True)
+    pio.write_html(
+        fig,
+        file=str(out_html),
+        full_html=True,
+        include_plotlyjs="cdn",
+        config={"responsive": True, "displayModeBar": True, "displaylogo": False},
+        auto_open=False,
+    )
+
+    if show:
+        fig.show()
+
+    return fig
+
+def _guess_col(df: pd.DataFrame, candidates: list[str], what: str) -> str:
+    for c in candidates:
+        if c in df.columns:
+            return c
+    raise ValueError(f"Couldn't find {what} column. Tried {candidates}. Have {list(df.columns)}")
+
+
+def extremes_by_model(
+    leakage_all: pd.DataFrame,
+    model_order: list[str],
+    value_col: str,
+) -> pd.DataFrame:
+    """
+    Auto-detect model/gene columns and compute per-model min/max (gene, value).
+    Returns index=model with columns: min_gene, min_value, max_gene, max_value
+    """
+
+    # ✅ Updated: include your 'target_gene' column (and a few other common variants)
+    model_col = _guess_col(
+        leakage_all,
+        ["model", "model_name", "estimator", "method", "regressor", "classifier"],
+        "model",
+    )
+    gene_col = _guess_col(
+        leakage_all,
+        [
+            "gene",
+            "gene_name",
+            "gene_id",
+            "symbol",
+            "ensg",
+            "ENSG",
+            "Gene",
+            "GeneID",
+            "target_gene",   # <-- YOUR COLUMN
+            "target",        # common in ML pipelines
+            "y_gene",        # sometimes used
+        ],
+        "gene",
+    )
+
+    if value_col not in leakage_all.columns:
+        raise ValueError(f"leakage_all must contain '{value_col}'. Have {list(leakage_all.columns)}")
+
+    rows = []
+    for m in model_order:
+        sub = leakage_all.loc[leakage_all[model_col] == m, [gene_col, value_col]].dropna()
+        if sub.empty:
+            rows.append((m, np.nan, np.nan, np.nan, np.nan))
+            continue
+
+        imin = sub[value_col].idxmin()
+        imax = sub[value_col].idxmax()
+
+        rows.append(
+            (
+                m,
+                sub.loc[imin, gene_col],
+                float(sub.loc[imin, value_col]),
+                sub.loc[imax, gene_col],
+                float(sub.loc[imax, value_col]),
+            )
+        )
+
+    return (
+        pd.DataFrame(rows, columns=["model", "min_gene", "min_value", "max_gene", "max_value"])
+        .set_index("model")
+    )
+
+
+
+def _linear_limits_with_padding(values: list[float], pad_frac: float = 0.16) -> tuple[float, float]:
+    v = np.asarray([x for x in values if np.isfinite(x)], dtype=float)
+    if v.size == 0:
+        return (-0.1, 0.1)
+    lo = float(v.min())
+    hi = float(v.max())
+    if lo == hi:
+        pad = 1.0 if hi == 0 else abs(hi) * pad_frac
+        return (lo - pad, hi + pad)
+    pad = (hi - lo) * pad_frac
+    return (lo - pad, hi + pad)
+
+
+def plot_mean_r2_with_extremes(
+    agg: pd.DataFrame,
+    leakage_all: pd.DataFrame,
+    model_order: list[str],
+    *,
+    title: str = "Mean variance explained, averaged over PIGs",
+    annotate_extremes: bool = True,
+    fontsize: int = 8,
+    figsize=(12, 5),
+    # extra: output control (kept optional; call still matches original)
+    out_html: str | Path = "frontend/public/plots/variance_spatial.html",
+    show: bool = False,
+):
+    """
+    Plotly interactive version of your matplotlib plot.
+
+    Call signature matches the original function.
+    Writes: frontend/public/plots/variance_spatial.html
+    Transparent background, preserves style choices as closely as Plotly allows.
+    """
+
+    models = list(model_order)
+    n = len(models)
+
+    # Ensure agg is aligned
+    # If agg is indexed by model names -> great
+    # Otherwise, if it has a 'model' column, use it.
+    if agg.index.name is None and "model" in agg.columns:
+        agg2 = agg.set_index("model")
+    else:
+        agg2 = agg.copy()
+
+    agg2 = agg2.reindex(models)
+
+    required = [
+        "R2_randomCV_mean",
+        "R2_randomCV_sem",
+        "R2_spatialBlockCV_mean",
+        "R2_spatialBlockCV_sem",
+    ]
+    missing = [c for c in required if c not in agg2.columns]
+    if missing:
+        raise ValueError(f"agg missing columns {missing}. Have {list(agg2.columns)}")
+
+    # Matplotlib geometry
+    x = np.arange(n, dtype=float)
+    w = 0.38
+    xr = x - w / 2
+    xs = x + w / 2
+
+    rand_mean = agg2["R2_randomCV_mean"].to_numpy(dtype=float)
+    rand_sem = agg2["R2_randomCV_sem"].to_numpy(dtype=float)
+    spat_mean = agg2["R2_spatialBlockCV_mean"].to_numpy(dtype=float)
+    spat_sem = agg2["R2_spatialBlockCV_sem"].to_numpy(dtype=float)
+
+    fig = go.Figure()
+
+    RAND_COLOR = "#1f77b4"
+    SPAT_COLOR = "#ff7f0e"
+    # Bars (keep Plotly default colors unless you want to hard-pin them)
+    fig.add_trace(
+        go.Bar(
+            x=xr,
+            y=rand_mean,
+            width=w,
+            name="Random cross-validation",
+            marker=dict(color=RAND_COLOR),
+            error_y=dict(type="data", array=rand_sem, visible=True, thickness=1.2, width=6),
+            hovertemplate="Random CV<br>mean=%{y:.4f}<extra></extra>",
+        )
+    )
+    fig.add_trace(
+        go.Bar(
+            x=xs,
+            y=spat_mean,
+            width=w,
+            name="Spatial block cross-validation",
+            marker=dict(color=SPAT_COLOR), 
+            error_y=dict(type="data", array=spat_sem, visible=True, thickness=1.2, width=6),
+            hovertemplate="Spatial block CV<br>mean=%{y:.4f}<extra></extra>",
+        )
+    )
+
+    # y-limits should include mean±sem and extremes
+    y_for_limits = []
+    y_for_limits += list(rand_mean - rand_sem)
+    y_for_limits += list(rand_mean + rand_sem)
+    y_for_limits += list(spat_mean - spat_sem)
+    y_for_limits += list(spat_mean + spat_sem)
+
+    annotations = []
+
+    if annotate_extremes:
+        ex_rand = extremes_by_model(leakage_all, models, "R2_randomCV")
+        ex_spat = extremes_by_model(leakage_all, models, "R2_spatialBlockCV")
+
+        y_for_limits += list(ex_rand["min_value"].to_numpy())
+        y_for_limits += list(ex_rand["max_value"].to_numpy())
+        y_for_limits += list(ex_spat["min_value"].to_numpy())
+        y_for_limits += list(ex_spat["max_value"].to_numpy())
+
+        SCATTER_COLOR = "black"
+
+        # Random extremes points at xr[i]
+        rx, ry, rtxt = [], [], []
+        sx, sy, stxt = [], [], []
+
+        for i, m in enumerate(models):
+            # Random min/max
+            for which in ("min", "max"):
+                v = ex_rand.loc[m, f"{which}_value"]
+                g = ex_rand.loc[m, f"{which}_gene"]
+                if pd.notna(v):
+                    rx.append(float(xr[i]))
+                    ry.append(float(v))
+                    rtxt.append(f"{g}, {float(v):.4f}")
+
+                    annotations.append(
+                        dict(
+                            x=float(xr[i]),
+                            y=float(v),
+                            xref="x",
+                            yref="y",
+                            text=f"{g}, {float(v):.4f}",
+                            showarrow=True,
+                            arrowhead=2,
+                            arrowsize=1,
+                            arrowwidth=1,
+                            ax=-20,
+                            ay=-20 if which == "max" else 20,
+                            font=dict(size=fontsize, color="black"),
+                            bgcolor="rgba(255,255,255,0.70)",
+                            bordercolor="rgba(0,0,0,0.25)",
+                            borderwidth=1,
+                        )
+                    )
+
+            # Spatial min/max
+            for which in ("min", "max"):
+                v = ex_spat.loc[m, f"{which}_value"]
+                g = ex_spat.loc[m, f"{which}_gene"]
+                if pd.notna(v):
+                    sx.append(float(xs[i]))
+                    sy.append(float(v))
+                    stxt.append(f"{g}, {float(v):.4f}")
+
+                    annotations.append(
+                        dict(
+                            x=float(xs[i]),
+                            y=float(v),
+                            xref="x",
+                            yref="y",
+                            text=f"{g}, {float(v):.4f}",
+                            showarrow=True,
+                            arrowhead=2,
+                            arrowsize=1,
+                            arrowwidth=1,
+                            ax=20,
+                            ay=-20 if which == "max" else 20,
+                            font=dict(size=fontsize, color="black"),
+                            bgcolor="rgba(255,255,255,0.70)",
+                            bordercolor="rgba(0,0,0,0.25)",
+                            borderwidth=1,
+                        )
+                    )
+
+        if rx:
+            fig.add_trace(
+                go.Scatter(
+                    x=rx,
+                    y=ry,
+                    mode="markers",
+                    marker=dict(size=7, color=SCATTER_COLOR),
+                    showlegend=False,
+                    hovertemplate="Random extreme<br>%{y:.4f}<extra></extra>",
+                )
+            )
+        if sx:
+            fig.add_trace(
+                go.Scatter(
+                    x=sx,
+                    y=sy,
+                    mode="markers",
+                    marker=dict(size=7, color=SCATTER_COLOR),
+                    showlegend=False,
+                    hovertemplate="Spatial extreme<br>%{y:.4f}<extra></extra>",
+                )
+            )
+
+    ylo, yhi = _linear_limits_with_padding(y_for_limits, pad_frac=0.16)
+
+    # Tick labels (rotated like matplotlib)
+    fig.update_layout(
+        title=title,
+        barmode="overlay",  # we’re manually positioning bars with numeric x
+        legend=dict(x=1.0, y=1.0, xanchor="right", yanchor="top"),
+        margin=dict(l=70, r=30, t=70, b=150),
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+        annotations=annotations,
+        width=int(figsize[0] * 90),   # rough mapping inches->px
+        height=int(figsize[1] * 90),
+    )
+
+    fig.update_xaxes(
+        tickmode="array",
+        tickvals=x,
+        ticktext=models,
+        tickangle=25,
+        showline=True,
+        mirror=True,
+        linecolor="black",
+        zeroline=False,
+        range=[-0.6, (n - 1) + 0.6],
+    )
+
+    fig.update_yaxes(
+        title="Mean OOF R² across genes",
+        range=[ylo, yhi],
+        showgrid=True,
+        gridcolor="rgba(0,0,0,0.25)",
+        showline=True,
+        mirror=True,
+        linecolor="black",
+        zeroline=False,
+    )
+
+    # Write HTML
+    out_html = Path(out_html)
+    out_html.parent.mkdir(parents=True, exist_ok=True)
+    pio.write_html(
+        fig,
+        file=str(out_html),
+        full_html=True,
+        include_plotlyjs="cdn",
+        config={"responsive": True, "displayModeBar": True, "displaylogo": False},
+        auto_open=False,
+    )
+
+    if show:
+        fig.show()
+
+    return fig
