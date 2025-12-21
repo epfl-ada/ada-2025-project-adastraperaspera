@@ -623,7 +623,7 @@ const RQ4Section = () => {
                 The high R² from spatial-only boosting is not automatically evidence of plaque biology. A
                 plausible explanation is anatomical bias: plaque deposition is not spatially uniform, and
                 certain anatomical regions accumulate more plaques than others. In that case, coordinates
-                predict *regional vulnerability* rather than true plaque distance.
+                predict <span className="font-medium italic text-foreground">regional vulnerability</span> rather than true plaque distance.
               </p>
 
               <p className="text-lg text-muted-foreground leading-relaxed">
@@ -766,43 +766,40 @@ const RQ4Section = () => {
                <p className="text-lg text-muted-foreground leading-relaxed">
                  Across feature sets, average R² under random cross-validation is consistently higher than under spatial block cross-validation (with overlapping 95% confidence intervals at the aggregate level), indicating that random splits can overstate generalization in the presence of spatial autocorrelation.
               </p>
-              <p className="text-lg text-muted-foreground leading-relaxed">
-                 Critically, this inflation is not uniform across genes: some show extremely large relative differences, including +138.2% for *Ctst* and +1,369% for *Nrep*.
-              </p>
-              <p className="text-lg text-muted-foreground leading-relaxed">
-                 These outliers highlight a key organizing principle for the remainder of this section: genes with stronger spatial variation (and/or sharper region-specific regimes) suffer disproportionate performance degradation when portions of the brain are obstructed during training, revealing dependence on localized structure rather than globally transferable trends.
-              </p>
-              <p className="text-lg text-muted-foreground leading-relaxed">
-                 We make this leakage effect explicit by quantifying the mean relative leakage gap (%) between random and spatial block cross-validation (log-scaled), where larger gaps indicate stronger performance inflation under random splits and therefore greater susceptibility to spatial autocorrelation across the tested feature sets.
-              </p>
 
-
-
-            <PlotFrame
+              <PlotFrame
                 src={`${base}plots/variance_spatial.html`}
                 title=""
                 size="sm"
                 caption="Mean OOF R² under random vs spatial block cross-validation across feature sets.."
               />
 
-            <PlotFrame
+              <p className="text-lg text-muted-foreground leading-relaxed">
+                 Critically, this inflation is not uniform across genes: some show extremely large relative differences, including +138.2% for <span className="font-medium italic text-foreground">Ctst</span> and +1,369% for <span className="font-medium italic text-foreground">Nrep</span>.
+              </p>
+              <PlotFrame
                 src={`${base}plots/relative_variance_gap.html`}
                 title=""
                 size="sm"
                 caption="Mean relative leakage gap (%) between random and spatial block cross-validation (log-scaled)."
               />
-
               <p className="text-lg text-muted-foreground leading-relaxed">
-                Having established that spatial context matters—and that its impact is highly gene-dependent—we next introduce a non-linear interaction between plaque distance and the local transcriptional context of surrounding PIGs. Specifically, we define the <span className="font-medium text-foreground">neighbor signature</span> (or <span className="font-medium text-foreground">signature</span> for short) as the average expression level of “Other PIGs” in the neighborhood, and we examine average target expression across joint bins of distance and signature. Distance is discretized into five bins (D1–D5 from closest to farthest), and the signature is discretized into five bins (S1–S5 from lowest to highest). Across these distance/signature groups, expression varies substantially, indicating that meaningful information is encoded jointly in proximity to plaques and local neighborhood state for essentially all genes—except *Cxcl10*, where extreme zero inflation limits interpretability. This motivates an interaction-aware formulation: by inspecting per-gene distance–signature interaction maps (log1p-transformed and normalized per gene), we can distinguish smoothly varying gradients (consistent with gradual spatial structure) from localized peaks (suggesting gene-specific regimes in which neighborhood composition modulates distance-dependent effects).
+                 These outliers highlight a key organizing principle for the remainder of this section: genes with stronger spatial variation (and/or sharper region-specific regimes) suffer disproportionate performance degradation when portions of the brain are obstructed during training, revealing dependence on localized structure rather than globally transferable trends.
               </p>
-
-              <PlotFrame
+              <p className="text-lg text-muted-foreground leading-relaxed">
+                 We make this leakage effect explicit by quantifying the mean relative leakage gap (%) between random and spatial block cross-validation (log-scaled), where larger gaps indicate stronger performance inflation under random splits and therefore greater susceptibility to spatial autocorrelation across the tested feature sets.
+              </p>
+               <PlotFrame
                 src={`${base}plots/interaction_model.html`}
                 title=""
                 size="lg"
                 caption="Performance of the interaction model, illustrating the model's ability to capture both proximal and distal gradients."
               />
+              <p className="text-lg text-muted-foreground leading-relaxed">
+                Having established that spatial context matters and that its impact is highly gene-dependent, we next introduce a non-linear interaction between plaque distance and the local transcriptional context of surrounding PIGs. Specifically, we define the <span className="font-medium text-foreground">neighbor signature</span> (or <span className="font-medium text-foreground">signature</span> for short) as the average expression level of “Other PIGs” in the neighborhood, and we examine average target expression across joint bins of distance and signature. Distance is discretized into five bins (D1–D5 from closest to farthest), and the signature is discretized into five bins (S1–S5 from lowest to highest). Across these distance/signature groups, expression varies substantially, indicating that meaningful information is encoded jointly in proximity to plaques and local neighborhood state for essentially all genes—except <span className="font-medium italic text-foreground">Cxcl10</span>, where extreme zero inflation limits interpretability. This motivates an interaction-aware formulation: by inspecting per-gene distance–signature interaction maps (log1p-transformed and normalized per gene), we can distinguish smoothly varying gradients (consistent with gradual spatial structure) from localized peaks (suggesting gene-specific regimes in which neighborhood composition modulates distance-dependent effects).
+              </p>
 
+             
               <p className="text-lg text-muted-foreground leading-relaxed">We then evaluate whether explicitly modeling this interaction improves spatial generalization under the spatial-block split. We compare the spatial-block OOF performance of a distance/signature interaction model against ablations that include only distance or only signature. On average, the interaction model performs best, but the improvement over the simpler signature-only model is not statistically significant at the 95% confidence level. This result is informative in two ways: it reinforces the strength of neighborhood context as a standalone predictor, while also suggesting that (at least in aggregate) much of the interaction’s predictive value may already be captured by the neighbor signature itself. At the same time, the best- and worst-predicted genes vary substantially across variants, underscoring pronounced gene-to-gene heterogeneity in the extent and form of spatial dependence.</p>
 
                <PlotFrame
@@ -813,7 +810,8 @@ const RQ4Section = () => {
               />
 
               <p className="text-lg text-muted-foreground leading-relaxed">
-                Because the neighbor-based model is unexpectedly strong under spatial-block evaluation, we next probe *what* it is learning via two targeted ablations designed to separate fine-grained neighborhood structure from coarser spatial confounding. In the first mode, we permute cells *within each brain tile* and measure the performance drop. Since cells inside a tile remain relatively close, this perturbation is milder than a global random permutation, yet it still breaks cell-to-cell correspondence in local neighborhoods. Even under this conservative disruption, spatial-block OOF performance drops by 62.9%, with no overlap in the 95% confidence intervals, indicating that the model’s predictive power depends materially on correctly matched neighborhood structure rather than merely on coarse location. Spatially localizing the resulting residual shifts reveals where this dependence is most pronounced: the average absolute divergence is highest in highly heterogeneous regions such as the hippocampal formation and isocortex, and it is also elevated near the tissue periphery containing break-away cells. The latter illustrates an extreme but instructive form of heterogeneity: when a single tile mixes “continental” cells within the main tissue mass and “island” cells that are detached and therefore drastically different in distance-to-plaque, within-tile permutation introduces substantial surprise and correspondingly larger residual changes.
+                Because the neighbor-based model is unexpectedly strong under spatial-block evaluation, we next probe 
+                <span className="font-medium italic text-foreground">what</span> it is learning via two targeted ablations designed to separate fine-grained neighborhood structure from coarser spatial confounding. In the first mode, we permute cells <span className="font-medium italic text-foreground">within each brain tile</span> and measure the performance drop. Since cells inside a tile remain relatively close, this perturbation is milder than a global random permutation, yet it still breaks cell-to-cell correspondence in local neighborhoods. Even under this conservative disruption, spatial-block OOF performance drops by 62.9%, with no overlap in the 95% confidence intervals, indicating that the model’s predictive power depends materially on correctly matched neighborhood structure rather than merely on coarse location. Spatially localizing the resulting residual shifts reveals where this dependence is most pronounced: the average absolute divergence is highest in highly heterogeneous regions such as the hippocampal formation and isocortex, and it is also elevated near the tissue periphery containing break-away cells. The latter illustrates an extreme but instructive form of heterogeneity: when a single tile mixes “continental” cells within the main tissue mass and “island” cells that are detached and therefore drastically different in distance-to-plaque, within-tile permutation introduces substantial surprise and correspondingly larger residual changes.
                 </p>
 
 
