@@ -13,7 +13,7 @@ MODALITY_SETS = [
     ["genes", "cluster"],
     ["genes", "spatial"],
     ["genes", "morph", "cluster"],
-    ["genes", "morph", "spatial", "cluster"],  # full model
+    ["genes", "morph", "spatial", "cluster"],
 ]
 
 
@@ -35,13 +35,12 @@ def run_modality_ablation(data, train_idx, test_idx, modality_sets=MODALITY_SETS
     DataFrame
         Results of the ablation across all modality sets and models.
     """
-    
+
     all_results = []
 
     for mods in modality_sets:
         print(f"\n=== Running modalities: {mods} ===")
 
-        # Prepare modality blocks
         blocks_train = {}
         blocks_test = {}
 
@@ -53,7 +52,6 @@ def run_modality_ablation(data, train_idx, test_idx, modality_sets=MODALITY_SETS
                 blocks_train[m] = None
                 blocks_test[m] = None
 
-        # Scaling
         scaler = ModalityScaler()
         scaler.fit(blocks_train)
 
@@ -63,7 +61,6 @@ def run_modality_ablation(data, train_idx, test_idx, modality_sets=MODALITY_SETS
         y_train = data["target"].iloc[train_idx].values.astype(np.float32)
         y_test = data["target"].iloc[test_idx].values.astype(np.float32)
 
-        # Run ablations (7 models)
         df = run_ablation_experiments(X_train, y_train, X_test, y_test)
         df["Modalities"] = ", ".join(mods)
 

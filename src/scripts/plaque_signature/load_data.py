@@ -50,16 +50,13 @@ def load_mouse_csv(path, include_modalities=None):
     path = Path(path)
     df = pd.read_csv(path)
 
-    # Detect gene columns dynamically
     gene_cols = get_gene_columns(df)
 
-    # Default: include all modalities
     if include_modalities is None:
         include_modalities = ["genes", "morph", "spatial", "cluster"]
 
     data = {"df": df, "modalities": include_modalities}
 
-    # Build modality blocks
     if "genes" in include_modalities:
         data["genes"] = df[gene_cols]
     else:
@@ -76,13 +73,12 @@ def load_mouse_csv(path, include_modalities=None):
         data["spatial"] = None
 
     if "cluster" in include_modalities:
-        # One-hot encode cluster_leiden
+
         clusters = pd.get_dummies(df[CLUSTER_COL], prefix="cluster")
         data["cluster"] = clusters
     else:
         data["cluster"] = None
 
-    # Concatenate selected modalities into one feature matrix
     blocks = []
     for key in ["genes", "morph", "spatial", "cluster"]:
         if data[key] is not None:
@@ -90,7 +86,6 @@ def load_mouse_csv(path, include_modalities=None):
 
     data["X"] = pd.concat(blocks, axis=1)
 
-    # Add plaque target if present
     if TARGET_COL in df.columns:
         data["target"] = df[TARGET_COL]
     else:

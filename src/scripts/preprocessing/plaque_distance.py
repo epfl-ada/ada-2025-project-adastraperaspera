@@ -31,7 +31,6 @@ def load_plaque_polygons(csv_path: str) -> gpd.GeoDataFrame:
 
     logger.info(f"📥 Parsing plaque polygons from {csv_path}")
 
-    # Read only data lines (skip comments)
     with open(csv_path, encoding="utf-8") as f:
         lines = [ln for ln in f.readlines() if not ln.startswith("#") and ln.strip()]
 
@@ -44,7 +43,7 @@ def load_plaque_polygons(csv_path: str) -> gpd.GeoDataFrame:
     names = []
     for sel, group in df.groupby("Selection"):
         coords = list(zip(group["X"], group["Y"], strict=False))
-        # Ensure valid polygon (>=3 points)
+
         if len(coords) >= 3:
             try:
                 poly = Polygon(coords)
@@ -75,23 +74,22 @@ def compute_cell_to_plaque_distance(
         cells_df["distance_to_plaque"] = float("nan")
         return cells_df
 
-    logger.info(f"📏 Computing distances for {len(cells_df)} cells → {len(plaques_gdf)} plaques")
+    logger.info(
+        f"📏 Computing distances for {len(cells_df)} cells → {len(plaques_gdf)} plaques"
+    )
 
-    # Build geometry for cells
     cell_points = gpd.GeoSeries(
         gpd.points_from_xy(cells_df[x_col], cells_df[y_col]), crs=plaques_gdf.crs
     )
 
-    # Use vectorized spatial index query (Shapely 2.x API)
     tree = STRtree(plaques_gdf.geometry.values)
 
     distances = []
     for pt in cell_points:
-        nearest_geom = tree.geometries[tree.nearest(pt)]  # geometry object
+        nearest_geom = tree.geometries[tree.nearest(pt)]
         distances.append(pt.distance(nearest_geom))
 
     cells_out = cells_df.copy()
     cells_out["distance_to_plaque"] = distances
     logger.info("✅ Distance computation complete.")
     return cells_out
-

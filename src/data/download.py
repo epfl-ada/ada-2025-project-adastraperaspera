@@ -24,7 +24,6 @@ def download_xenium_dataset(url: str, output_dir: str) -> str:
     """
     os.makedirs(output_dir, exist_ok=True)
 
-    # Skip download if directory is not empty
     if os.listdir(output_dir):
         logger.info("Dataset already downloaded in the output directory, skipping.")
         return output_dir

@@ -5,10 +5,6 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
 
 
-# ------------------------------------------------------------
-# 1. PCA PER CLUSTER
-# ------------------------------------------------------------
-
 def run_pca_per_cluster(mice, gene_cols, glial_clusters, disease_map):
     """
     Compute PCA for each glial cluster using gene expression.
@@ -47,10 +43,6 @@ def run_pca_per_cluster(mice, gene_cols, glial_clusters, disease_map):
 
     return results
 
-
-# ------------------------------------------------------------
-# 2. DIFFERENTIAL EXPRESSION PER CLUSTER (TG vs WT)
-# ------------------------------------------------------------
 
 def compute_de_per_cluster(mice_z, gene_cols, glial_clusters, disease_map):
     """
@@ -92,10 +84,6 @@ def compute_de_per_cluster(mice_z, gene_cols, glial_clusters, disease_map):
     return de_results
 
 
-# ------------------------------------------------------------
-# 3. TOP GENES PER CLUSTER (UP & DOWN)
-# ------------------------------------------------------------
-
 def extract_top_genes(de_results, n=20):
     """
     For each cluster: top N upregulated and top N downregulated genes.
@@ -105,10 +93,7 @@ def extract_top_genes(de_results, n=20):
     for c, df in de_results.items():
         top_up = df.nlargest(n, "logFC")
         top_down = df.nsmallest(n, "logFC")
-        top_genes_per_cluster[c] = {
-            "upregulated": top_up,
-            "downregulated": top_down
-        }
+        top_genes_per_cluster[c] = {"upregulated": top_up, "downregulated": top_down}
 
     return top_genes_per_cluster
 
@@ -126,12 +111,10 @@ def build_top_genes_heatmap_matrix(de_results, top_n=10):
         all_top.append(df)
 
     matrix_df = pd.concat(all_top)
-    return matrix_df.pivot_table(index="cluster", columns="gene", values="logFC", fill_value=0)
+    return matrix_df.pivot_table(
+        index="cluster", columns="gene", values="logFC", fill_value=0
+    )
 
-
-# ------------------------------------------------------------
-# 4. AD-SPECIFIC GENE ACTIVATION
-# ------------------------------------------------------------
 
 def compute_ad_specificity(mice_z, gene_cols, glial_clusters, disease_map):
     """
@@ -157,11 +140,9 @@ def compute_ad_specificity(mice_z, gene_cols, glial_clusters, disease_map):
         TG = pd.concat(tg_cells).mean()
         WT = pd.concat(wt_cells).mean()
 
-        df_out = pd.DataFrame({
-            "gene": gene_cols,
-            "TG_mean": TG.values,
-            "WT_mean": WT.values
-        })
+        df_out = pd.DataFrame(
+            {"gene": gene_cols, "TG_mean": TG.values, "WT_mean": WT.values}
+        )
 
         df_out["logFC"] = df_out["TG_mean"] - df_out["WT_mean"]
         df_out["disease_specific_score"] = df_out["logFC"] - df_out["WT_mean"]
@@ -178,19 +159,19 @@ def build_ad_specific_heatmap(ad_specific, top_n=10):
     rows = []
     for c, df in ad_specific.items():
         for _, row in df.head(top_n).iterrows():
-            rows.append({
-                "cluster": c,
-                "gene": row["gene"],
-                "score": row["disease_specific_score"],
-            })
+            rows.append(
+                {
+                    "cluster": c,
+                    "gene": row["gene"],
+                    "score": row["disease_specific_score"],
+                }
+            )
 
     heat_df = pd.DataFrame(rows)
-    return heat_df.pivot_table(index="cluster", columns="gene", values="score", fill_value=0)
+    return heat_df.pivot_table(
+        index="cluster", columns="gene", values="score", fill_value=0
+    )
 
-
-# ------------------------------------------------------------
-# 5. RANK CLUSTERS BY AD-SPECIFICITY
-# ------------------------------------------------------------
 
 def rank_clusters_by_ad_specificity(ad_specific):
     rows = []
@@ -198,10 +179,12 @@ def rank_clusters_by_ad_specificity(ad_specific):
         mean_score = df["disease_specific_score"].abs().mean()
         top_gene = df.loc[df["disease_specific_score"].idxmax(), "gene"]
         top_val = df["disease_specific_score"].max()
-        rows.append({
-            "cluster": c,
-            "mean_AD_specificity": mean_score,
-            "top_gene": top_gene,
-            "top_gene_score": top_val
-        })
+        rows.append(
+            {
+                "cluster": c,
+                "mean_AD_specificity": mean_score,
+                "top_gene": top_gene,
+                "top_gene_score": top_val,
+            }
+        )
     return pd.DataFrame(rows).sort_values("mean_AD_specificity", ascending=False)

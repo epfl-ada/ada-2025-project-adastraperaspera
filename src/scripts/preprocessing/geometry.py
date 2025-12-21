@@ -18,7 +18,9 @@ def fill_holes(g):
     if isinstance(g, Polygon):
         return Polygon(g.exterior)
     if isinstance(g, MultiPolygon):
-        return MultiPolygon([Polygon(p.exterior) for p in g.geoms if not p.exterior.is_empty])
+        return MultiPolygon(
+            [Polygon(p.exterior) for p in g.geoms if not p.exterior.is_empty]
+        )
     return g
 
 
@@ -26,7 +28,6 @@ def convexify(g):
     return g.convex_hull
 
 
-# Filter plaques
 def filter_plaques(
     plaques: pd.DataFrame,
     brain_geom: Polygon,
@@ -46,20 +47,22 @@ def filter_plaques(
         tree = STRtree(geoms)
         nested = set()
         try:
-            src_idx, tree_idx = tree.query(geoms, predicate="contains", return_indices=True)
+            src_idx, tree_idx = tree.query(
+                geoms, predicate="contains", return_indices=True
+            )
             for i, j in zip(src_idx, tree_idx, strict=False):
                 if i == j:
-                    continue  # skip self-pairs
-                nested.add(j)  # j is the contained geometry (should be dropped)
+                    continue
+                nested.add(j)
         except TypeError:
-            # Older Shapely versions
+
             for i, g in enumerate(geoms):
-                for cand in tree.query(g):  # returns geometries
+                for cand in tree.query(g):
                     if cand is g:
                         continue
                     try:
                         if cand.contains(g):
-                            nested.add(i)  # i is the contained geometry (should be dropped)
+                            nested.add(i)
                             break
                     except Exception:
                         pass
@@ -68,8 +71,7 @@ def filter_plaques(
             plaques_poly = plaques_poly.iloc[keep_idx].copy()
     parts = []
     if MERGE_OVERLAPS and len(plaques_poly):
-        # Remove overlapping plaques (if any)
-        # Overlapping or touching polygons get fused. Separate islands remain separate but are returned together.
+
         u = unary_union(plaques_poly["geometry"].tolist())
         if isinstance(u, Polygon):
             parts = [u]
@@ -91,16 +93,22 @@ def filter_plaques(
         & plaques_poly["geometry"].map(lambda g: g.is_valid and g.area > 0)
     ].copy()
 
-    plaques_poly["isPolygon"] = plaques_poly["geometry"].map(lambda g: isinstance(g, Polygon))
+    plaques_poly["isPolygon"] = plaques_poly["geometry"].map(
+        lambda g: isinstance(g, Polygon)
+    )
     plaques_poly["isMultiPolygon"] = plaques_poly["geometry"].map(
         lambda g: isinstance(g, MultiPolygon)
     )
-    plaques_poly["is_valid"] = plaques_poly["geometry"].map(lambda g: getattr(g, "is_valid", False))
+    plaques_poly["is_valid"] = plaques_poly["geometry"].map(
+        lambda g: getattr(g, "is_valid", False)
+    )
     plaques_poly["has_holes"] = plaques_poly["geometry"].map(has_holes)
     plaques_poly["is_convex"] = plaques_poly["geometry"].map(
         lambda g: hasattr(g, "convex_hull") and g.equals(g.convex_hull)
     )
-    plaques_poly["area"] = plaques_poly["geometry"].map(lambda g: getattr(g, "area", 0.0))
+    plaques_poly["area"] = plaques_poly["geometry"].map(
+        lambda g: getattr(g, "area", 0.0)
+    )
     plaques_poly["centroid_x"] = plaques_poly["geometry"].map(
         lambda g: getattr(getattr(g, "centroid", None), "x", np.nan)
     )
@@ -146,15 +154,15 @@ def compute_cell_to_plaque_distances(
     ):
         x, y = float(row.x_centroid), float(row.y_centroid)
         p = Point(x, y)
-        # Get nearest geometry index directly
-        j = tree.nearest(p)  # returns integer index of nearest geometry
+
+        j = tree.nearest(p)
         nearest_geom = pg[j]
-        # Is this cell occurring inside aplaque?
+
         inside = nearest_geom.contains(p)
-        # Closest boundary point and distances
+
         np1, np2 = nearest_points(p, nearest_geom)
         dist_boundary = p.distance(nearest_geom)
-        # Distance to plaque centroid
+
         cx, cy = pcent[j]
         dist_center = np.hypot(x - cx, y - cy)
         results.append(
@@ -195,8 +203,12 @@ def rename_centroid_columns(df: pd.DataFrame) -> pd.DataFrame:
     Returns:
         The dataframe with the renamed centroid columns.
     """
-    cand_x = [c for c in ["x_centroid", "x", "x_center", "centroid_x"] if c in df.columns]
-    cand_y = [c for c in ["y_centroid", "y", "y_center", "centroid_y"] if c in df.columns]
+    cand_x = [
+        c for c in ["x_centroid", "x", "x_center", "centroid_x"] if c in df.columns
+    ]
+    cand_y = [
+        c for c in ["y_centroid", "y", "y_center", "centroid_y"] if c in df.columns
+    ]
     if not cand_x or not cand_y:
         raise ValueError(
             "Missing centroid columns. Provide x_centroid/y_centroid (or synonyms: x,y / x_center,y_center / centroid_x,centroid_y)."
@@ -259,11 +271,11 @@ def load_plaques(
     """
     raw = plaque_path.read_text(encoding="utf-8").splitlines()
     areas_meta = []
-    # Load the areas metadata from the first line if it exists
+
     if raw and raw[0].lstrip().startswith("#Areas"):
         parts = [p.strip() for p in raw[0].split(",")]
         areas_meta = [float(x) for x in parts[1:] if x.replace(".", "", 1).isdigit()]
-    # Load the plaques from the remaining lines
+
     rows = []
     for line in raw[2:]:
         if not line.strip():
@@ -280,7 +292,9 @@ def load_plaques(
         rows.append((name, x, y))
 
     plaques_long = pd.DataFrame(rows, columns=["plaque_name", "x", "y"])
-    plaques_long["plaque_id"] = plaques_long["plaque_name"].str.extract(r"(\d+)").astype(int)
+    plaques_long["plaque_id"] = (
+        plaques_long["plaque_name"].str.extract(r"(\d+)").astype(int)
+    )
     if areas_meta:
         area_map = {
             i + 1: areas_meta[i]
@@ -304,9 +318,9 @@ def close_polygon_if_needed(
     """
     if len(xy) < 3:
         return None
-    # If the first and last points are not exactly identical, append the first point to the end
+
     if not (xy[0] == xy[-1]).all():
-        # Ensure that the polygon is explicitly closed
+
         xy = np.vstack([xy, xy[0]])
     return Polygon(xy)
 

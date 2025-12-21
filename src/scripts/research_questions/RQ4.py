@@ -12,7 +12,6 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 
 
-
 class ModelRunner(Protocol):
     """
     Protocol for model runner callables.
@@ -47,6 +46,7 @@ class GeneModelingOutput:
     spearman_corr: pd.DataFrame
     delta_expression: pd.Series
 
+
 def run_gene_distance_modeling(
     cells_with_distances: pd.DataFrame,
     gene_cols: Sequence[str],
@@ -60,11 +60,15 @@ def run_gene_distance_modeling(
     n_top_genes_for_overlay: int = 5,
     top_n_importances_for_plot: int = 20,
     plot_model_performance: Callable[[pd.DataFrame], None] | None = None,
-    plot_model_performance_interactive: (Callable[[pd.DataFrame], None] | None) = None,
+    plot_model_performance_interactive: Callable[[pd.DataFrame], None] | None = None,
     plot_top_gene_importances: Callable[[pd.DataFrame, int], None] | None = None,
-    plot_top_gene_importances_interactive: Callable[[pd.DataFrame, int], None] | None = None,
+    plot_top_gene_importances_interactive: (
+        Callable[[pd.DataFrame, int], None] | None
+    ) = None,
     plot_spatial_overlay: Callable[[pd.DataFrame, str], None] | None = None,
-    plot_multi_gene_signature: (Callable[[pd.DataFrame, Sequence[str]], None] | None) = None,
+    plot_multi_gene_signature: (
+        Callable[[pd.DataFrame, Sequence[str]], None] | None
+    ) = None,
     plot_pred_vs_true: Callable[[pd.Series, np.ndarray, str], None] | None = None,
     plot_residual_hist: Callable[[pd.Series, np.ndarray, str], None] | None = None,
     plot_spatial_residual_map: (
@@ -77,21 +81,25 @@ def run_gene_distance_modeling(
         Callable[[pd.DataFrame, pd.Series, np.ndarray, str], None] | None
     ) = None,
     plot_bivariate_resid_distance_spatial_interactive: (
-        Callable[[pd.DataFrame, pd.Series, np.ndarray, str], None] | None ) = None,   
+        Callable[[pd.DataFrame, pd.Series, np.ndarray, str], None] | None
+    ) = None,
     plot_radius_color_spatial: (
         Callable[[pd.DataFrame, pd.Series, np.ndarray, str], None] | None
     ) = None,
     plot_true_pred_kde: Callable[[pd.Series, np.ndarray, str], None] | None = None,
-    plot_true_pred_kde_interactive: 
-        Callable[[pd.Series, np.ndarray, str], None] | None = None,
-    plot_residual_vs_distance: Callable[[pd.Series, np.ndarray, str], None] | None = None,
-    plot_residual_vs_distance_interactive:
-        Callable[[pd.Series, np.ndarray, str], None] | None = None,
+    plot_true_pred_kde_interactive: (
+        Callable[[pd.Series, np.ndarray, str], None] | None
+    ) = None,
+    plot_residual_vs_distance: (
+        Callable[[pd.Series, np.ndarray, str], None] | None
+    ) = None,
+    plot_residual_vs_distance_interactive: (
+        Callable[[pd.Series, np.ndarray, str], None] | None
+    ) = None,
     plaques_poly: Any | None = None,
     logger: logging.Logger | None = None,
     dropna: bool = True,
 ) -> GeneModelingOutput:
-
     """
     Train several models to predict plaque distance from gene expression, collect results,
     compute residual-based diagnostics, and (optionally) run plotting callbacks.
@@ -152,7 +160,6 @@ def run_gene_distance_modeling(
     """
     log = logger or logging.getLogger(__name__)
 
-    # Select subset and handle missing values if requested
     required_cols = list(gene_cols) + [target_col]
     df = cells_with_distances.copy()
 
@@ -170,12 +177,10 @@ def run_gene_distance_modeling(
     log.info(f"y shape: {y.shape}")
     log.info(f"Target NaN count: {int(np.isnan(y).sum())}")
 
-    # Train/test split
     X_train, X_test, y_train, y_test = train_test_split(
         X, y, test_size=test_size, random_state=random_state
     )
 
-    # Scale features
     scaler = StandardScaler()
     X_train_scaled = scaler.fit_transform(X_train)
     X_test_scaled = scaler.transform(X_test)
@@ -186,19 +191,20 @@ def run_gene_distance_modeling(
         f"{np.mean(X_train_scaled[:, :5], axis=0)}"
     )
     log.info(
-        f"Std  of first 5 genes (train, after scaling): " f"{np.std(X_train_scaled[:, :5], axis=0)}"
+        f"Std  of first 5 genes (train, after scaling): "
+        f"{np.std(X_train_scaled[:, :5], axis=0)}"
     )
 
-    # Run all models
     trained_models: dict[str, Any] = {}
     results_list: list[dict[str, Any]] = []
     importance_frames: list[pd.DataFrame] = []
 
     for name, fn in model_runners.items():
         log.info(f"Running {name.upper()}")
-        model, results, imp = fn(X_train_scaled, X_test_scaled, y_train, y_test, gene_cols)
+        model, results, imp = fn(
+            X_train_scaled, X_test_scaled, y_train, y_test, gene_cols
+        )
 
-        # Normalize results to a dict and include model name for clarity
         if isinstance(results, pd.Series):
             results = results.to_dict()
         else:
@@ -222,7 +228,6 @@ def run_gene_distance_modeling(
     log.info("Model performance summary created.")
     log.info(results_df.head())
 
-    # Optional performance plots
     if plot_model_performance is not None:
         plot_model_performance(results_df)
     if plot_model_performance_interactive is not None:
@@ -230,9 +235,10 @@ def run_gene_distance_modeling(
     if plot_top_gene_importances is not None and not importance_df.empty:
         plot_top_gene_importances(importance_df, top_n_importances_for_plot)
     if plot_top_gene_importances_interactive is not None and not importance_df.empty:
-        plot_top_gene_importances_interactive(importance_df, top_n=top_n_importances_for_plot)
+        plot_top_gene_importances_interactive(
+            importance_df, top_n=top_n_importances_for_plot
+        )
 
-    # Choose top genes from the designated "best" model
     top_genes: list[str] = []
     if (
         not importance_df.empty
@@ -242,7 +248,9 @@ def run_gene_distance_modeling(
         mask_best = importance_df["model"].str.lower() == best_model_name.lower()
         imp_best = importance_df.loc[mask_best]
         if not imp_best.empty:
-            top_genes = imp_best.nlargest(n_top_genes_for_overlay, "importance")["gene"].tolist()
+            top_genes = imp_best.nlargest(n_top_genes_for_overlay, "importance")[
+                "gene"
+            ].tolist()
 
     if top_genes:
         log.info(f"Top genes for {best_model_name.upper()}: {top_genes}")
@@ -256,51 +264,20 @@ def run_gene_distance_modeling(
             "Check importance_df contains ['gene','importance','model']."
         )
 
-    # Fit/predict with the "best" model across the full dataset (no row dropping here)
     if best_model_name not in trained_models:
         raise KeyError(
             f"best_model_name='{best_model_name}' not found in trained_models: "
             f"{list(trained_models.keys())}"
         )
 
-    # Use scaler to transform ALL rows (may yield NaNs if inputs have NaNs)
     X_scaled_all = scaler.transform(cells_with_distances[gene_cols].to_numpy())
     best_model = trained_models[best_model_name]
     y_true = cells_with_distances[target_col]
     y_pred = best_model.predict(X_scaled_all)
 
-    # Residual diagnostics
     residuals = y_true - y_pred
     abs_resid = residuals.abs()
 
-    """# Optional residual plots
-    if plot_pred_vs_true is not None:
-        plot_pred_vs_true(y_true, y_pred, model_name=best_model_name)
-    if plot_residual_hist is not None:
-        plot_residual_hist(y_true, y_pred, model_name=best_model_name)
-    if plot_spatial_residual_map is not None:
-        plot_spatial_residual_map(cells_with_distances, y_true, y_pred, model_name=best_model_name)
-    if plot_residual_figure is not None:
-        plot_residual_figure(cells_with_distances, y_true, y_pred, gene_cols, plaques_poly)
-    
-    if plot_resid_distance_bivariate is not None:
-        plot_resid_distance_bivariate(
-            cells_with_distances, y_true, y_pred,
-            x_col="x_centroid", y_col="y_centroid"
-        )
-
-    if plot_spatial_bubble_resid_distance is not None:
-        plot_spatial_bubble_resid_distance(
-            cells_with_distances, y_true, y_pred,
-            x_col="x_centroid", y_col="y_centroid"
-        )
-
-    if plot_kde_true_pred_distance is not None:
-        plot_kde_true_pred_distance(y_true, y_pred, model_name=best_model_name)
-
-    if plot_resid_vs_distance_scatter is not None:
-        plot_resid_vs_distance_scatter(y_true, residuals, model_name=best_model_name)"""
-    # Optional residual plots
     if plot_pred_vs_true is not None:
         plot_pred_vs_true(y_true, y_pred, model_name=best_model_name)
     if plot_residual_hist is not None:
@@ -316,11 +293,6 @@ def run_gene_distance_modeling(
 
     import matplotlib.pyplot as plt
 
-    # --- NEW plots (combined spatial figure + separate KDE / scatter) ---
-
-    # 1) Combined spatial residual figure (two panels in one figure)
-
-    # We drop the "Residuals in space" plot entirely.
     if plot_bivariate_resid_dist_spatial is not None:
         fig, ax = plt.subplots(1, 1, figsize=(7.5, 6))
 
@@ -334,32 +306,27 @@ def run_gene_distance_modeling(
             ax=ax,
         )
 
-        fig.suptitle(f"{best_model_name.upper()}: residual structure around plaques", fontsize=14)
+        fig.suptitle(
+            f"{best_model_name.upper()}: residual structure around plaques", fontsize=14
+        )
 
         if plot_bivariate_resid_distance_spatial_interactive is not None:
             plot_bivariate_resid_distance_spatial_interactive(
-                cells_with_distances, y_true, y_pred, model_name=best_model_name)
+                cells_with_distances, y_true, y_pred, model_name=best_model_name
+            )
 
-        # 2) KDE of true vs predicted distance
         if plot_true_pred_kde is not None:
             plot_true_pred_kde(y_true, y_pred, model_name=best_model_name)
         if plot_true_pred_kde_interactive is not None:
-            plot_true_pred_kde_interactive(
-                y_true, y_pred, model_name=best_model_name
-            )
+            plot_true_pred_kde_interactive(y_true, y_pred, model_name=best_model_name)
 
-        # 3) Residual vs true distance scatter with Pearson r in legend
         if plot_residual_vs_distance is not None:
             plot_residual_vs_distance(y_true, y_pred, model_name=best_model_name)
         if plot_residual_vs_distance_interactive is not None:
             plot_residual_vs_distance_interactive(
-                    y_true, y_pred, model_name=best_model_name
-                )
-        
+                y_true, y_pred, model_name=best_model_name
+            )
 
-
-
-    # Pearson correlations (guard against zero variance)
     pearson_corrs: list[tuple[str, float]] = []
     for g in gene_cols:
         g_series = cells_with_distances[g]
@@ -371,9 +338,10 @@ def run_gene_distance_modeling(
     pearson_df = pd.DataFrame(pearson_corrs, columns=["gene", "pearson_r"])
     if not pearson_df.empty:
         pearson_df["abs_r"] = pearson_df["pearson_r"].abs()
-        pearson_df = pearson_df.sort_values("abs_r", ascending=False).reset_index(drop=True)
+        pearson_df = pearson_df.sort_values("abs_r", ascending=False).reset_index(
+            drop=True
+        )
 
-    # Spearman correlations (nan-safe)
     spearman_rows: list[tuple[str, float]] = []
     for g in gene_cols:
         rho, _ = spearmanr(cells_with_distances[g], residuals, nan_policy="omit")
@@ -383,9 +351,10 @@ def run_gene_distance_modeling(
     spearman_df = pd.DataFrame(spearman_rows, columns=["gene", "spearman_rho"])
     if not spearman_df.empty:
         spearman_df["abs_rho"] = spearman_df["spearman_rho"].abs()
-        spearman_df = spearman_df.sort_values("abs_rho", ascending=False).reset_index(drop=True)
+        spearman_df = spearman_df.sort_values("abs_rho", ascending=False).reset_index(
+            drop=True
+        )
 
-    # Poor vs well predicted means by quantile of |residual|
     thr = abs_resid.quantile(quantile_threshold)
     poor_mask = abs_resid >= thr
     good_mask = abs_resid < thr
@@ -395,7 +364,6 @@ def run_gene_distance_modeling(
     delta_expression = (poor_means - good_means).sort_values(ascending=False)
     log.info(delta_expression.head(15))
 
-    # Final log message
     log.info("Gene modeling pipeline completed.")
 
     return GeneModelingOutput(
@@ -411,4 +379,3 @@ def run_gene_distance_modeling(
         spearman_corr=spearman_df,
         delta_expression=delta_expression,
     )
-

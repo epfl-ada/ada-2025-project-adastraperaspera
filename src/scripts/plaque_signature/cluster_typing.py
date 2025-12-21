@@ -1,5 +1,6 @@
 import pandas as pd
 
+
 def identify_cluster_celltypes(df_example, gene_cols, marker_sets):
     """
     Assign a dominant cell type to each cluster using average marker expression.
@@ -15,5 +16,5 @@ def identify_cluster_celltypes(df_example, gene_cols, marker_sets):
     return cluster_celltype
 
 
-def get_glial_clusters(cluster_celltype, glial_types=("micro","astro","oligo")):
-    return [c for c,t in cluster_celltype.items() if t in glial_types]
+def get_glial_clusters(cluster_celltype, glial_types=("micro", "astro", "oligo")):
+    return [c for c, t in cluster_celltype.items() if t in glial_types]

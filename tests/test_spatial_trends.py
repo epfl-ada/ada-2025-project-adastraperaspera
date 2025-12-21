@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-matplotlib.use("Agg")  # disable GUI backend for tests
+matplotlib.use("Agg")
 
 from src.scripts.preprocessing.spatial_trends import (
     assign_distance_bins,
@@ -40,21 +40,21 @@ def test_mean_expression_by_bin_computes_means(fake_cells_df):
     grouped = mean_expression_by_bin(df_binned, ["GeneA", "GeneB"])
     assert isinstance(grouped, pd.DataFrame)
     assert {"GeneA", "GeneB"}.issubset(grouped.columns)
-    # Should have ≤ number of bins rows
+
     assert grouped.shape[0] <= 4
 
 
 def test_plot_gene_trends_executes(fake_cells_df):
     df_binned = assign_distance_bins(fake_cells_df, n_bins=3)
     grouped = mean_expression_by_bin(df_binned, ["GeneA", "GeneB"])
-    # Should not raise
+
     plot_gene_trends(grouped, genes=["GeneA", "GeneB"])
 
 
 def test_plot_mean_heatmap_executes(fake_cells_df):
     df_binned = assign_distance_bins(fake_cells_df, n_bins=3)
     grouped = mean_expression_by_bin(df_binned, ["GeneA", "GeneB", "GeneC"])
-    # Should not raise
+
     plot_mean_heatmap(grouped, top_n=2)
 
 

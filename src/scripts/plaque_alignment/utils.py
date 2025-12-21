@@ -87,7 +87,7 @@ def fit_transform_with_ransac(
         residual_threshold=residual_threshold,
         max_trials=max_trials,
     )
-    # Evaluate RMSE over *all* matches (not just inliers), to decide upgrade
+
     pred_all = model_robust(src_if_px)
     rmse_all = _rmse(pred_all, dst_morph_px)
     logger.info(
@@ -120,7 +120,7 @@ def build_shapely_xy_transform(matrix_3x3: np.ndarray):
     def _f(x, y, z=None):
         xy1 = np.vstack([np.asarray(x), np.asarray(y), np.ones_like(x)])
         out = matrix_3x3 @ xy1
-        return out[0], out[1]  # drop homogeneous coordinate
+        return out[0], out[1]
 
     return _f
 
@@ -147,7 +147,7 @@ def iter_exterior_polygons(geom_obj) -> list[Polygon]:
     elif isinstance(geom_obj, MultiPolygon):
         yield from geom_obj.geoms
     else:
-        # unsupported geometry types are skipped
+
         return
 
 
@@ -164,11 +164,11 @@ def load_polygons_from_geojson(gj: dict) -> list[tuple[str, Polygon]]:
     counter = 0
 
     for feat in feat_list:
-        base_name = "Selection"  # this format is required for import into Xenium Explorer
+        base_name = "Selection"
 
         geom = shape(feat.get("geometry"))
         for poly in iter_exterior_polygons(geom):
-            # Ensure polygon is valid and has enough points
+
             if not isinstance(poly, Polygon) or len(poly.exterior.coords) < 3:
                 continue
             sel_name = polygon_name(base_name, counter)
@@ -208,17 +208,21 @@ def write_selections_csv(
         raise ValueError("No valid polygons found in GeoJSON.")
 
     names = [name for name, _ in selections]
-    areas = [poly.area for _, poly in selections]  # microns squared (coords are microns)
+    areas = [poly.area for _, poly in selections]
     if top_n is not None:
-        # Let us sort and pick top_n plaques with the largest area
+
         sorted_indices = np.argsort(areas)[::-1]
         top_indices = sorted_indices[:top_n]
-        names = [names[i].split(" ")[0] + f" {idx+1}" for idx, i in enumerate(top_indices)]
+        names = [
+            names[i].split(" ")[0] + f" {idx+1}" for idx, i in enumerate(top_indices)
+        ]
         areas = [areas[i] for i in top_indices]
-        selections = [(names[idx], selections[i][1]) for idx, i in enumerate(top_indices)]
+        selections = [
+            (names[idx], selections[i][1]) for idx, i in enumerate(top_indices)
+        ]
 
     with open(out_csv, "w", encoding="utf-8", newline="") as f:
-        # --- Write the header lines as plain text (not via csv.writer) ---
+
         if len(selections) == 1:
             f.write(f"#Selection name: {names[0]}\n")
             f.write(f"#Area (µm^2): {areas[0]:.2f}\n")
@@ -226,12 +230,11 @@ def write_selections_csv(
             f.write("#Selection names: " + ", ".join(names) + "\n")
             f.write("#Areas (µm^2): " + ", ".join(f"{a:.2f}" for a in areas) + "\n")
 
-        # --- Now write the table using csv.writer ---
-        writer = csv.writer(f, lineterminator="\n")  # prevents extra CRLF on Windows
+        writer = csv.writer(f, lineterminator="\n")
         writer.writerow(["Selection", "X", "Y"])
 
         fmt = f"{{:.{decimals}f}}"
         for name, poly in selections:
-            # exterior coords are typically closed (first point repeated last) - keep as-is
+
             for x, y in poly.exterior.coords:
                 writer.writerow([name, fmt.format(float(x)), fmt.format(float(y))])

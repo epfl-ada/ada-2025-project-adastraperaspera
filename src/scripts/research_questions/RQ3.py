@@ -16,6 +16,7 @@ import copy
 import matplotlib.pyplot as plt
 from typing import Iterable, Optional, Tuple
 
+
 def plot_boxgrid(
     df,
     cols: Iterable[str],
@@ -49,7 +50,9 @@ def plot_boxgrid(
         s = df[col].dropna()
         if s.empty:
             ax.set_title(col, fontsize=10)
-            ax.text(0.5, 0.5, "No data", ha="center", va="center", transform=ax.transAxes)
+            ax.text(
+                0.5, 0.5, "No data", ha="center", va="center", transform=ax.transAxes
+            )
             ax.set_xticks([])
             ax.grid(axis="y", alpha=0.3)
             continue
@@ -66,9 +69,8 @@ def plot_boxgrid(
 
         if annotate_median:
             median_val = float(s.median())
-            x = 1  # single box per axis
+            x = 1
 
-            # Offset so text doesn't sit exactly on the line
             if ax.get_yscale() == "log":
                 y = median_val * 1.08
             else:
@@ -76,11 +78,12 @@ def plot_boxgrid(
                 y = median_val + 0.02 * (y_max - y_min)
 
             ax.text(
-                x, y,
+                x,
+                y,
                 median_fmt.format(median_val),
                 ha="center",
                 va="bottom",
-                fontsize=median_fontsize
+                fontsize=median_fontsize,
             )
 
     if title:
@@ -108,7 +111,8 @@ def compute_pig_neighbor_corr_matrix(
 
     missing_targets = [g for g in pig_genes if g not in cells_df.columns]
     missing_neighbors = [
-        f"{neighbor_prefix}{g}" for g in pig_genes
+        f"{neighbor_prefix}{g}"
+        for g in pig_genes
         if f"{neighbor_prefix}{g}" not in cells_df.columns
     ]
 
@@ -135,15 +139,12 @@ def plot_corr_matrix(
     corr_df: pd.DataFrame,
     title: str = "PIG target vs neighbor-mean correlation",
     mask_upper_triangle: bool = True,
-    # Color choices
     cmap: str = "RdBu_r",
     mask_color: str = "black",
-    # Scaling choices
     color_scale: str = "zscore",
     z_clip: float | None = 2.5,
     raw_vmin: float | None = None,
     raw_vmax: float | None = None,
-    # Annotation
     annotate: bool = True,
     fmt: str = ".2f",
     fontsize: int = 9,
@@ -160,23 +161,17 @@ def plot_corr_matrix(
     data = corr_df.to_numpy(dtype=float)
     nrows, ncols = data.shape
 
-    # --- Mask construction (FIXED) ---
     structural_mask = np.zeros_like(data, dtype=bool)
 
-    # Mask strictly above diagonal if requested
     if mask_upper_triangle:
         structural_mask |= np.triu(np.ones_like(data, dtype=bool), k=1)
 
-    # Mask diagonal independently of upper-triangle masking
     if mask_diagonal:
         structural_mask |= np.eye(nrows, ncols, dtype=bool)
 
-    # Also mask invalid values (NaN/inf)
     invalid_mask = ~np.isfinite(data)
     full_mask = structural_mask | invalid_mask
-    # --- end mask construction ---
 
-    # Choose what to color by
     if color_scale.lower() == "zscore":
         vals = data[~full_mask]
         if vals.size == 0:
@@ -194,7 +189,9 @@ def plot_corr_matrix(
             norm = mcolors.TwoSlopeNorm(vcenter=0.0, vmin=-z_clip, vmax=z_clip)
             cbar_label = f"Correlation (z-score, clipped to ±{z_clip})"
         else:
-            maxabs = float(np.nanmax(np.abs(z[~full_mask]))) if np.any(~full_mask) else 1.0
+            maxabs = (
+                float(np.nanmax(np.abs(z[~full_mask]))) if np.any(~full_mask) else 1.0
+            )
             maxabs = max(maxabs, 1e-12)
             norm = mcolors.TwoSlopeNorm(vcenter=0.0, vmin=-maxabs, vmax=maxabs)
             cbar_label = "Correlation (z-score)"
@@ -211,7 +208,6 @@ def plot_corr_matrix(
 
         cbar_label = "Correlation"
 
-    # Colormap + "bad" color for masked cells
     cmap_obj = plt.get_cmap(cmap)
     try:
         cmap_obj = cmap_obj.copy()
@@ -219,7 +215,6 @@ def plot_corr_matrix(
         cmap_obj = copy.copy(cmap_obj)
     cmap_obj.set_bad(color=mask_color)
 
-    # Plot
     figsize = (max(8, 0.55 * ncols + 4), max(6, 0.55 * nrows + 3))
     fig, ax = plt.subplots(figsize=figsize)
     im = ax.imshow(plot_arr, cmap=cmap_obj, norm=norm)
@@ -238,7 +233,6 @@ def plot_corr_matrix(
     cbar = fig.colorbar(im, ax=ax)
     cbar.set_label(cbar_label)
 
-    # Annotate with raw correlation values (skip masked cells)
     if annotate:
         for i in range(nrows):
             for j in range(ncols):
@@ -249,11 +243,22 @@ def plot_corr_matrix(
                     continue
 
                 bg = plot_arr[i, j]
-                bg_norm = 0.5 if (bg is np.ma.masked or not np.isfinite(float(bg))) else float(norm(float(bg)))
+                bg_norm = (
+                    0.5
+                    if (bg is np.ma.masked or not np.isfinite(float(bg)))
+                    else float(norm(float(bg)))
+                )
                 text_color = "white" if (bg_norm < 0.25 or bg_norm > 0.75) else "black"
 
-                ax.text(j, i, format(val, fmt), ha="center", va="center",
-                        fontsize=fontsize, color=text_color)
+                ax.text(
+                    j,
+                    i,
+                    format(val, fmt),
+                    ha="center",
+                    va="center",
+                    fontsize=fontsize,
+                    color=text_color,
+                )
 
     fig.tight_layout()
     plt.show()
@@ -344,18 +349,15 @@ def analyze_plaque_distance_effects(
         If required columns are missing.
     """
     logger = logger or logging.getLogger(__name__)
-    pig_genes = list(pig_genes)  # solidify the iterable
+    pig_genes = list(pig_genes)
 
-    # --- Basic validations
     required_cols = {cell_type_col, distance_col}
     missing = required_cols - set(cells.columns)
     if missing:
         raise ValueError(f"Missing required columns in `cells`: {sorted(missing)}")
 
-    # Work on a copy to avoid mutating caller data
     cells = cells.copy()
 
-    # --- Mark unknown predicted labels as unlabeled (NA cell_type)
     if predicted_label_col in cells.columns:
         mask_unknown = cells[predicted_label_col] == unknown_label_value
         n_unknown = int(mask_unknown.sum())
@@ -369,12 +371,10 @@ def analyze_plaque_distance_effects(
             )
             cells.loc[mask_unknown, cell_type_col] = pd.NA
 
-    # --- Ensure broad type
     def _simplify_celltype(ct: object) -> str:
         if pd.isna(ct):
             return "Unlabeled"
         celltype_to_broad = {
-            # Neurons (glutamatergic)
             "Corticothalamic, Gluta": "Neuron_Glutamatergic",
             "Dentate, Gluta": "Neuron_Glutamatergic",
             "Hypothalamic Gnrh1, Gluta": "Neuron_Glutamatergic",
@@ -384,17 +384,14 @@ def analyze_plaque_distance_effects(
             "Pineal, Gluta": "Neuron_Glutamatergic",
             "Pons, Gluta": "Neuron_Glutamatergic",
             "Thalamic, Gluta": "Neuron_Glutamatergic",
-            # Neurons (GABAergic)
             "Cerebellar, GABA": "Neuron_GABAergic",
             "Cerebral LGE, GABA": "Neuron_GABAergic",
             "Cortex caudal, GABA": "Neuron_GABAergic",
             "Cortex medial, GABA": "Neuron_GABAergic",
             "Hypothalamic GABA": "Neuron_GABAergic",
             "Medulla, GABA": "Neuron_GABAergic",
-            # Glia
             "Astrocyte": "Glia_Astrocyte_Ependymal",
             "Oligodendrocyte": "Glia_Oligodendrocyte_Lineage",
-            # Other non-neuronal
             "Immune": "Immune_Microglia_Macrophage",
             "Vascular": "Vascular_Endothelial_Pericyte",
         }
@@ -404,16 +401,16 @@ def analyze_plaque_distance_effects(
         logger.info("Creating '%s' by simplifying '%s'.", broad_type_col, cell_type_col)
         cells[broad_type_col] = cells[cell_type_col].apply(_simplify_celltype)
 
-    # --- Ensure distance bins if needed
     if distance_bin_col not in cells.columns and create_distance_bins:
         logger.info(
             "Creating '%s' from '%s' using 5 equal quantile bins.",
             distance_bin_col,
             distance_col,
         )
-        cells[distance_bin_col] = pd.qcut(cells[distance_col].astype(float), q=5, duplicates="drop")
+        cells[distance_bin_col] = pd.qcut(
+            cells[distance_col].astype(float), q=5, duplicates="drop"
+        )
 
-    # --- Determine baseline level for broad_type treatment coding
     observed_levels = set(cells[broad_type_col].dropna().astype(str).unique())
     ref = baseline_broad_type
     if ref is None or ref not in observed_levels:
@@ -422,22 +419,21 @@ def analyze_plaque_distance_effects(
                 ref = candidate
                 break
         else:
-            # Fallback: use the most frequent observed level
+
             ref = cells[broad_type_col].dropna().astype(str).value_counts().idxmax()
-    # --- Apoe model
+
     if apoe_gene not in cells.columns:
-        raise ValueError(f"Column '{apoe_gene}' not found in `cells` for the Apoe model.")
+        raise ValueError(
+            f"Column '{apoe_gene}' not found in `cells` for the Apoe model."
+        )
     apoe_df = cells[[apoe_gene, distance_col, broad_type_col]].dropna()
     if apoe_df.empty:
         raise ValueError("No rows available for the Apoe model after dropping NAs.")
-    apoe_formula = (
-        f"Q('{apoe_gene}') ~ {distance_col} + C({broad_type_col}, Treatment(reference='{ref}'))"
-    )
+    apoe_formula = f"Q('{apoe_gene}') ~ {distance_col} + C({broad_type_col}, Treatment(reference='{ref}'))"
     apoe_res = smf.ols(apoe_formula, data=apoe_df).fit()
     apoe_summary_text = apoe_res.summary().as_text()
     logger.info("\n%s", apoe_summary_text)
 
-    # --- PIG genes models
     results: list[dict] = []
     present_genes = [g for g in pig_genes if g in cells.columns]
     missing_genes = [g for g in pig_genes if g not in cells.columns]
@@ -452,9 +448,7 @@ def analyze_plaque_distance_effects(
         df_gene = cells[[distance_col, gene, broad_type_col]].dropna()
         if df_gene.empty:
             continue
-        formula = (
-            f"Q('{gene}') ~ {distance_col} + C({broad_type_col}, Treatment(reference='{ref}'))"
-        )
+        formula = f"Q('{gene}') ~ {distance_col} + C({broad_type_col}, Treatment(reference='{ref}'))"
         res = smf.ols(formula, data=df_gene).fit()
         for var in res.params.index:
             results.append(
@@ -468,7 +462,9 @@ def analyze_plaque_distance_effects(
     gene_coefs = pd.DataFrame(results)
 
     if gene_coefs.empty:
-        logger.info("No coefficients produced (no qualifying PIG gene models could be fit).")
+        logger.info(
+            "No coefficients produced (no qualifying PIG gene models could be fit)."
+        )
     else:
         logger.info(
             "Fitted %d gene models. Example rows:\n%s",
@@ -476,9 +472,8 @@ def analyze_plaque_distance_effects(
             gene_coefs.head().to_string(index=False),
         )
 
-    # --- Binned summaries (mean, SEM, n) per (gene, broad_type, distance_bin)
     if distance_bin_col not in cells.columns:
-        # If we still don't have bins, we cannot aggregate by bin
+
         logger.info(
             "Column '%s' not available; binned statistics will be empty.",
             distance_bin_col,
@@ -510,7 +505,6 @@ def analyze_plaque_distance_effects(
             .reset_index()
         )
 
-        # Ensure ordering if categorical bins
         if hasattr(agg[distance_bin_col].dtype, "ordered") and getattr(
             agg[distance_bin_col].dtype, "ordered", False
         ):
@@ -520,9 +514,9 @@ def analyze_plaque_distance_effects(
             columns={broad_type_col: "broad_type", distance_bin_col: "distance_bin"}
         )
 
-    # Return a copy of cells with ensured columns
-    # Derive bin order from cells if available
-    if distance_bin_col in cells.columns and hasattr(cells[distance_bin_col].dtype, "categories"):
+    if distance_bin_col in cells.columns and hasattr(
+        cells[distance_bin_col].dtype, "categories"
+    ):
         bin_order = list(map(str, cells[distance_bin_col].cat.categories))
     else:
         bin_order = (
@@ -563,14 +557,14 @@ def process_cell_annotations(
     annotation_csv: str | Path,
     *,
     distance_col: str = "distance_to_plaque",
-    distance_bins: Sequence[float] = (0, 20, 50, 100, 200, 1e9),  # unused when using quantiles
+    distance_bins: Sequence[float] = (0, 20, 50, 100, 200, 1e9),
     distance_labels: Sequence[str] = (
         "0-20",
         "20-50",
         "50-100",
         "100-200",
         ">200",
-    ),  # unused when using quantiles
+    ),
     logger: logging.Logger | None = None,
 ) -> dict[str, Any]:
     """
@@ -638,10 +632,8 @@ def process_cell_annotations(
     if not annotation_csv.exists():
         raise FileNotFoundError(f"Annotation CSV not found: {annotation_csv}")
 
-    # Read annotations
     annot = pd.read_csv(annotation_csv)
 
-    # Identify and normalize the cell ID column
     id_col = next(
         (c for c in annot.columns if "cell" in c.lower() and "id" in c.lower()),
         None,
@@ -653,27 +645,27 @@ def process_cell_annotations(
     annot = annot.rename(columns={id_col: "cell_id"})
     annot["cell_id"] = annot["cell_id"].apply(_clean_cell_id)
 
-    # Keep useful columns if present
     keep_cols = ["cell_id", "cell_type", "coord_X", "coord_Y", "predicted_label"]
     keep_cols = [c for c in keep_cols if c in annot.columns]
     annot = annot[keep_cols]
 
     logger.info(annot.head())
 
-    # Merge
     before = combined_df_normalized.shape[0]
     cells = combined_df_normalized.copy()
     cells["cell_id"] = (
-        cells["cell_id"].apply(_clean_cell_id) if "cell_id" in cells.columns else cells["cell_id"]
+        cells["cell_id"].apply(_clean_cell_id)
+        if "cell_id" in cells.columns
+        else cells["cell_id"]
     )
     cells = cells.merge(annot, on="cell_id", how="left")
     logger.info("Merged: %d -> %d rows", before, cells.shape[0])
 
-    # Diagnostics: annotation match rate
-    match_rate = cells["cell_type"].notna().mean() if "cell_type" in cells.columns else 0.0
+    match_rate = (
+        cells["cell_type"].notna().mean() if "cell_type" in cells.columns else 0.0
+    )
     logger.info("Annotated cells rate: %.1f%%", 100.0 * match_rate)
 
-    # Check for unknown predicted labels (34)
     unknown_count = 0
     if "predicted_label" in cells.columns:
         unknown_count = int((cells["predicted_label"] == 34).sum())
@@ -683,24 +675,25 @@ def process_cell_annotations(
                 unknown_count,
             )
 
-    # Build distance bins if missing (use quantiles)
     if "distance_bin" not in cells.columns:
         if distance_col not in cells.columns:
             raise ValueError(
                 f"'distance_bin' is missing and '{distance_col}' not found to create it."
             )
-        cells["distance_bin"] = pd.qcut(cells[distance_col].astype(float), q=5, duplicates="drop")
+        cells["distance_bin"] = pd.qcut(
+            cells[distance_col].astype(float), q=5, duplicates="drop"
+        )
 
-    # Ensure categorical ordering for distance_bin
-    # Ensure categorical ordering if present
     if hasattr(cells["distance_bin"].dtype, "ordered"):
         cells["distance_bin"] = cells["distance_bin"].cat.as_ordered()
 
-    # Per-bin proportions of cell types
-    props = cells.groupby(["distance_bin", "cell_type"]).size().rename("n").reset_index()
-    props["proportion"] = props.groupby("distance_bin")["n"].transform(lambda x: x / x.sum())
+    props = (
+        cells.groupby(["distance_bin", "cell_type"]).size().rename("n").reset_index()
+    )
+    props["proportion"] = props.groupby("distance_bin")["n"].transform(
+        lambda x: x / x.sum()
+    )
 
-    # Sanity check: sums should be ~1 per bin
     bin_proportion_sums = props.groupby("distance_bin")["proportion"].sum().round(6)
     logger.info("Sum of proportions per bin: %s", dict(bin_proportion_sums))
 

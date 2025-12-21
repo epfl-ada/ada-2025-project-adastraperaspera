@@ -65,7 +65,7 @@ def summarize_gene_stats(
     ValueError
         If required columns ("gene" and `sort_column`) are missing from inputs.
     """
-    # --- Validate required columns
+
     if "gene" not in reg_df.columns:
         raise ValueError("`reg_df` must contain a 'gene' column.")
     if sort_column not in reg_df.columns and sort_column not in anova_df.columns:
@@ -74,23 +74,23 @@ def summarize_gene_stats(
             "It must exist in either reg_df or anova_df (preferably reg_df)."
         )
 
-    # --- Rename overlapping columns to avoid collisions
-    reg_renamed = reg_df.rename(columns={"pval": "pval_continuous", "qval": "qval_continuous"})
-    anova_renamed = anova_df.rename(columns={"pval": "anova_pval", "qval": "qval_anova"})
+    reg_renamed = reg_df.rename(
+        columns={"pval": "pval_continuous", "qval": "qval_continuous"}
+    )
+    anova_renamed = anova_df.rename(
+        columns={"pval": "anova_pval", "qval": "qval_anova"}
+    )
 
-    # --- Merge
     summary_stats = reg_renamed.merge(anova_renamed, on="gene", how="left")
 
-    # --- Sort
     if sort_column not in summary_stats.columns:
-        # If the requested sort column isn't in merged (unlikely), raise a clearer error.
+
         raise ValueError(
             f"`sort_column='{sort_column}'` not present after merge. "
             "Ensure it exists in reg_df or choose another column."
         )
     summary_stats = summary_stats.sort_values(sort_column, ascending=ascending)
 
-    # --- Key columns to show (only those present)
     key_cols = [
         c
         for c in [
@@ -104,13 +104,13 @@ def summarize_gene_stats(
         if c in summary_stats.columns
     ]
 
-    # --- Slices to return
     top_df = summary_stats.head(top_n)[key_cols]
     bottom_df = summary_stats.tail(bottom_n)[key_cols]
 
-    # --- Optional logging/display
     if logger is not None:
-        logger.info("=== Top plaque-proximal genes (negative slope, smallest q-values) ===")
+        logger.info(
+            "=== Top plaque-proximal genes (negative slope, smallest q-values) ==="
+        )
         logger.info(top_df.head())
 
     if logger is not None:
@@ -178,18 +178,15 @@ def compute_genewise_categorical_anova(
         if gene not in data.columns:
             if raise_on_missing_gene:
                 raise KeyError(f"Gene '{gene}' not found in `data`.")
-            # Skip missing genes silently if not raising
+
             continue
 
-        # Subset and drop rows with NA in either column
         df_sub = data[[gene, group_col]].dropna().copy()
 
-        # Require at least `min_groups` distinct categories to attempt ANOVA
         if df_sub[group_col].nunique(dropna=True) < min_groups:
             results.append({"gene": gene, "anova_pval": np.nan})
             continue
 
-        # Sanitize the gene name for Patsy/formula usage
         safe_gene = re.sub(r"[^0-9a-zA-Z_]", "_", gene)
         df_sub = df_sub.rename(columns={gene: safe_gene})
 
@@ -202,7 +199,7 @@ def compute_genewise_categorical_anova(
             if term in aov_table.index:
                 pval = float(aov_table.loc[term, "PR(>F)"])
             else:
-                # Fallback: take the first row if the expected term name isn't present
+
                 pval = float(aov_table["PR(>F)"].iloc[0])
 
         except Exception:
@@ -210,13 +207,11 @@ def compute_genewise_categorical_anova(
 
         results.append({"gene": gene, "anova_pval": pval})
 
-    # Assemble results
     anova_df = pd.DataFrame(results, columns=["gene", "anova_pval"])
 
     if anova_df.empty:
         return anova_df
 
-    # Multiple testing correction (handle NaNs safely)
     pvals = anova_df["anova_pval"].to_numpy(dtype=float)
     mask = np.isfinite(pvals)
     qvals = np.full_like(pvals, np.nan, dtype=float)
@@ -226,8 +221,9 @@ def compute_genewise_categorical_anova(
 
     anova_df["qval"] = qvals
 
-    # Sort by raw p-value, placing NaNs at the end
-    anova_df = anova_df.sort_values("anova_pval", na_position="last").reset_index(drop=True)
+    anova_df = anova_df.sort_values("anova_pval", na_position="last").reset_index(
+        drop=True
+    )
 
     return anova_df
 
@@ -263,14 +259,12 @@ def compute_group_means_for_gene(
 
     df = data[[gene, group_col]].dropna().copy()
 
-    # Aggregate
     grouped = (
         df.groupby(group_col)[gene]
-        .agg(["mean", "sem", "count"])  # yields columns: mean, sem, count
+        .agg(["mean", "sem", "count"])
         .rename(columns={"mean": "mean_expr", "sem": "sem_expr", "count": "n"})
     )
 
-    # Respect categorical order if present
     if pd.api.types.is_categorical_dtype(df[group_col]):
         categories = df[group_col].cat.categories
         grouped = grouped.reindex(categories)
@@ -331,17 +325,15 @@ def regress_expression_vs_distance(
     if distance_col not in data.columns:
         raise ValueError(f"'{distance_col}' not found in data columns.")
 
-    # Use only genes present in the dataframe
     pig_cols = [g for g in gene_list if g in data.columns]
 
     results = []
     for gene in pig_cols:
         df = data[[gene, distance_col]].dropna()
-        # Need at least 2 observations to fit OLS with intercept and one predictor
+
         if len(df) < 2:
             continue
 
-        # Design matrix with intercept
         X = sm.add_constant(df[distance_col])
         y = df[gene]
 
@@ -351,10 +343,9 @@ def regress_expression_vs_distance(
             pval = float(model.pvalues[distance_col])
             results.append({"gene": gene, "slope": slope, "pval": pval})
         except Exception:
-            # Skip genes where the regression fails (e.g., singular matrix)
+
             continue
 
-    # Convert to DataFrame
     reg_df = pd.DataFrame(results)
     if not reg_df.empty:
         reg_df["qval"] = multipletests(reg_df["pval"], method=fdr_method)[1]
@@ -366,7 +357,6 @@ def regress_expression_vs_distance(
         logger.info("Continuous regression results (expression ~ distance).")
         logger.info("Computed %d gene regressions.", len(reg_df))
 
-    # Highlight top plaque-proximal genes (negative slope)
     proximal_genes = (
         reg_df.loc[reg_df["slope"] < 0]
         .sort_values("qval", ascending=True, kind="mergesort")
@@ -432,30 +422,33 @@ def summarize_pig_expression_by_distance(
         If none of the requested `pig_genes` are present in `df`.
         If `labels` length does not match `len(bins) - 1`.
     """
-    # Basic validations
+
     if distance_col not in df.columns:
         raise KeyError(f"Column '{distance_col}' not found in DataFrame.")
 
     pig_cols = [g for g in pig_genes if g in df.columns]
     if not pig_cols:
-        raise ValueError("None of the specified `pig_genes` are present in the DataFrame.")
+        raise ValueError(
+            "None of the specified `pig_genes` are present in the DataFrame."
+        )
 
-    # Work on a copy to avoid mutating the caller's DataFrame
     tmp = df.copy()
 
-    # Assign distance bins via equal quantiles
-    tmp["distance_bin"] = pd.qcut(tmp[distance_col].astype(float), q=q, duplicates="drop")
+    tmp["distance_bin"] = pd.qcut(
+        tmp[distance_col].astype(float), q=q, duplicates="drop"
+    )
 
-    # Compute mean and SEM for each distance bin
     mean_expr = tmp.groupby("distance_bin")[pig_cols].mean().reset_index()
     sem_expr = tmp.groupby("distance_bin")[pig_cols].sem().reset_index()
 
-    # Melt to long-form and merge mean/sem
-    summary_df = mean_expr.melt(id_vars="distance_bin", var_name="gene", value_name="mean_expr")
-    sem_melted = sem_expr.melt(id_vars="distance_bin", var_name="gene", value_name="sem_expr")
+    summary_df = mean_expr.melt(
+        id_vars="distance_bin", var_name="gene", value_name="mean_expr"
+    )
+    sem_melted = sem_expr.melt(
+        id_vars="distance_bin", var_name="gene", value_name="sem_expr"
+    )
     summary_df = summary_df.merge(sem_melted, on=["distance_bin", "gene"], how="left")
 
-    # Cell counts per bin (sorted by categorical order)
     counts = tmp["distance_bin"].value_counts().sort_index()
 
     return summary_df, counts

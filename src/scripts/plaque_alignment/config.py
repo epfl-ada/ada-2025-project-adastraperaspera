@@ -12,10 +12,6 @@ import typing as t
 
 import yaml
 
-# ===========================================================
-# Dataclass models for validating the plaque_alignment.yaml
-# ===========================================================
-
 
 @dataclass
 class RansacCfg:
@@ -59,11 +55,6 @@ class AppCfg:
     logging: dict[str, t.Any]
 
 
-# =========================
-# Helpers
-# =========================
-
-
 def _expand(p: str | Path) -> Path:
     """
     Expand ~ and $VARS then return a Path (without resolving).
@@ -102,7 +93,7 @@ def _coerce_paths(raw_paths: dict[str, t.Any]) -> PathsCfg:
 
     All fields become absolute Paths; relative ones are resolved under base_dir.
     """
-    # Base dir first
+
     base_dir_raw = raw_paths.get("base_dir")
     base_dir = _expand(base_dir_raw).resolve()
 
@@ -138,11 +129,6 @@ def _coerce_params(raw_params: dict[str, t.Any]) -> ParamsCfg:
     )
     _validate_params(params)
     return params
-
-
-# =========================
-# Public API
-# =========================
 
 
 def load_config(path: str | Path) -> AppCfg:
@@ -201,20 +187,19 @@ def apply_cli_overrides(cfg: AppCfg, args: t.Any) -> AppCfg:
         The same instance with fields updated from CLI flags.
     """
 
-    # Helper for attribute presence AND non-None value.
     def has(args: t.Any, name: str) -> bool:
         return hasattr(args, name) and getattr(args, name) is not None
 
-    # --- Paths ---
-    b = cfg.paths.base_dir  # absolute
+    b = cfg.paths.base_dir
     if has(args, "keypoints"):
         cfg.paths = replace(cfg.paths, keypoints_csv=_resolve_under(b, args.keypoints))
     if has(args, "plaques"):
         cfg.paths = replace(cfg.paths, plaque_geojson=_resolve_under(b, args.plaques))
     if has(args, "out_selections"):
-        cfg.paths = replace(cfg.paths, out_xenium_format=_resolve_under(b, args.out_selections))
+        cfg.paths = replace(
+            cfg.paths, out_xenium_format=_resolve_under(b, args.out_selections)
+        )
 
-    # --- Params: pixel size & RANSAC ---
     if has(args, "pixel_size_um"):
         cfg.params = replace(cfg.params, xenium_pixel_size_um=float(args.pixel_size_um))
 
@@ -232,12 +217,12 @@ def apply_cli_overrides(cfg: AppCfg, args: t.Any) -> AppCfg:
     if changed:
         cfg.params = replace(cfg.params, ransac=r)
     if has(args, "upgrade_affine_rmse"):
-        cfg.params = replace(cfg.params, upgrade_to_affine_rmse_px=float(args.upgrade_affine_rmse))
+        cfg.params = replace(
+            cfg.params, upgrade_to_affine_rmse_px=float(args.upgrade_affine_rmse)
+        )
 
-    # Re-validate after overrides
     _validate_params(cfg.params)
 
-    # --- Logging ---
     if has(args, "log_level"):
         cfg.logging["level"] = str(args.log_level)
     if has(args, "log_tz"):

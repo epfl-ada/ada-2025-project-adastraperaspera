@@ -10,7 +10,7 @@ from zoneinfo import ZoneInfo
 
 from src.scripts.plaque_alignment.config import PathsCfg
 
-# Global logger for this module
+
 logging.basicConfig(
     level=logging.INFO,
     format="%(message)s",
