@@ -339,11 +339,20 @@ const PreprocessingSection = () => {
                 This matters because plaques do not occur uniformly across the brain. Any plaque-distance trend can partly reflect <span className="font-medium text-foreground">which cell types and brain regions are near plaques</span>, so later analyses must consider composition and anatomy explicitly.
               </p>
 
-                {/*<div className="rounded-2xl border border-border bg-card p-6">*/}
+              <p className="text-lg text-muted-foreground leading-relaxed">
+                Several clusters align with well-defined anatomical structures, supporting biologically meaningful cell-type assignments. 
+                <span className="font-medium text-foreground">Cluster 6</span> is enriched along the outer tissue boundary, consistent with vascular cells localized to the epidural space. 
+                <span className="font-medium text-foreground">Cluster 14</span> traces the hippocampal formation and follows the dentate gyrus morphology, consistent with immature dentate gyrus glutamatergic neurons, while <span className="font-medium text-foreground">cluster 10</span> is concentrated in the amygdala and hypothalamic regions, 
+                consistent with medial mammillary glutamatergic neurons. In addition, <span className="font-medium text-foreground">cluster 15</span> forms a thin lining along ventricular cavities, consistent with GnRH1-expressing hypothalamic glutamatergic neurons associated with the walls of the third ventricle.
+              </p>
+
+              
+
+                {/*<div className="rounded-2xl border border-border bg-card p-6">
                     <p className="text-lg text-muted-foreground leading-relaxed">
                 Representative cluster interpretations include:
-                </p>
-                    <ul className="space-y-3 text-muted-foreground">
+                </p>*/}
+                    {/*<ul className="space-y-3 text-muted-foreground">
                       <li className="flex items-start gap-2">
                         <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
                         <span>
@@ -384,7 +393,9 @@ const PreprocessingSection = () => {
                           </span>, consistent with hypothalamic contributions to the third ventricle walls.
                         </span>
                       </li>
-                    </ul>
+                    </ul>3/}
+
+                  
 
                 {/*</div>*/}
                 
