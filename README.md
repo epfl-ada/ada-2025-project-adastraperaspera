@@ -81,11 +81,11 @@ Milestone P3 — Analyses, Ownership, and Due-Point 2025 Timeline
   Nov10   Nov18     Nov26     Dec4      Dec12     Dec20
   start    ▲1        ▲2        ▲3        ▲4        ▲5
            
-  Nov18: Preprocessing + clustering                        [Alexander]          ━━━━━━━━━                                          Progress: [██░░░░░░░░]
-  Nov26: Multi-mouse analysis + individualized modeling    [Sogand]             ━━━━━━━━━┆━━━━━━━━━                                Progress: [████░░░░░░]
-  Dec4: Feature engineering + regression modeling          [Zayed]              ━━━━━━━━━┆━━━━━━━━━┆━━━━━━━━━                      Progress: [██████░░░░]
-  Dec12: Spatial cross-validation setup + ablations        [Walid]              ━━━━━━━━━┆━━━━━━━━━┆━━━━━━━━━┆━━━━━━━━━            Progress: [████████░░]
-  Dec20: Frontend development + CI/CD                      [Rosa]               ━━━━━━━━━┆━━━━━━━━━┆━━━━━━━━━┆━━━━━━━━━┆━━━━━━━━━  Progress: [██████████]
+  Nov18: Preprocessing + clustering                        [Alexander]      Progress: [██░░░░░░░░]
+  Nov26: Multi-mouse analysis + individualized modeling    [Sogand]         Progress: [████░░░░░░]
+  Dec4: Feature engineering + regression modeling          [Zayed]          Progress: [██████░░░░]
+  Dec12: Spatial cross-validation setup + ablations        [Walid]          Progress: [████████░░]
+  Dec20: Frontend development + CI/CD                      [Rosa]           Progress: [██████████]
 
   Key:
     ▲1..▲5  deliverable due-points

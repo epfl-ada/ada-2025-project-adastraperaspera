@@ -307,19 +307,19 @@ const Chapter6 = () => {
 
               <p className="text-lg text-muted-foreground leading-relaxed">
                 We identify 9 <span className="font-medium text-foreground">cell types</span> with significant correlations to PIG expression. Notably:
-            </p>
-                              <ul className="space-y-3 text-muted-foreground">
-                                <li className="flex items-start gap-2">
-                                  <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
-                                  <span className="font-medium text-foreground">8/9</span> are strongly correlated with a <span className="font-medium text-foreground">core set of 14 PIGs</span>.
-                                </li>
-              
-                                <li className="flex items-start gap-2">
-                                  <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
-                                  The remaining cell type is strongly correlated with <span className="font-medium text-foreground">Nrep</span> alone, suggesting a complementary pattern rather than redundancy with the core PIG set.
-                                </li>
-                              </ul>
-                        
+              </p>
+              <ul className="space-y-3 text-muted-foreground">
+                <li className="flex items-start gap-2">
+                  <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
+                  <span className="font-medium text-foreground">8/9</span> are strongly correlated with a <span className="font-medium text-foreground">core set of 14 PIGs</span>.
+                </li>
+
+                <li className="flex items-start gap-2">
+                  <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
+                  The remaining cell type is strongly correlated with <span className="font-medium text-foreground">Nrep</span> alone, suggesting a complementary pattern rather than redundancy with the core PIG set.
+                </li>
+              </ul>
+
 
 
               <p className="text-lg text-muted-foreground leading-relaxed">
@@ -351,9 +351,9 @@ const Chapter6 = () => {
               </div>
 
               <div className="space-y-6">
-                    <CorrTable />
-                    <DirectionTable />
-                </div>
+                <CorrTable />
+                <DirectionTable />
+              </div>
 
 
             </div>
@@ -397,4 +397,3 @@ const Chapter6 = () => {
 };
 
 export default Chapter6;
-```
