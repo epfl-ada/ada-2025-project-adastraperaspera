@@ -45,7 +45,7 @@ const Index = () => {
       {/*<DiscussionSection */}
       <DiscussionSection2/>
       <IntroductionSection2/>
-      {/*<Chapter1 />*/}
+      <Chapter1 />
       <Footer />
     </main>
   );

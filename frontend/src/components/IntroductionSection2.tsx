@@ -1,6 +1,7 @@
 import PlotFrame from "@/components/PlotFrame";
 import { Grid2x2Check, CircleChevronRight  } from 'lucide-react'
 import ImageGridPlot from "./ImageGridFrame";
+const base = import.meta.env.BASE_URL;
 
 const IntroductionSection2 = () => {
   return (
