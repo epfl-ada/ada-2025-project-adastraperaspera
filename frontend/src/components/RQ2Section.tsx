@@ -310,7 +310,10 @@ const RQ2Section = () => {
               <h3 className="text-2xl font-bold text-foreground">RQ2 : How are the cell type composition, PIG expression, and plaque distance related?</h3>
 
               <p className="text-lg text-muted-foreground leading-relaxed">
-                Cluster-level marker enrichment shows that some clusters exhibit strong over- or under-expression of specific genes. For example:
+                Because clusters have strong marker structure, apparent plaque-associated gene gradients could arise simply because the <span className="font-medium text-foreground">cell-type mixture changes</span> near plaques.
+              </p>
+              <p className="text-lg text-muted-foreground leading-relaxed">
+                We first show cluster-level enrichment patterns:
               </p>
               {/*<div className="rounded-2xl border border-border bg-card p-5">*/}
               <ul className="space-y-3 text-muted-foreground">
@@ -324,11 +327,13 @@ const RQ2Section = () => {
                   Cluster 14 (dentate gyrus immature glutamatergic) under-expresses <span className="font-medium text-foreground">Cst3</span> (z-score ~−2).
                 </li>
               </ul>
-              {/*</div>*/}
+
+              
+              {/*</div>
 
               <p className="text-lg text-muted-foreground leading-relaxed">
                 This reinforces that anatomical/cell-type structure and gene expression patterns are tightly coupled and motivates a central question: <span className="font-medium text-foreground">are plaque-associated PIG gradients direct effects, or are they mediated by cell-type composition shifts?</span>
-              </p>
+              </p>*/}
 
               <PlotFrame
                 src={`${base}plots/expression_per_cluster.html`}
@@ -336,6 +341,9 @@ const RQ2Section = () => {
                 size="lg"
                 caption="Cluster-by-gene enrichment (z-score) heatmap illustrating marker structure and motivating composition–expression coupling analyses.."
               />
+              <p className="text-lg text-muted-foreground leading-relaxed">
+                The results confirm that expression is strongly cluster-dependent. This establishes the need for analyses that separate composition from distance.
+              </p>
 
             </div>
 
@@ -388,8 +396,7 @@ const RQ2Section = () => {
                 </li>
 
                 <li className="flex items-start gap-2">
-                  <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
-                  The remaining cell type is strongly correlated with <span className="font-medium text-foreground">Nrep</span> alone, suggesting a complementary pattern rather than redundancy with the core PIG set.
+                  <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />The remaining cell type is strongly correlated with <span className="font-medium text-foreground">Nrep</span> alone, suggesting a complementary pattern rather than redundancy with the core PIG set.
                 </li>
               </ul>
               {/*</div>*/}
@@ -398,9 +405,14 @@ const RQ2Section = () => {
                 <CorrTable />
                 <DirectionTable />
               </div>
-              <p className="text-lg text-muted-foreground leading-relaxed">
+              {/*<p className="text-lg text-muted-foreground leading-relaxed">
                 Interpreted biologically, the core PIGs are most aligned with immune enrichment and neuronal depletion, consistent with a glial activation signature that strengthens in plaque-proximal bins.
+              </p>*/}
+
+              <p className="text-lg text-muted-foreground leading-relaxed">
+                This suggests composition is a major driver of plaque-associated PIG trends.
               </p>
+
             </div>
 
             <div id="rq2-linear" className="space-y-4">

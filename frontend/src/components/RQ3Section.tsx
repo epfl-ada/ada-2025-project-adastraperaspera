@@ -98,8 +98,64 @@ const RQ3Section = () => {
                 Distance-binned means, confidence intervals, and ANOVA
               </h4>
 
+              <p className="text-lg text-muted-foreground leading-relaxed">
+                  We quantify plaque-induced gene behavior directly by binning cells into <span className="font-medium text-foreground">five equal-count distance bins</span> and computing mean log1p expression with uncertainty estimates. 
+                  ANOVA confirms that <span className="font-medium text-foreground">all 16 PIGs differ significantly across distance bins</span>.
+                  
+              </p>
+
+              <p className="text-lg text-muted-foreground leading-relaxed">
+                The qualitative pattern is consistent:
+              </p>
 
               <ul className="space-y-3 text-muted-foreground">
+                <li className="flex items-start gap-2">
+                  <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
+                  PIG expression is highest near plaques
+                </li>
+
+                <li className="flex items-start gap-2">
+                  <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
+                  Expression generally decreases with distance
+                </li>
+              </ul>
+
+              <PlotFrame
+                src={`${base}plots/PIG_expression_vs_distance.html`}
+                title="Expression of PIGs vs. distance to plaque"
+                size="xl"
+                caption="Distance-binned mean expression of all 16 PIGs with 95% C, showing consistent plaque-proximal elevation for glial/immune markers.."
+              />
+
+              <p className="text-lg text-muted-foreground leading-relaxed">
+                The magnitude and spatial scale of decay vary by gene:
+              </p>
+
+              <ul className="space-y-3 text-muted-foreground">
+                <li className="flex items-start gap-2">
+                  <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
+                  <em>Gfap</em> shows the strongest and most localized gradient
+                </li>
+
+                <li className="flex items-start gap-2">
+                  <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
+                  <em>Cxcl10</em> appears nearly flat due to extreme zero inflation
+                </li>
+              </ul>
+
+              <p className="text-lg text-muted-foreground leading-relaxed">
+                To summarize this continuously, we regress expression on distance for each PIG and convert slopes into a more interpretable metric: <span className="font-medium text-foreground">distance-to-half-expression</span>. This highlights gene-specific scales, with Gfap showing a relatively local decline and Cxcl10 appearing almost flat, consistent with its extreme zero inflation.
+              </p>
+
+              <PlotFrame
+                src={`${base}plots/distances_to_halve_expression.html`}
+                title="Distances to halve expression for the 16 PIGs"
+                size="md"
+                caption="Interactive: d₁/₂ per PIG computed from regression slopes."
+              />
+
+
+              {/*<ul className="space-y-3 text-muted-foreground">
                 <li>
                   <p className="text-lg text-muted-foreground leading-relaxed">
                     We group cells into{" "}
@@ -209,7 +265,7 @@ const RQ3Section = () => {
               <p className="text-lg text-muted-foreground leading-relaxed">
                 Collectively, tissue within ~0–29 µm of plaques shows elevated glial/immune
                 signatures that fade with distance.
-              </p>
+              </p>*/}
             </div>
 
             {/* =========================
@@ -220,7 +276,7 @@ const RQ3Section = () => {
                 Per-gene regression slopes and “distance-to-half-expression”
               </h4>
 
-              <p className="text-lg text-muted-foreground leading-relaxed">
+              {/*<p className="text-lg text-muted-foreground leading-relaxed">
                 To summarize gradients continuously, we regress log1p-normalized transcript
                 count against distance for each PIG and apply Benjamini–Hochberg FDR
                 correction across the 16 regressions.
@@ -245,9 +301,9 @@ const RQ3Section = () => {
                 title="Distances to halve expression for the 16 PIGs"
                 size="md"
                 caption="Interactive: d₁/₂ per PIG computed from regression slopes."
-              />
+              /> */}
 
-              <p className="text-lg text-muted-foreground leading-relaxed">
+              {/*<p className="text-lg text-muted-foreground leading-relaxed">
                 To increase explanatory power (R²), reduce heteroscedasticity, and test
                 whether plaque shape contributes to local responses, we compute geometric
                 properties of the nearest plaque for each cell:{" "}
@@ -255,14 +311,9 @@ const RQ3Section = () => {
                   area, perimeter, major axis length and orientation
                 </span>
                 .
-              </p>
+              </p>*/}
 
-              <PlotFrame
-                src={`${base}plots/geometric_characteristics_of_plaque.html`}
-                title="Geometric characteristics of the nearest plaque"
-                size="md"
-                caption="Distributions of nearest-plaque geometry features (area, perimeter, major axis, orientation) summarized via box plots."
-              />
+              
 
               <p className="text-lg text-muted-foreground leading-relaxed">
                 Nearest-plaque distance captures proximity to <em>one</em> plaque, but local
@@ -279,6 +330,13 @@ const RQ3Section = () => {
                 <span className="font-medium text-foreground">mean distance</span> to plaques
                 within the same neighborhood.
               </p>
+
+              <PlotFrame
+                src={`${base}plots/geometric_characteristics_of_plaque.html`}
+                title="Geometric characteristics of the nearest plaque"
+                size="md"
+                caption="Distributions of nearest-plaque geometry features (area, perimeter, major axis, orientation) summarized via box plots."
+              />
 
               <p className="text-lg text-muted-foreground leading-relaxed">
                 To validate that R is informative, we check the Count distribution and CDF.
@@ -297,12 +355,16 @@ const RQ3Section = () => {
                 caption="Histogram and CDF of local plaque density (Count within R = 61 µm), validating that multi-plaque proximity provides informative variation beyond nearest-plaque distance."
               />
 
-              <p className="text-lg text-muted-foreground leading-relaxed">
+              {/*<p className="text-lg text-muted-foreground leading-relaxed">
                 To capture local cell–cell context and spatial signaling, we compute
                 neighborhood mean expression features: for each cell and each PIG, we
                 summarize the expression of the{" "}
                 <span className="font-medium text-foreground">15 other PIGs</span> across its{" "}
                 <span className="font-medium text-foreground">k = 100 nearest neighbors</span>.
+              </p>*/}
+              <p className="text-lg text-muted-foreground leading-relaxed">
+                Plaque responses are not purely cell-autonomous. 
+                To quantify local transcriptional context, we compute neighborhood summaries: for each cell and each PIG, we compute mean expression of the <span className="font-medium text-foreground">other 15 PIGs</span> across the cell’s <span className="font-medium text-foreground">100 nearest neighbors</span>.
               </p>
 
 
@@ -333,10 +395,10 @@ const RQ3Section = () => {
                 caption="Histogram and CDF of local plaque density (Count within R = 61 µm), validating that multi-plaque proximity provides informative variation beyond nearest-plaque distance."
               />
 
-              <p className="text-lg text-muted-foreground leading-relaxed">
+              {/*<p className="text-lg text-muted-foreground leading-relaxed">
                 The matrix is not symmetric because target/neighbor roles are not
                 commutative. The strongest relationships are:
-              </p>
+              </p>*/}
 
               <PigNeighborCorrTable />
 

@@ -155,7 +155,7 @@ const RQ5Section = () => {
               </ul>
 
               <p className="text-lg text-muted-foreground leading-relaxed">
-                In these clusters, disease-specific genes such as **Syngr1, Gfap, and Sparcl1** show large positive specificity scores (high in Tg, mostly silent in WT), consistent with glial reactivity, complement/inflammatory remodeling, and plaque-associated activation programs.
+                In these clusters, disease-specific genes such as <span className="font-medium text-foreground">Syngr1, Gfap, and Sparcl1</span> show large positive specificity scores (high in Tg, mostly silent in WT), consistent with glial reactivity, complement/inflammatory remodeling, and plaque-associated activation programs.
               </p>
 
               <p className="text-lg text-muted-foreground leading-relaxed">
