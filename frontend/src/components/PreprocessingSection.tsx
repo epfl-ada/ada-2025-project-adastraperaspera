@@ -322,7 +322,7 @@ const PreprocessingSection = () => {
                 />
             
                 <p className="text-lg text-muted-foreground leading-relaxed">
-                    When mapped back onto tissue, clusters aligned closely with anatomical structures.
+                    The key observation is that clusters are not arbitrary. When projected back onto the tissue, they align with anatomical regions, indicating that gene expression encodes anatomical structure and cell identity.
                 </p>
 
                 <PlotFrame
@@ -331,6 +331,10 @@ const PreprocessingSection = () => {
               size="lg"
               caption="Spatial coordinates colored by Leiden clusters (interactive)."
                 />
+
+              <p className="text-lg text-muted-foreground leading-relaxed">
+                This matters because plaques do not occur uniformly across the brain. Any plaque-distance trend can partly reflect <span className="font-medium text-foreground">which cell types and brain regions are near plaques</span>, so later analyses must consider composition and anatomy explicitly.
+              </p>
 
                 {/*<div className="rounded-2xl border border-border bg-card p-6">*/}
                     <p className="text-lg text-muted-foreground leading-relaxed">
@@ -380,10 +384,6 @@ const PreprocessingSection = () => {
                     </ul>
 
                 {/*</div>*/}
-                
-                <p className="text-lg text-muted-foreground leading-relaxed">
-                    This anatomical correspondence is critical: plaque proximity effects must be interpreted in the context of non-uniform cell-type and regional distributions.
-                </p>
                 
             </div>
 
