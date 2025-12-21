@@ -38,8 +38,8 @@
 
 6. Discussion and Limitations  
    6.a What we can conclude robustly (and what we cannot)  
-   6.b Confounding, alignment error, sparsity/zero inflation, and interpretation risks  
-   6.c Implications for target selection and drug development relevance  
+   6.b Confounding and interpretation risks
+   6.c Conclusions
 
 7. Appendix  
    7.a Multiple-comparisons controls used (Bonferroni, BH-FDR)  
@@ -871,36 +871,33 @@ We also acknowledge our limitations:
 
 ---
 
-### 6.b Confounding, alignment error, sparsity/zero inflation, spatial leakage, and interpretation risks
-
-- **Alignment error:** IF-to-morphology RMSE is small (3.2 µm) but nonzero; fine-scale (single-digit µm) conclusions remain sensitive. In practice, this means that distance-to-plaque effects should be interpreted as mesoscopic trends rather than precise single-cell radial laws.  
-- **Zero inflation and sparsity:** genes like *Cxcl10* illustrate that statistical significance can coexist with minimal practical effect size due to near-all-zero distributions; zero inflation also complicates interaction visualizations and can mask structured effects present in nonzero subsets.  
+### 6.b Confounding and interpretation risks
+ 
 - **Anatomical confounding:** plaque density varies by region; any model using coordinates (and, more broadly, any feature correlated with anatomy) must be treated as potentially learning anatomy rather than pathology. Section 4.c further shows that models can implicitly encode regional structure even when trained on biologically relevant targets (e.g., plaque-distance fields), emphasizing the need to separate “anatomy learning” from “pathology learning.”  
 - **Spatial leakage and evaluation dependence:** random cross-validation can substantially inflate performance because nearby cells share context (spatial autocorrelation). The tile-based spatial block CV (391 tiles with 78 held out, ~20%) provides a more stringent estimate, and the large gene-to-gene variability in leakage gaps (e.g., *Ctst*, *Nrep*) implies that any single pooled performance metric can obscure which genes are truly transferable out-of-region.  
-- **Neighborhood features can still encode location:** although neighborhood summaries are biologically motivated, they can act as proxies for local tissue identity. Ablations in Section 4.c partially address this by breaking neighborhood correspondence: within-tile permutation causes a 62.9% drop in spatial-block OOF performance (no overlap in 95% CIs), and substituting 100 nearest neighbors with 100 farthest neighbors causes an 86.4% drop. These results support a real dependence on local structure, but they do not eliminate the possibility that some neighborhood signal reflects regional identity rather than plaque-specific mechanisms.  
-- **Sensitivity to spatial discretization and neighbor definitions:** tile size, the number of neighbors (e.g., 100), and the precise definition of “neighbor” can change the balance between microenvironmental signal and coarse spatial averaging. This is particularly important in anatomically complex regions (hippocampal formation, isocortex) and near tissue boundaries.  
+- **Neighborhood features can still encode location:** although neighborhood summaries are biologically motivated, they can act as proxies for local tissue identity. Ablations in Section 4.c partially address this by breaking neighborhood correspondence: within-tile permutation causes a 62.9% drop in spatial-block OOF performance (no overlap in 95% CIs), and substituting 100 nearest neighbors with 100 farthest neighbors causes an 86.4% drop. These results support a real dependence on local structure, but they do not eliminate the possibility that some neighborhood signal reflects regional identity rather than plaque-specific mechanisms.   
 - **Boundary artifacts and “break-away” cells:** detached or peripheral cells can be trivially far from plaques and can disproportionately influence segmentation, residual maps, and permutation behavior-especially when tiles mix “continental” (main tissue mass) and “island” (detached) cells.  
-- **Cross-mouse comparability:** batch-like distortions make global cross-mouse normalization risky; the chosen within-cluster z-score approach mitigates but does not eliminate all comparability concerns, particularly for genes with strong regional specificity.  
-- **Causal direction and latent variables:** composition shifts, PIG expression, plaque distance, and neighborhood state co-occur. Regression, ablations, and spatial CV help decompose predictive contributions, but they do not establish causality, nor do they rule out unmeasured covariates (e.g., local damage state, vascular microstructure, technical capture variation) that could drive both plaques and transcriptional programs.
+- **Zero inflation and sparsity:** genes like *Cxcl10* illustrate that statistical significance can coexist with minimal practical effect size due to near-all-zero distributions; zero inflation also complicates interaction visualizations and can mask structured effects present in nonzero subsets.  
 
 ---
 
-### 6.c. Implications for target selection and drug development relevance
+### 6.c. Conclusions
 
-Despite these limitations, the combined evidence supports a biologically consistent plaque-centered narrative: plaques are embedded within region-dependent spatial structure and are surrounded by activated glial niches (microglia/astrocytes) with elevated plaque-induced genes, accompanied by cell-type redistribution and distance-dependent decay. Section 4.c adds an important translational nuance: a meaningful fraction of expression variability is encoded not only in plaque proximity but also in *local neighborhood state*, and this neighborhood signal is predominantly local (performance collapses under far-neighbor substitution and declines strongly under within-tile permutation). Consequently, targets that appear promising under naive evaluation may be those that track conserved anatomy or broad regional identity rather than plaque-linked mechanisms; robust prioritization should therefore emphasize signals that (i) remain detectable under spatial block generalization, (ii) exhibit interpretable dependence on plaque proximity and local microenvironment, and (iii) show consistency with age- and genotype-progressive AD-specific activation signatures. This framing aligns therapeutic target selection with the spatial constraints of real tissue biology: interventions are more likely to succeed when they modulate plaque-proximal, cell-type-resolved programs that are locally coherent and progressive with pathology, rather than programs that simply mark where the cell resides in the brain.
+Our findings reveal that plaques are accumulated in a brain-region-specific way and radiate a multi-modal influence into the surrounding tissue. Plaques re-model cell types and result in niches dominated by vascular and immune cells while being devoid of neurons. Further, plaques activate distinct transcriptional programs, with different genes affected at different distances. 
+
+When considering genes as AD therapy targets, it is crucial to ensure that plaque/gene association is specific to transgenic mice, is robust to spatial block cross validation, and persists across realistic distances from vasculature. In other words, the drug interventions should focus on near-plaque, cell-type-specific transcriptional programs that show a clear progression with age.
 
 
 ---
 
 ## 7. Appendix
 
-### 7.a Multiple-comparisons controls used (Bonferroni, BH-FDR) 
-- Bonferroni correction for cluster-wise logistic regressions (RQ1) and ANOVA across distance bins (RQ3).  
-- Benjamini–Hochberg FDR correction for:  
-  - per-PIG distance regressions (RQ3)  
-  - nested model comparison F-tests across PIGs (RQ3 extended)  
+### 7.a Multiple testing correction 
+- We used Bonferroni correction in RQ1 for per-cluster logistic regressions and in RQ3 for ANOVA across distance bins.  
+- Additionally, we applied Benjamini–Hochberg FDR correction in RQ3 when building per-PIG distance regressions and nested model comparisons.
 
-### 7.b Feature engineering terminology
-- Nearest plaque geometry: area, perimeter, major axis length, orientation.  
-- Multi-plaque proximity (R = 61 µm): Count within R; mean distance within R.  
-- Neighborhood context: mean expression of other PIGs in k = 100 nearest neighbors.
+### 7.b Feature engineering
+- When discussing the features for linear regression, we use the following terms:
+- Nearest plaque geometry refers to plaque area, perimeter, major axis length, and orientation.  
+- Multi-plaque proximity refers to the plaque count and the average distance within R. In our case, we set R = 61 µm, which is the median cell-to-plaque distance.
+- Neighborhood context refers to the average expression of other PIGs in 100 nearest neighbors.
