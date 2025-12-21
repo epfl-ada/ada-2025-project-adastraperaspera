@@ -363,12 +363,11 @@ const RQ3Section = () => {
                 <span className="font-medium text-foreground">k = 100 nearest neighbors</span>.
               </p>*/}
               <p className="text-lg text-muted-foreground leading-relaxed">
-                Plaque responses are not purely cell-autonomous. 
-                To quantify local transcriptional context, we compute neighborhood summaries: for each cell and each PIG, we compute mean expression of the <span className="font-medium text-foreground">other 15 PIGs</span> across the cell’s <span className="font-medium text-foreground">100 nearest neighbors</span>.
-              </p>
+                Plaque-associated transcriptional responses are not purely cell-autonomous and may reflect local microenvironmental context. To quantify this, we computed neighborhood expression summaries by averaging the expression of the other <span className="font-medium text-foreground">15 PIGs</span> across each cell’s <span className="font-medium text-foreground">100 nearest neighbors</span>. This neighborhood size balances locality with statistical stability, avoiding excessive noise from very small neighborhoods and oversmoothing from very large ones. Given typical cell diameters (~10 µm) and tissue density, this choice corresponds to an interaction scale on the order of <span className="font-medium text-foreground">~100 µm</span>, which is relevant for cell–cell signaling and coordinated glial responses. These neighborhood features allow us to model collective plaque-associated activation rather than isolated single-cell effects.
+               </p>
 
 
-              <ul className="space-y-3 text-muted-foreground">
+              {/*<ul className="space-y-3 text-muted-foreground">
                 <li>
                   <p className="text-lg text-muted-foreground leading-relaxed">
                     Motivation for k = 100:
@@ -386,7 +385,7 @@ const RQ3Section = () => {
                   communication (~100 µm radius depending on density, assuming ~10 µm cell
                   diameter and relatively dense cell packing)
                 </li>
-              </ul>
+              </ul>*/}
 
               <PlotFrame
                 src={`${base}plots/pigs_coexpression.html`}
@@ -402,10 +401,12 @@ const RQ3Section = () => {
 
               <PigNeighborCorrTable />
 
-
-              <ul className="mt-3 space-y-3 text-sm text-muted-foreground">
+              <p className="text-lg text-muted-foreground leading-relaxed">
+                To quantify the contribution of different spatial and contextual features to PIG prediction, we evaluated a series of <span className="font-medium text-foreground">nested linear models</span> separately for each PIG. The baseline model included <span className="font-medium text-foreground">distance to the nearest plaque</span> only, followed by successive additions of <span className="font-medium text-foreground">plaque geometry and local multi-plaque proximity </span>features. We then augmented this model with neighborhood transcriptional context, adding the top <span className="font-medium text-foreground">1, 2, 4, 8, or 15</span> correlated neighboring PIG features. Neighbor PIGs were ranked by their correlation strength with the target gene. This nested design allows direct assessment of the incremental explanatory value of each feature group.
+              </p>
+              {/*<ul className="mt-3 space-y-3 text-sm text-muted-foreground">
                 <li>
-                  <p className="text-lg text-muted-foreground leading-relaxed">
+                  
                     We systematically quantify how each feature group improves PIG prediction
                     using nested linear models for each PIG:
                   </p>
@@ -444,7 +445,8 @@ const RQ3Section = () => {
                     15 neighbor PIGs (ranked by correlation)
                   </span>
                 </li>
-              </ul>
+              </ul>*/}
+
               <PlotFrame
                 src={`${base}plots/pig_trajectories.html`}
                 title="Multi-plaque proximity features"
