@@ -310,13 +310,13 @@ const RQ2Section = () => {
               <h3 className="text-2xl font-bold text-foreground">RQ2 : How are the cell type composition, PIG expression, and plaque distance related?</h3>
 
               <p className="text-lg text-muted-foreground leading-relaxed">
-                Because clusters have strong marker structure, apparent plaque-associated gene gradients could arise simply because the <span className="font-medium text-foreground">cell-type mixture changes</span> near plaques.
+                Because clusters exhibit strong marker-gene structure, apparent plaque-associated expression gradients could arise solely from changes in cell-type composition rather than within-cell-type regulation. To illustrate this, we examined cluster-level gene enrichment patterns. <span className="font-medium text-foreground">Cluster 8</span> (immune cells) strongly over-expresses <span className="font-medium text-foreground">Hexb</span> (z-score ≈ 4), whereas <span className="font-medium text-foreground">cluster 14</span> (dentate gyrus immature glutamatergic neurons) under-expresses <span className="font-medium text-foreground">Cst3</span> (z-score ≈ −2). These examples highlight the need to disentangle compositional effects from true distance-dependent gene regulation.
               </p>
-              <p className="text-lg text-muted-foreground leading-relaxed">
+              {/*<p className="text-lg text-muted-foreground leading-relaxed">
                 We first show cluster-level enrichment patterns:
               </p>
-              {/*<div className="rounded-2xl border border-border bg-card p-5">*/}
-              <ul className="space-y-3 text-muted-foreground">
+              <div className="rounded-2xl border border-border bg-card p-5">*/}
+              {/*<ul className="space-y-3 text-muted-foreground">
                 <li className="flex items-start gap-2">
                   <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
                   Cluster 8 (immune) over-expresses <span className="font-medium text-foreground">Hexb</span> (z-score ~4).
@@ -326,7 +326,7 @@ const RQ2Section = () => {
                   <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
                   Cluster 14 (dentate gyrus immature glutamatergic) under-expresses <span className="font-medium text-foreground">Cst3</span> (z-score ~−2).
                 </li>
-              </ul>
+              </ul>*/}
 
               
               {/*</div>
@@ -349,8 +349,7 @@ const RQ2Section = () => {
 
             <div id="rq2-spearman" className="space-y-4">
               <h4 className="text-xl font-semibold text-foreground">Correlation: cell-type proportions vs mean PIG expression</h4>
-
-              {/*<div className="rounded-2xl border border-border bg-card p-5">*/}
+              {/*<div className="rounded-2xl border border-border bg-card p-5">
               <ul className="space-y-3 text-muted-foreground">
                 <p className="text-lg text-muted-foreground leading-relaxed">
                   We test whether distance-dependent PIG expression could be explained by changing cell-type composition. Concretely:
@@ -377,8 +376,13 @@ const RQ2Section = () => {
                   <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
                   Perform significance testing with multiple-testing correction per gene–cell-type pair.
                 </li>
-              </ul>
+              </ul>*/}
               {/*</div>*/}
+
+              <p className="text-lg text-muted-foreground leading-relaxed">
+                To test whether distance-dependent PIG expression can be explained by shifts in cell-type composition, we performed a correlation analysis across plaque-distance bins. Cells were first grouped by distance to the nearest plaque, and for each bin we computed both <span className="font-medium text-foreground">cell-type proportions</span> and <span className="font-medium text-foreground">mean PIG expression</span>. We then calculated a <span className="font-medium text-foreground">Spearman rank correlation matrix</span> relating cell-type proportions to PIG expression across bins. Spearman correlation was used to accommodate potential nonlinear or threshold-like relationships between distance and composition. Statistical significance was assessed for each gene–cell-type pair with appropriate multiple-testing correction.
+              </p>
+
               <PlotFrame
                 src={`${base}plots/PIG_type_spearman.html`}
                 title="PIG type correlation vs. cellular type proportion"
@@ -387,9 +391,9 @@ const RQ2Section = () => {
               />
 
               <p className="text-lg text-muted-foreground leading-relaxed">
-                We identify 9 <span className="font-medium text-foreground">cell types</span> with significant correlations to PIG expression. Notably:
+                We identify <span className="font-medium text-foreground">9 cell types</span> whose proportions are significantly correlated with PIG expression across distance bins. <span className="font-medium text-foreground">8 of these cell types</span> show strong correlations with a <span className="font-medium text-foreground">core set of 14 PIGs</span>, indicating a shared plaque-associated transcriptional program. The remaining cell type shows a strong association with <span className="font-medium text-foreground">Nrep</span> alone. This pattern suggests complementary, gene-specific relationships rather than redundancy across all PIGs.
               </p>
-              <ul className="space-y-3 text-muted-foreground">
+              {/*<ul className="space-y-3 text-muted-foreground">
                 <li className="flex items-start gap-2">
                   <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
                   <span className="font-medium text-foreground">8/9</span> are strongly correlated with a <span className="font-medium text-foreground">core set of 14 PIGs</span>.
@@ -399,7 +403,7 @@ const RQ2Section = () => {
                   <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />The remaining cell type is strongly correlated with <span className="font-medium text-foreground">Nrep</span> alone, suggesting a complementary pattern rather than redundancy with the core PIG set.
                 </li>
               </ul>
-              {/*</div>*/}
+              </div>*/}
 
               <div className="space-y-6">
                 <CorrTable />
@@ -417,9 +421,11 @@ const RQ2Section = () => {
 
             <div id="rq2-linear" className="space-y-4">
               <h4 className="text-xl font-semibold text-foreground">Joint regression (Apoe) </h4>
-
-              <ul className="space-y-3 text-muted-foreground">
-                <p className="text-lg text-muted-foreground leading-relaxed">
+              <p className="text-lg text-muted-foreground leading-relaxed">
+                To quantify the contribution of cell-type composition to PIG expression gradients, we fit a joint linear regression model predicting PIG expression from <span className="font-medium text-foreground">broad cell type</span> (with vascular endothelial pericytes as the baseline) and distance to the nearest plaque. The model explains <span className="font-medium text-foreground">20.3%</span> of the variance in normalized transcript counts (<span className="font-medium text-foreground">R² = 0.203</span>). The overall model fit is highly significant (<span className="font-medium text-foreground">F-test p &lt; 2.13 × 10⁻¹⁷⁴</span>), rejecting the joint null hypothesis. These results indicate that both cell identity and plaque proximity contribute substantially to PIG expression variation.
+              </p>
+              {/*}<ul className="space-y-3 text-muted-foreground">
+                
                   To quantify how much cell composition explains PIG expression gradients, we fit a joint linear regression predicting PIG expression from:
                 </p>
                 <li className="flex items-start gap-2">
@@ -433,7 +439,7 @@ const RQ2Section = () => {
                 </li>
               </ul>
 
-              {/*}
+              
               <p className="text-lg text-muted-foreground leading-relaxed">
                 We illustrate results for <span className="font-medium text-foreground">Apoe</span>.
               </p>*/}
