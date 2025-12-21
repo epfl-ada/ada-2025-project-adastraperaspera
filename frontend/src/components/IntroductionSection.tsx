@@ -30,7 +30,7 @@ const IntroductionSection = () => {
               and neuronal death. However, the bulk of the existing research only examines
               this influence across rough distance bins. Building a finer model of
               plaque-induced microenvironment has important downstream applications.
-              With the knowledge of <em>which</em> cells and <em>which</em> genes respond
+              With the knowledge of <em>which</em> cells and <em>which</em> genes respond 
               <em>where</em> around the plaques, drug developers can pre-filter
               therapeutic targets accessible from the vasculature.
             </p>

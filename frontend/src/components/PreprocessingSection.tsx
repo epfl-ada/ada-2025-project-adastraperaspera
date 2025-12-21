@@ -281,7 +281,7 @@ const PreprocessingSection = () => {
               <h3 className="text-xl font-semibold text-foreground">Cell clustering workflow</h3>
 
               <p className="text-lg text-muted-foreground leading-relaxed">
-                Cells were clustered using expression alone (PCA → kNN → Leiden), yielding **19 clusters**.:
+                Cells were clustered using expression alone (PCA → kNN → Leiden), yielding <span className="font-medium text-foreground">19 clusters</span>.:
               </p>
 
 
