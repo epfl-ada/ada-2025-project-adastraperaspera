@@ -8,7 +8,7 @@ const RQ5Section = () => {
     <section id="rq-5" className="py-24 bg-background">
       <div className="container mx-auto px-6 max-w-6xl">
         <div className="grid gap-10 lg:grid-cols-[1fr_320px] items-start">
-            
+
           {/* 
 
           {/* Main content */}
@@ -18,36 +18,36 @@ const RQ5Section = () => {
                 RQ5: How does the gene expression change with age for each cell type and mouse group?
               </h3>
             </div>
-             {/* =========================
+            {/* =========================
                 RQ5
                 ========================= */}
             <div id="rq5-modalities" className="space-y-4">
 
-                <p className="text-lg text-muted-foreground leading-relaxed">
-                    Because spatial-only prediction is dominated by conserved anatomy, we pivot to gene-expression-anchored, age-aware analyses. This shift is motivated by three constraints:
-                </p>
+              <p className="text-lg text-muted-foreground leading-relaxed">
+                Because spatial-only prediction is dominated by conserved anatomy, we pivot to gene-expression-anchored, age-aware analyses. This shift is motivated by three constraints:
+              </p>
 
-                
-                    <div className="rounded-2xl border border-border bg-card p-5">
-                    <ul className="space-y-3 text-muted-foreground">
-                        <li className="flex items-start gap-2"><CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" /> 
-                          Plaque-induced transcriptional responses are **cell-state specific** (microglia, astrocytes, and some oligodendrocyte populations can change strongly near plaques in ways spatial position alone cannot resolve).
-                        </li>
-                        <li className="flex items-start gap-2"><CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" /> 
-                          Direct normalization across mice is unreliable: orientation, capture area, imaging depth, and detection efficiency create batch-like distortions, and global scaling/quantile matching can suppress real gradients or introduce artifacts.  
-                          </li>
-                        <li className="flex items-start gap-2"><CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" /> 
-                          Common harmonization methods (Harmony, MNN, scVI) are ill-suited here: the panel is sparse, cell count is very large, and plaque-associated variance is biological signal—not batch noise to be removed.
-                          </li>
-                    </ul>
-                    </div>
-                
+
+              <div className="rounded-2xl border border-border bg-card p-5">
+                <ul className="space-y-3 text-muted-foreground">
+                  <li className="flex items-start gap-2"><CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
+                    Plaque-induced transcriptional responses are **cell-state specific** (microglia, astrocytes, and some oligodendrocyte populations can change strongly near plaques in ways spatial position alone cannot resolve).
+                  </li>
+                  <li className="flex items-start gap-2"><CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
+                    Direct normalization across mice is unreliable: orientation, capture area, imaging depth, and detection efficiency create batch-like distortions, and global scaling/quantile matching can suppress real gradients or introduce artifacts.
+                  </li>
+                  <li className="flex items-start gap-2"><CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
+                    Common harmonization methods (Harmony, MNN, scVI) are ill-suited here: the panel is sparse, cell count is very large, and plaque-associated variance is biological signal-not batch noise to be removed.
+                  </li>
+                </ul>
+              </div>
+
             </div>
 
 
-            
 
-            
+
+
 
             {/* =========================
                 Disease status 
@@ -80,7 +80,7 @@ const RQ5Section = () => {
                 <li className="flex items-start gap-2">
                   <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
                   <span>
-                    Disease status: <span className="font-medium text-foreground">Tg vs WT</span> 
+                    Disease status: <span className="font-medium text-foreground">Tg vs WT</span>
                   </span>
                 </li>
 
@@ -93,7 +93,7 @@ const RQ5Section = () => {
               </ul>
 
               <p className="text-lg text-muted-foreground leading-relaxed">
-                For each Leiden cluster, we compute a disease-specific activation score that highlights genes strongly expressed in Tg mice but minimally expressed in WT controls—capturing plaque-linked induction rather than baseline glial identity or general aging. We then rank clusters by the mean disease specificity across genes.
+                For each Leiden cluster, we compute a disease-specific activation score that highlights genes strongly expressed in Tg mice but minimally expressed in WT controls-capturing plaque-linked induction rather than baseline glial identity or general aging. We then rank clusters by the mean disease specificity across genes.
               </p>
 
               <PlotFrame
@@ -110,7 +110,7 @@ const RQ5Section = () => {
                 caption="Per-cluster age progression."
               />
 
-              
+
             </div>
 
             {/* =========================
@@ -142,7 +142,7 @@ const RQ5Section = () => {
                 <li className="flex items-start gap-2">
                   <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
                   <span>
-                    <span className="font-medium text-foreground">Cluster 8 (microglia)</span> as the strongest AD-specific activation cluster  
+                    <span className="font-medium text-foreground">Cluster 8 (microglia)</span> as the strongest AD-specific activation cluster
                   </span>
                 </li>
 
@@ -188,7 +188,7 @@ const RQ5Section = () => {
                 <li className="flex items-start gap-2">
                   <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
                   <span>
-                    In Tg mice, microglia and astrocytes show *<span className="font-medium text-foreground">monotone increases</span> from <span className="font-medium text-foreground">2 to 5 to 17 months</span>.  
+                    In Tg mice, microglia and astrocytes show *<span className="font-medium text-foreground">monotone increases</span> from <span className="font-medium text-foreground">2 to 5 to 17 months</span>.
                   </span>
                 </li>
 
@@ -208,53 +208,53 @@ const RQ5Section = () => {
               />
 
               <p className="text-lg text-muted-foreground leading-relaxed">
-                Taken together, RQ6 supports a coherent synthesis: specific glial clusters—particularly microglia (cluster 8) and astrocytes (cluster 18)—undergo robust and progressive transcriptional activation driven by amyloid pathology. These signatures intensify with age in Tg mice but remain absent in age-matched WT animals. Compared to spatial-only modeling, this gene-level, age-resolved approach yields a more stable and pathology-driven understanding of how glial states evolve around Aβ plaques..
+                Taken together, RQ6 supports a coherent synthesis: specific glial clusters-particularly microglia (cluster 8) and astrocytes (cluster 18)-undergo robust and progressive transcriptional activation driven by amyloid pathology. These signatures intensify with age in Tg mice but remain absent in age-matched WT animals. Compared to spatial-only modeling, this gene-level, age-resolved approach yields a more stable and pathology-driven understanding of how glial states evolve around Aβ plaques..
               </p>
             </div>
           </div>
 
 
           <aside className="lg:sticky lg:top-24">
-                            <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
-                                {/* Header (same pattern as GeneExpression / Microscopy) */}
-                                <div className="flex items-start gap-3">
-                                <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
-                                    <Brain className="w-5 h-5 text-primary" />
-                                </div>
-                                <div>
-                                    <div className="text-sm font-semibold text-foreground">
-                                    Research Question 5
-                                    </div>
-                                    <div className="text-xs text-muted-foreground">
-                                    How does the gene expression change with age for each cell type and mouse group?
-                                    </div>
-                                </div>
-                                </div>
-            
-                                {/* Navigation (identical hover / spacing / typography) */}
-                                <nav className="mt-6 space-y-2 text-sm">
-                                <a
-                                    href="#rq5-disease"
-                                    className="block rounded-xl px-3 py-2 text-muted-foreground hover:text-foreground hover:bg-muted/50 transition"
-                                >
-                                    Disease specificity
-                                </a>
-            
-                                <a
-                                    href="#rq5-age"
-                                    className="block rounded-xl px-3 py-2 text-muted-foreground hover:text-foreground hover:bg-muted/50 transition"
-                                >
-                                    Age trajectories
-                                </a>
-          
-                                </nav>
-            
-                                {/* Footer hint */}
-                                <div className="mt-6 text-xs text-muted-foreground">
-                                Tip: scroll or use the navigation above.
-                                </div>
-                            </div>
-                        </aside>
+            <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+              {/* Header (same pattern as GeneExpression / Microscopy) */}
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+                  <Brain className="w-5 h-5 text-primary" />
+                </div>
+                <div>
+                  <div className="text-sm font-semibold text-foreground">
+                    Research Question 5
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    How does the gene expression change with age for each cell type and mouse group?
+                  </div>
+                </div>
+              </div>
+
+              {/* Navigation (identical hover / spacing / typography) */}
+              <nav className="mt-6 space-y-2 text-sm">
+                <a
+                  href="#rq5-disease"
+                  className="block rounded-xl px-3 py-2 text-muted-foreground hover:text-foreground hover:bg-muted/50 transition"
+                >
+                  Disease specificity
+                </a>
+
+                <a
+                  href="#rq5-age"
+                  className="block rounded-xl px-3 py-2 text-muted-foreground hover:text-foreground hover:bg-muted/50 transition"
+                >
+                  Age trajectories
+                </a>
+
+              </nav>
+
+              {/* Footer hint */}
+              <div className="mt-6 text-xs text-muted-foreground">
+                Tip: scroll or use the navigation above.
+              </div>
+            </div>
+          </aside>
 
 
 

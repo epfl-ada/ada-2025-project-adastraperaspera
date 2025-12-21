@@ -22,7 +22,7 @@ def split_train_test(df, test_fraction=0.2, random_state=42):
     """
     if TARGET_COL not in df.columns:
         raise ValueError(
-            "Target column not found — this mouse has no plaque distances."
+            "Target column not found - this mouse has no plaque distances."
         )
 
     y = df[TARGET_COL]

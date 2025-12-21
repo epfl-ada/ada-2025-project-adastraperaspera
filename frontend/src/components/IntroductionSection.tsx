@@ -18,7 +18,7 @@ const IntroductionSection = () => {
 
         {/* Two-column layout */}
         <div className="grid gap-10 lg:grid-cols-[1fr_360px] items-start">
-          {/* LEFT — Overview text */}
+          {/* LEFT - Overview text */}
           <div className="space-y-6">
             <h3 className="text-2xl font-semibold text-foreground">
               Overview
@@ -30,7 +30,7 @@ const IntroductionSection = () => {
               and neuronal death. However, the bulk of the existing research only examines
               this influence across rough distance bins. Building a finer model of
               plaque-induced microenvironment has important downstream applications.
-              With the knowledge of <em>which</em> cells and <em>which</em> genes respond 
+              With the knowledge of <em>which</em> cells and <em>which</em> genes respond
               <em>where</em> around the plaques, drug developers can pre-filter
               therapeutic targets accessible from the vasculature.
             </p>
@@ -45,33 +45,33 @@ const IntroductionSection = () => {
               genotype-specific signatures.
             </p>
             <ImageGridPlot
-                              files={{
-                                "wt-2": `${base}images_grid_bw/full/wt-2.webp`,
-                                "wt-5": `${base}images_grid_bw/full/wt-5.webp`,
-                                "wt-13": `${base}images_grid_bw/full/wt-13.webp`,
-                                "tg-2": `${base}images_grid_bw/full/tg-2.webp`,
-                                "tg-5": `${base}images_grid_bw/full/tg-5.webp`,
-                                "tg-17": `${base}images_grid_bw/full/tg-17.webp`,
-                              }}
-                              keyToPos={{
-                                "wt-2": [0, 0],
-                                "wt-5":  [0, 1],
-                                "wt-13": [0, 2],
-                                "tg-2": [1, 0],
-                                "tg-5": [1, 1],
-                                "tg-17": [1, 2],
-                              }}
-                              colTicks={["2", "5.7", "13+"]}
-                              rowTicks={["Wild Type", "Transgenic"]}
-                              caption="Morphology images of Wt and transgenic mice across ages."
-                              cellSize={180}
-                            />
+              files={{
+                "wt-2": `${base}images_grid_bw/full/wt-2.webp`,
+                "wt-5": `${base}images_grid_bw/full/wt-5.webp`,
+                "wt-13": `${base}images_grid_bw/full/wt-13.webp`,
+                "tg-2": `${base}images_grid_bw/full/tg-2.webp`,
+                "tg-5": `${base}images_grid_bw/full/tg-5.webp`,
+                "tg-17": `${base}images_grid_bw/full/tg-17.webp`,
+              }}
+              keyToPos={{
+                "wt-2": [0, 0],
+                "wt-5": [0, 1],
+                "wt-13": [0, 2],
+                "tg-2": [1, 0],
+                "tg-5": [1, 1],
+                "tg-17": [1, 2],
+              }}
+              colTicks={["2", "5.7", "13+"]}
+              rowTicks={["Wild Type", "Transgenic"]}
+              caption="Morphology images of Wt and transgenic mice across ages."
+              cellSize={180}
+            />
             <p className="text-lg text-muted-foreground leading-relaxed">
-                              Brain <span className="font-medium text-foreground">slices</span> from six mice were analyzed. Three are healthy controls, and three are transgenic mice that overproduce amyloid precursor protein, leading to early amyloid-β plaque formation. Plaques are visible in red in the oldest transgenic mouse (17.9 months).
+              Brain <span className="font-medium text-foreground">slices</span> from six mice were analyzed. Three are healthy controls, and three are transgenic mice that overproduce amyloid precursor protein, leading to early amyloid-β plaque formation. Plaques are visible in red in the oldest transgenic mouse (17.9 months).
             </p>
           </div>
 
-          {/* RIGHT — Research questions card */}
+          {/* RIGHT - Research questions card */}
           <aside className="lg:sticky lg:top-24">
             <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
               <div className="flex items-start gap-3 mb-4">

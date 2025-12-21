@@ -62,7 +62,7 @@ def plot_age_progression(pig_glial_df, glial_clusters):
 
     plt.xlabel("Age (months)")
     plt.ylabel("Mean PIG (TG only)")
-    plt.title("Age Progression of PIG Scores — TG Only")
+    plt.title("Age Progression of PIG Scores - TG Only")
     plt.legend(bbox_to_anchor=(1.05, 1), loc="upper left")
     plt.show()
 
@@ -224,7 +224,7 @@ def plot_age_curves_by_cluster(pig_glial_df, glial_clusters):
     for j in range(i + 1, rows * cols):
         fig.delaxes(axes[j])
 
-    plt.suptitle("Age Progression — TG vs WT", fontsize=26)
+    plt.suptitle("Age Progression - TG vs WT", fontsize=26)
     plt.tight_layout()
     plt.show()
 
@@ -254,7 +254,7 @@ def plot_ad_scatter_per_cluster(disease_specific_genes):
             palette="viridis",
             sizes=(20, 200),
         )
-        plt.title(f"AD-Specific Gene Activation — Cluster {c}")
+        plt.title(f"AD-Specific Gene Activation - Cluster {c}")
         plt.xlabel("WT Expression")
         plt.ylabel("TG − WT logFC")
         plt.axhline(0, color="black", ls="--")

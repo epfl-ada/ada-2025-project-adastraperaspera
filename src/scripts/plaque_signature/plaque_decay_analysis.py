@@ -98,7 +98,7 @@ def plot_decay(pid, tg_records, wt_records):
     )
     plt.xlabel("Distance to Plaque (µm)")
     plt.ylabel("PLS Signature")
-    plt.title(f"Signature Decay — Plaque {pid}")
+    plt.title(f"Signature Decay - Plaque {pid}")
     plt.legend()
     plt.show()
 
@@ -126,7 +126,7 @@ def plot_binned_profile(pid, tg_records, wt_records, bin_size=20, max_dist=300):
 
     plt.xlabel("Distance (µm)")
     plt.ylabel("PLS Signature")
-    plt.title(f"Binned Signature Profile — Plaque {pid}")
+    plt.title(f"Binned Signature Profile - Plaque {pid}")
     plt.legend()
     plt.grid(alpha=0.3)
     plt.show()
