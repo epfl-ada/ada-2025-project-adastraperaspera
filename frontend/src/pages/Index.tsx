@@ -20,6 +20,7 @@ import RQ4Section from "@/components/RQ4Section";
 import RQ5Section from "@/components/RQ5Section";
 import DiscussionSection from "@/components/DiscussionSection";
 import DiscussionSection2 from "@/components/DiscussionSection2";
+import Chapter1 from "@/components/Chapter1";
 
 const Index = () => {
   return (
@@ -44,6 +45,7 @@ const Index = () => {
       {/*<DiscussionSection */}
       <DiscussionSection2/>
       <IntroductionSection2/>
+      <Chapter1 />
       <Footer />
     </main>
   );
