@@ -7,7 +7,7 @@ const bw_grid_path = `${base}images_grid_bw/full/`;
 const _grid_path = `${base}images_grid_gold/full/`;
 
 const WEIRD_GENE_ROWS = [
-  { gene: "Cxcl10", zero_frac: "1.00", weird_score: "9.35" },
+  { gene: "Cxcl10", zero_frac: "0.99", weird_score: "9.35" },
   { gene: "Cd74", zero_frac: "0.98", weird_score: "8.13" },
   { gene: "Serpina3n", zero_frac: "0.88", weird_score: "0.79" },
   { gene: "C4b", zero_frac: "0.90", weird_score: "0.19" },
