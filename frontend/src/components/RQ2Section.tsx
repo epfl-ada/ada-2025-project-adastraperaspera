@@ -396,8 +396,7 @@ const RQ2Section = () => {
                 </li>
 
                 <li className="flex items-start gap-2">
-                  <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
-                  The remaining cell type is strongly correlated with <span className="font-medium text-foreground">Nrep</span> alone, suggesting a complementary pattern rather than redundancy with the core PIG set.
+                  <CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />The remaining cell type is strongly correlated with <span className="font-medium text-foreground">Nrep</span> alone, suggesting a complementary pattern rather than redundancy with the core PIG set.
                 </li>
               </ul>
               {/*</div>*/}
