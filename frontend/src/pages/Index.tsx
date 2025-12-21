@@ -35,31 +35,14 @@ const Index = () => {
       <HeroSection />
       <IntroductionSection />
       <PreprocessingSection />
-      {/*<MetricsSection /> 
-      <MicroscopySection/>*/}
-      {/*<GeneExpressionChart />
-      <GeneExpressionSection2 />
-      <CellClusteringSection />*/}
-      {/*<RQSection />*/}
       <RQ1Section />
       <RQ2Section />
       <RQ3Section />
       <RQ4Section />
       <RQ5Section />
-      {/*<SpatialMapSection />
-      <MethodologySection />
-      <ConclusionSection />*/}
-      {/*<DiscussionSection */}
       <DiscussionSection2/>
-      {/*<IntroductionSection2/>
-      <Chapter1 />
-      <Chapter2 />
-      <Chapter3 />
-      <Chapter4 />
-      <Chapter5 />
-      <Chapter6 />
-      <Chapter7 />
-      <Chapter8 />*/}
+      <AppendixSection />
+
       <Footer />
     </main>
   );
