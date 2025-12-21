@@ -2,47 +2,47 @@
 
 ## Table of Contents
 
-1. Introduction  
-   1.a Motivation  
-   1.b Project goals  
-   1.c Research questions  
+1. Introduction
+   1.a Motivation
+   1.b Project goals
+   1.c Research questions
 
-2. Dataset Preprocessing Pipeline  
-   2.a Xenium dataset summary 
-   2.b Microscopy modalities and plaque ground truth  
-   2.c. Cell-to-plaque distance definition and computation  
-   2.d Gene panel composition and sparsity properties  
-   2.e. Inferring cell types via clustering 
+2. Dataset Preprocessing Pipeline
+   2.a Xenium dataset summary
+   2.b Microscopy modalities and plaque ground truth
+   2.c. Cell-to-plaque distance definition and computation
+   2.d Gene panel composition and sparsity properties
+   2.e. Inferring cell types via clustering
 
-3. Results: Plaque-Proximity Effects  
-   3.a RQ1 - How does cell-type composition change in plaque proximity?  
-   3.a.i Logistic regression specification, multiple-testing control, and effect interpretation  
-   3.b RQ2 - Relationship between cell type composition, PIG expression, and plaque distance  
-   3.b.i Correlation analysis: cell-type proportions vs mean PIG expression (Spearman)  
-   3.b.ii Joint regression case study (Apoe): cell type + distance → expression  
-   3.b.iii Stratified mean expression by distance and cell type  
-   3.c RQ3 - How does PIG expression change in plaque proximity?  
-   3.c.i Binned means, confidence intervals, and ANOVA evidence  
-   3.c.ii Per-gene distance regressions, FDR control, and “distance-to-half-expression”   
+3. Results: Plaque-Proximity Effects
+   3.a RQ1 - How does cell-type composition change in plaque proximity?
+   3.a.i Logistic regression specification, multiple-testing control, and effect interpretation
+   3.b RQ2 - Relationship between cell type composition, PIG expression, and plaque distance
+   3.b.i Correlation analysis: cell-type proportions vs mean PIG expression (Spearman)
+   3.b.ii Joint regression case study (Apoe): cell type + distance → expression
+   3.b.iii Stratified mean expression by distance and cell type
+   3.c RQ3 - How does PIG expression change in plaque proximity?
+   3.c.i Binned means, confidence intervals, and ANOVA evidence
+   3.c.ii Per-gene distance regressions, FDR control, and “distance-to-half-expression”
 
-4. Predictive Modeling: Inferring Plaque Distance  
+4. Predictive Modeling: Inferring Plaque Distance
    4.a RQ4 - When modeling plaque distance, which features are most important?
-   4.a.i Benchmarking setup and results 
+   4.a.i Benchmarking setup and results
    4.b Additional feature modalities
    4.c Deep-dive into the expression models
 
 5. Age and Genotype specific patterns
    5.a RQ5 - How does the gene expression change with age for each cell type and mouse group?
-   5.b Disease specificity (Tg vs WT) by cell type 
-   5.c Age trajectories for Tg and WT at (2, 5, 13+ months)  
+   5.b Disease specificity (Tg vs WT) by cell type
+   5.c Age trajectories for Tg and WT at (2, 5, 13+ months)
 
-6. Discussion and Limitations  
-   6.a What we can conclude robustly (and what we cannot)  
+6. Discussion and Limitations
+   6.a What we can conclude robustly (and what we cannot)
    6.b Confounding and interpretation risks
    6.c Conclusions
 
-7. Appendix  
-   7.a Multiple-comparisons controls used (Bonferroni, BH-FDR)  
+7. Appendix
+   7.a Multiple-comparisons controls used (Bonferroni, BH-FDR)
    7.b Feature engineering terminology
 
 
@@ -56,16 +56,16 @@ Amyloid beta plaques (Aβ) are a known hallmark of Alzheimer's disease (AD) with
 
 ### 1.b Project goals
 
-In this project, we utilize Xenium murine transcriptomics dataset to develop and interpret quantitative models. We investigate (1) temporal and spatial trends in gene expression, and (2) time and distance-dependent changes in cell composition. We describe the interplay between the two and provide a plausible causal relationship. Finally, we flip the direction and benchmark predictive models to infer plaque distance from multiple modalities. 
+In this project, we utilize Xenium murine transcriptomics dataset to develop and interpret quantitative models. We investigate (1) temporal and spatial trends in gene expression, and (2) time and distance-dependent changes in cell composition. We describe the interplay between the two and provide a plausible causal relationship. Finally, we flip the direction and benchmark predictive models to infer plaque distance from multiple modalities.
 
 ### 1.c Research questions
 
 In the upcoming sections, we will explore the following research questions (RQs).
 
-- **RQ1:** How does the cell type composition change in plaque proximity?  
+- **RQ1:** How does the cell type composition change in plaque proximity?
 - **RQ2:** How are the cell type composition, PIG expression, and plaque distance related?
-- **RQ3:** How does the Plaque Induced Gene (PIG) expression change in plaque proximity?  
-- **RQ4:** When modeling plaque distance, which feature modalities are most important?  
+- **RQ3:** How does the Plaque Induced Gene (PIG) expression change in plaque proximity?
+- **RQ4:** When modeling plaque distance, which feature modalities are most important?
 - **RQ5:** How does the gene expression change with age for each cell type and mouse group?
 
 When addressing these questions, we compute the statistical significance of findings and perform critical diagnostics of trained models.
@@ -77,14 +77,14 @@ When addressing these questions, we compute the statistical significance of find
 ### 2.a Xenium AD dataset
 We analyze a 10X Genomics Xenium spatial transcriptomics dataset consisting of:
 
-- 6 mice  
-- 6 morphology images  
-- 1 immunofluorescence (IF) image  
-- 347 genes  
-- 351,714 cells  
-- 78,885,074 transcripts  
-- 34.7 GB of data  
-- 0 missing values  
+- 6 mice
+- 6 morphology images
+- 1 immunofluorescence (IF) image
+- 347 genes
+- 351,714 cells
+- 78,885,074 transcripts
+- 34.7 GB of data
+- 0 missing values
 - 1,736 Aβ plaques
 
 The data comes from sagittal brain slices of 6 mice stained with DAPI, a fluorescent DNA-binding nucleus dye. Three mice are healthy controls (wild type or Wt) at **2.5, 5.7, and 13.4 months**. The remaining three are transgenic (Tg) at **2.5, 5.7, and 17.9 months**.
@@ -125,10 +125,10 @@ To build intuition, we overlay plaque polygons onto the morphology image and col
 
 Distances are spatially heterogeneous but concentrated near plaques:
 
-- Maximum distance from any plaque: **457 µm**  
-- **>99%** of cells are within **200 µm** of a plaque  
-- Median distance: **61 µm**  
-- Standard deviation: **44.4 µm**  
+- Maximum distance from any plaque: **457 µm**
+- **>99%** of cells are within **200 µm** of a plaque
+- Median distance: **61 µm**
+- Standard deviation: **44.4 µm**
 - Distribution is **right-skewed** with a long tail of cells far from plaques
 
 <p align="center">
@@ -143,8 +143,8 @@ Distances are spatially heterogeneous but concentrated near plaques:
 This Xenium dataset provides single-cell expression for **347 genes**, but expression is sparse. In the most AD-advanced sample (the 17.9-month transgenic mouse), **302/347 genes** have **zero median transcript count**. Across genes, transcript counts are **right-skewed**, and the fraction of cells with nonzero counts varies widely (**0.002 to 0.989**), underscoring substantial gene-dependent detection and expression variability.
 
 The gene panel includes:
-- **248** markers for 8 main cell types, neuronal cortical layer markers, and non-neuronal markers  
-- **83** genes related to activated microglia and astrocytes  
+- **248** markers for 8 main cell types, neuronal cortical layer markers, and non-neuronal markers
+- **83** genes related to activated microglia and astrocytes
 - **16** plaque-induced genes (PIGs) curated from primary literature
 
 <p align="center">
@@ -180,9 +180,9 @@ Cxcl10 and Cd74 clearly stand out: both have weirdness scores > 8 and extremely 
 ### 2.e Cell clustering workflow (PCA → kNN → Leiden → UMAP)
 To characterize cell types and anatomical structure, we cluster cells using their 347-dimensional expression vectors:
 
-1. PCA on expression space  
-2. kNN graph with **15 nearest neighbors**  
-3. **Leiden clustering**, yielding **K = 19** clusters  
+1. PCA on expression space
+2. kNN graph with **15 nearest neighbors**
+3. **Leiden clustering**, yielding **K = 19** clusters
 4. 2D embedding via **UMAP** for visualization
 
 <p align="center">
@@ -198,9 +198,9 @@ Overlaying clusters on tissue reveals strong correspondence with brain morpholog
 </p>
 
 Representative cluster interpretations include:
-- **Cluster 6 (vascular cells)** is concentrated near the outer rim, consistent with epidural space localization.  
-- **Cluster 14** traces hippocampal formation and follows the dentate gyrus shape; inferred as **dentate gyrus immature glutamatergic neurons**.  
-- **Cluster 10** dominates the amygdala/hypothalamus region; inferred as **hypothalamic medial mammillary glutamatergic neurons**.  
+- **Cluster 6 (vascular cells)** is concentrated near the outer rim, consistent with epidural space localization.
+- **Cluster 14** traces hippocampal formation and follows the dentate gyrus shape; inferred as **dentate gyrus immature glutamatergic neurons**.
+- **Cluster 10** dominates the amygdala/hypothalamus region; inferred as **hypothalamic medial mammillary glutamatergic neurons**.
 - Ventricular cavities show a distinct lining cluster (**cluster 15**), inferred as **hypothalamic GnRH1-expressing glutamatergic neurons**, consistent with hypothalamic contributions to the third ventricle walls.
 
 This anatomical concordance is central for later interpretation: spatial plaque proximity effects can reflect genuine plaque biology, but also the fact that plaques and cell types are unevenly distributed across brain regions.
@@ -215,9 +215,9 @@ This anatomical concordance is central for later interpretation: spatial plaque 
 We model the relationship between **cluster membership** and **distance to the nearest plaque** using logistic regression. After fitting, we find statistically significant coefficients for **14 of 19 clusters**, using a **Bonferroni-adjusted p-value threshold of 0.01**.
 
 To make coefficients interpretable, we translate them into:
-- **p(0):** baseline probability of observing a cluster at the plaque surface  
-- **p(100):** probability of observing a cluster at 100 µm from plaque  
-- **p(100) − p(0):** relative change over 100 µm away from plaque  
+- **p(0):** baseline probability of observing a cluster at the plaque surface
+- **p(100):** probability of observing a cluster at 100 µm from plaque
+- **p(100) − p(0):** relative change over 100 µm away from plaque
 
 Key effects (selected):
 
@@ -253,7 +253,7 @@ These coefficients are summarized visually below.
 </p>
 
 Overall, the results show a clear composition shift near plaques:
-- **Neuronal cell types are generally depleted** around plaques.  
+- **Neuronal cell types are generally depleted** around plaques.
 - **Immune, vascular, and astrocytic** populations are **enriched** at the smallest distances.
 
 This aligns with known AD mechanisms: plaques are associated with neuronal degeneration, reactive astrocytosis and microglial activation, and vascular remodeling.
@@ -271,9 +271,9 @@ To complement the regression summary, we examine frequency vs. distance using bi
 
 
 Several clusters show changes primarily at extreme distances rather than gradual shifts:
-- Cluster 0 (oligodendrocyte lineage) shows a clear upward trend away from plaques.  
-- Cluster 15 increases sharply only after ~113 µm.  
-- Cluster 14 declines sharply after ~138 µm.  
+- Cluster 0 (oligodendrocyte lineage) shows a clear upward trend away from plaques.
+- Cluster 15 increases sharply only after ~113 µm.
+- Cluster 14 declines sharply after ~138 µm.
 - Cluster 8 (immune) drops sharply after the first bin, then levels off.
 
 These non-linearities motivate correlation and regression analyses that do not assume strict linear response across distance.
@@ -283,7 +283,7 @@ These non-linearities motivate correlation and regression analyses that do not a
 ## 3.b RQ2 - Relationship between cell type composition, PIG expression, and plaque distance
 
 Cluster-level marker enrichment shows that some clusters exhibit strong over- or under-expression of specific genes. For example:
-- Cluster 8 (immune) over-expresses **Hexb** (z-score ~4).  
+- Cluster 8 (immune) over-expresses **Hexb** (z-score ~4).
 - Cluster 14 (dentate gyrus immature glutamatergic) under-expresses **Cst3** (z-score ~−2).
 
 This reinforces that anatomical/cell-type structure and gene expression patterns are tightly coupled and motivates a central question: **are plaque-associated PIG gradients direct effects, or are they mediated by cell-type composition shifts?**
@@ -296,10 +296,10 @@ This reinforces that anatomical/cell-type structure and gene expression patterns
 
 ### 3.b.i Correlation: cell-type proportions vs mean PIG expression
 We test whether distance-dependent PIG expression could be explained by changing cell-type composition. Concretely:
-- Bin cells by plaque distance.  
-- For each bin, compute **cell-type proportions** and **mean PIG expression**.  
-- Compute a **Spearman rank correlation matrix** between cell-type proportions and PIG expression across bins.  
-- Use Spearman (rather than Pearson) to accommodate plausible non-linear/step-like behaviors.  
+- Bin cells by plaque distance.
+- For each bin, compute **cell-type proportions** and **mean PIG expression**.
+- Compute a **Spearman rank correlation matrix** between cell-type proportions and PIG expression across bins.
+- Use Spearman (rather than Pearson) to accommodate plausible non-linear/step-like behaviors.
 - Perform significance testing with multiple-testing correction per gene–cell-type pair.
 
 <p align="center">
@@ -309,7 +309,7 @@ We test whether distance-dependent PIG expression could be explained by changing
 
 
 We identify **9 cell types** with significant correlations to PIG expression. Notably:
-- **8/9** are strongly correlated with a **core set of 14 PIGs**.  
+- **8/9** are strongly correlated with a **core set of 14 PIGs**.
 - The remaining cell type is strongly correlated with **Nrep** alone, suggesting a complementary pattern rather than redundancy with the core PIG set.
 
 Detailed summary:
@@ -339,13 +339,13 @@ Interpreted biologically, the core PIGs are most aligned with immune enrichment 
 
 ### 3.b.ii Joint regression (Apoe): cell type + distance → expression
 To quantify how much cell composition explains PIG expression gradients, we fit a joint linear regression predicting PIG expression from:
-- Broad cell type (with **Vascular Endothelial Pericyte** as the baseline), and  
+- Broad cell type (with **Vascular Endothelial Pericyte** as the baseline), and
 - Distance to the nearest plaque.
 
 We illustrate results for **Apoe**.
 
 Model fit:
-- **R² = 0.203** (20.3% variance explained in normalized transcript count)  
+- **R² = 0.203** (20.3% variance explained in normalized transcript count)
 - Overall F-test p-value: **< 2.13e−174** (joint null rejected)
 
 Coefficients:
@@ -361,7 +361,7 @@ Coefficients:
 | Distance to plaque (per µm) | −0.0012 | < 1e−300 | 0.9988× per µm | Each µm reduces expected expression by ~0.12% |
 
 This reinforces two earlier observations simultaneously:
-1. Apoe is higher in **astrocytic and immune** populations and reduced in **neuronal** populations, especially glutamatergic neurons.  
+1. Apoe is higher in **astrocytic and immune** populations and reduced in **neuronal** populations, especially glutamatergic neurons.
 2. Even after accounting for cell type, there remains a significant **negative distance effect**, consistent with a true plaque-centered expression gradient.
 
 ### 3.b.iii Stratified mean expression by cell type and distance
@@ -381,7 +381,7 @@ The stratified plot corroborates the regression interpretation: astrocyte/ependy
 
 ### 3.c.i Distance-binned means, confidence intervals, and ANOVA
 We group cells into **5 equal-count distance bins** and compute, for each PIG:
-- mean **log1p-normalized** transcript count per bin  
+- mean **log1p-normalized** transcript count per bin
 - 95% confidence interval (SEM-based)
 
 An ANOVA confirms that **all 16 PIGs** have significant differences in mean expression across distance bins at **Bonferroni-corrected FDR = 0.01**.
@@ -392,13 +392,13 @@ An ANOVA confirms that **all 16 PIGs** have significant differences in mean expr
 </p>
 
 A prominent example is **Gfap**, which shows the largest proximal-to-distal mean difference on the log1p scale:
-- Δ(log1p mean) ≈ **0.72** between closest and farthest bins  
-- SEM ≈ **0.01** (with **10,779 cells per bin**)  
+- Δ(log1p mean) ≈ **0.72** between closest and farthest bins
+- SEM ≈ **0.01** (with **10,779 cells per bin**)
 - On the natural scale: exp(0.72) ≈ **2.05×** higher expression near plaques
 
 Across genes, the most consistent gradients include:
-- Microglial markers (e.g., **Hexb, Ctsd, Cst3, Apoe**)  
-- Astrocytic markers (e.g., **Gfap, Serpina3n, Vim**)  
+- Microglial markers (e.g., **Hexb, Ctsd, Cst3, Apoe**)
+- Astrocytic markers (e.g., **Gfap, Serpina3n, Vim**)
 
 Collectively, tissue within ~0–29 µm of plaques shows elevated glial/immune signatures that fade with distance.
 
@@ -406,25 +406,25 @@ Collectively, tissue within ~0–29 µm of plaques shows elevated glial/immune s
 To summarize gradients continuously, we regress log1p-normalized transcript count against distance for each PIG and apply Benjamini–Hochberg FDR correction across the 16 regressions.
 
 Results:
-- **All 16 PIGs** show statistically significant **negative slopes** at **FDR = 0.01**.  
-- Slope magnitudes vary substantially. Translating slopes into a natural-scale interpretability metric (“distance to halve expression”):  
-  - **Gfap:** ~**128 µm** to halve expression  
-  - **Cxcl10:** ~**4,415 µm** to halve expression  
+- **All 16 PIGs** show statistically significant **negative slopes** at **FDR = 0.01**.
+- Slope magnitudes vary substantially. Translating slopes into a natural-scale interpretability metric (“distance to halve expression”):
+  - **Gfap:** ~**128 µm** to halve expression
+  - **Cxcl10:** ~**4,415 µm** to halve expression
 
 Given the mouse brain diameter (~6,000 µm), Cxcl10’s gradient is effectively flat, consistent with its extreme zero inflation (low absolute expression variation across distance).
 
 <p align="center">
   <img src="src/data/figures/distances_to_halve_expression.png" width="480">
   <br><em>*Figure 15. Distance required (µm) to reduce predicted expression by half for each PIG, derived from per-gene distance regressions.*</em>
-</p> 
+</p>
 
 ---
 
 To increase explanatory power (R²), reduce heteroscedasticity, and test whether plaque shape contributes to local responses, we compute geometric properties of the nearest plaque for each cell:
-- area  
-- perimeter  
-- major axis length  
-- orientation  
+- area
+- perimeter
+- major axis length
+- orientation
 
 <p align="center">
   <!-- This was obtained with plot_boxgrid; usage in results.ipynb -->
@@ -433,8 +433,8 @@ To increase explanatory power (R²), reduce heteroscedasticity, and test whether
 </p>
 
 Nearest-plaque distance captures proximity to *one* plaque, but local pathology may depend on plaque *crowding*. We therefore add two “multi-plaque proximity” features within a radius **R = 61 µm** (the median nearest-plaque distance):
-- **Count:** number of plaques within radius R  
-- **Mean Distance:** average distance to plaques within radius R  
+- **Count:** number of plaques within radius R
+- **Mean Distance:** average distance to plaques within radius R
 
 To validate that R is informative, we check the Count distribution and CDF. The distribution shows meaningful variation: **55.2%** of cells have **0** plaques within 61 µm, while the remainder have up to **21** plaques within that radius-indicating a usable local density signal.
 
@@ -448,7 +448,7 @@ To validate that R is informative, we check the Count distribution and CDF. The 
 To capture local cell–cell context and spatial signaling, we compute neighborhood mean expression features: for each cell and each PIG, we summarize the expression of the **15 other PIGs** across its **k = 100 nearest neighbors**.
 
 Motivation for k = 100:
-- balances locality with stability (not too small, not too large)  
+- balances locality with stability (not too small, not too large)
 - approximates neighborhood effects at a scale relevant to cell–cell communication (~100 µm radius depending on density, assuming ~10 µm cell diameter and relatively dense cell packing)
 
 We then compute Pearson correlations between each target PIG and the neighborhood means of the other PIGs, ranking by absolute strength.
@@ -469,15 +469,15 @@ The matrix is not symmetric because target/neighbor roles are not commutative. T
 | Gfap | Vim | 0.45 |
 
 Interpretations:
-- **Gfap/C4b:** reactive gliosis around plaques co-occurs with complement cascade activation; C4a/C4b is expressed in astrocytes, making co-variation expected.  
-- **Gfap/S100a6:** S100a6 is reported to be upregulated in astrocytes in AD, concentrated around Aβ plaques, often alongside Gfap-positive reactive astrocytes.  
+- **Gfap/C4b:** reactive gliosis around plaques co-occurs with complement cascade activation; C4a/C4b is expressed in astrocytes, making co-variation expected.
+- **Gfap/S100a6:** S100a6 is reported to be upregulated in astrocytes in AD, concentrated around Aβ plaques, often alongside Gfap-positive reactive astrocytes.
 - **Gfap/Vim:** both are intermediate filament proteins upregulated in reactive astrogliosis; coordinated induction is expected in plaque-adjacent reactive astrocytes.
 
 We systematically quantify how each feature group improves PIG prediction using nested linear models for each PIG:
 
-- **Model 0:** distance only  
-- **Model 1:** distance + plaque geometry  
-- **Model 2:** distance + plaque geometry + multi-plaque proximity  
+- **Model 0:** distance only
+- **Model 1:** distance + plaque geometry
+- **Model 2:** distance + plaque geometry + multi-plaque proximity
 - **Models 3_1, 3_2, 3_4, 3_8, 3_15:** Model 2 + neighborhood PIG context features using the top 1/2/4/8/15 neighbor PIGs (ranked by correlation)
 
 We compare successive models using nested F-tests (α = 0.01) and apply BH-FDR correction across the 16 per-PIG tests for each comparison.
@@ -489,10 +489,10 @@ We compare successive models using nested F-tests (α = 0.01) and apply BH-FDR c
 </p>
 
 Key findings:
-- The largest average adjusted R² gain comes from adding the **single most correlated neighborhood PIG** (mean improvement **+0.074**). This is consistent with plaque proximity acting as a common confounder that drives coordinated PIG activation.  
-- Additional neighbor PIG proxies provide diminishing but still significant gains (e.g., **+0.036** for the next increment), and the nested analysis favors using up to **15** neighbor PIGs even though most benefit comes from the first proxy.  
-- **Gfap** achieves the highest adjusted R² in **7 of 8** model variants, consistent with it being strongly distance-linked.  
-- **Cxcl10** is lowest in **5 of 8** model variants, consistent with extreme zero inflation limiting explainable variance.  
+- The largest average adjusted R² gain comes from adding the **single most correlated neighborhood PIG** (mean improvement **+0.074**). This is consistent with plaque proximity acting as a common confounder that drives coordinated PIG activation.
+- Additional neighbor PIG proxies provide diminishing but still significant gains (e.g., **+0.036** for the next increment), and the nested analysis favors using up to **15** neighbor PIGs even though most benefit comes from the first proxy.
+- **Gfap** achieves the highest adjusted R² in **7 of 8** model variants, consistent with it being strongly distance-linked.
+- **Cxcl10** is lowest in **5 of 8** model variants, consistent with extreme zero inflation limiting explainable variance.
 - Plaque geometry (Model 1) and multi-plaque proximity (Model 2) yield statistically significant (but modest) improvements in adjusted R² for **15/16 PIGs** (average improvements ~**0.0021** and **0.0063**, respectively), implying these spatial descriptors are biologically salient but secondary to neighborhood transcriptional context.
 
 ---
@@ -504,10 +504,10 @@ Key findings:
 ### 4.a.i Benchmarking setup and results
 We benchmark models that predict plaque distance from the **347-gene expression vector**, using a random **80/20 train/test split over cells**:
 
-- Linear models: **LASSO**, **ElasticNet**  
-  - input: standardized log1p-transformed counts  
-- Tree models: **Random Forest**, **XGBoost**  
-  - input: unstandardized log1p-transformed counts  
+- Linear models: **LASSO**, **ElasticNet**
+  - input: standardized log1p-transformed counts
+- Tree models: **Random Forest**, **XGBoost**
+  - input: unstandardized log1p-transformed counts
 
 We report train/test R² and inspect residual structure and feature importance.
 
@@ -537,8 +537,8 @@ The target distribution is also highly concentrated in the 0–100 µm range, me
 </p>
 
 We further categorize residuals:
-- **25.51%**: highly negative residuals (< −17.2 µm), mostly close to plaques (within 49 µm)  
-- **28.15%**: highly positive residuals (> 10.6 µm), mostly far from plaques (beyond 87 µm)  
+- **25.51%**: highly negative residuals (< −17.2 µm), mostly close to plaques (within 49 µm)
+- **28.15%**: highly positive residuals (> 10.6 µm), mostly far from plaques (beyond 87 µm)
 - **20.94%**: moderate residuals (−17.2 to 10.6 µm), mostly mid-range (49–87 µm)
 
 Spatially mapping residuals reveals non-uniform error patterns aligned with plaque centroids (red stars), implying missing covariates and/or anatomical confounding.
@@ -546,7 +546,7 @@ Spatially mapping residuals reveals non-uniform error patterns aligned with plaq
 <p align="center">
   <img src="src/data/figures/residuals_vs_distance.png" width="480">
   <br><em>*Figure 22. Spatial error maps showing structured residual patterns aligned with plaque locations, indicating that gene-only models miss important spatial/anatomical factors.*</em>
-</p> 
+</p>
 
 Cluster-specific errors reinforce this: mean absolute residuals are largest for ventricular-associated cluster 15 (GnRH1-expressing glutamatergic neurons), plausibly because these cells occupy regions far from plaques and the model under-utilizes the full distance range.
 
@@ -572,16 +572,16 @@ Agreement across linear and tree models suggests these genes carry robust, biolo
 ### 4.b. Additional feature modalities
 To improve interpretability and performance while probing feature importance, we add non-transcriptomic predictors:
 
-- Cell centroid coordinates  
-- Cell area  
-- Nucleus area  
+- Cell centroid coordinates
+- Cell area
+- Nucleus area
 - Cell type (Leiden cluster ID)
 
 We group predictors into four modalities:
-- **Genes:** 347 expression values  
-- **Morphology:** cell area, nucleus area  
-- **Spatial:** centroid coordinates  
-- **Cluster:** Leiden cluster identity  
+- **Genes:** 347 expression values
+- **Morphology:** cell area, nucleus area
+- **Spatial:** centroid coordinates
+- **Cluster:** Leiden cluster identity
 
 We compare ordinary linear regression (OLS-like linear model) to Partial Least Squares (PLS), which constrains predictions through a small number of latent components optimized for covariance with plaque distance.
 
@@ -603,11 +603,11 @@ To test whether the plaque-trained PLS signature reflects biologically meaningfu
 </p>
 
 Across plaques:
-- Tg17 shows more negative correlations between signature and distance (**mean ρ ≈ −0.19**) and steeper negative slopes (**mean slope ≈ −0.0055**).  
-- WT13 shows near-flat/weak trends (**mean ρ ≈ −0.02**, **mean slope ≈ −0.0018**).  
-- FDR-corrected results indicate **3 plaques** with significant decay in Tg but not WT, supporting a plaque-linked gradient in a subset of locations.  
-- Some plaques show decay in both Tg and WT, plausibly reflecting imperfect cross-animal alignment or shared anatomical gradients rather than true pathology.  
-- The inner (0–50 µm) region has, on average, higher signature in Tg than WT, consistent with localized activation near plaques.  
+- Tg17 shows more negative correlations between signature and distance (**mean ρ ≈ −0.19**) and steeper negative slopes (**mean slope ≈ −0.0055**).
+- WT13 shows near-flat/weak trends (**mean ρ ≈ −0.02**, **mean slope ≈ −0.0018**).
+- FDR-corrected results indicate **3 plaques** with significant decay in Tg but not WT, supporting a plaque-linked gradient in a subset of locations.
+- Some plaques show decay in both Tg and WT, plausibly reflecting imperfect cross-animal alignment or shared anatomical gradients rather than true pathology.
+- The inner (0–50 µm) region has, on average, higher signature in Tg than WT, consistent with localized activation near plaques.
 
 Two example visualizations:
 
@@ -627,10 +627,10 @@ Overall, the PLS signature appears biologically informative for a subset of plaq
 
 We next compare linear models (Ridge/Lasso/PLS) to nonlinear models (especially gradient boosting) under modality ablation. Results show:
 
-- Linear models reach modest accuracy (**R² ≈ 0.20–0.24**) when gene expression is included.  
-- Morphology-only or spatial-only linear models perform near chance.  
-- Nonlinear models extract substantially richer structure.  
-- Surprisingly, **spatial-only** nonlinear models can reach **R² ≈ 0.64** (HistGradientBoosting), exceeding even full multimodal models.  
+- Linear models reach modest accuracy (**R² ≈ 0.20–0.24**) when gene expression is included.
+- Morphology-only or spatial-only linear models perform near chance.
+- Nonlinear models extract substantially richer structure.
+- Surprisingly, **spatial-only** nonlinear models can reach **R² ≈ 0.64** (HistGradientBoosting), exceeding even full multimodal models.
 - Gene-only and gene+cluster improve tree models moderately (**R² ≈ 0.26–0.28**), while morphology adds little.
 
 <p align="center">
@@ -657,7 +657,7 @@ We compare spatial-only model outputs across all Tg and WT animals:
 </p>
 
 The model produces nearly identical prediction distributions across all mice:
-- Output distributions differ by at most ~**6%** at any point.  
+- Output distributions differ by at most ~**6%** at any point.
 - This is inconsistent with a pathology-sensitive model that should shift with genotype and disease stage.
 
 We quantify distributional similarity using Jensen–Shannon divergence (JSD) and corroborate with KS tests and ANOVA:
@@ -675,8 +675,8 @@ We quantify distributional similarity using Jensen–Shannon divergence (JSD) an
 </p>
 
 Findings:
-- JSD values are mostly **0.05–0.10**, only slightly higher (~0.14–0.16) for comparisons involving WT-13.  
-- KS statistics are small (mostly **0.02–0.08**) despite extremely significant p-values driven by large sample sizes.  
+- JSD values are mostly **0.05–0.10**, only slightly higher (~0.14–0.16) for comparisons involving WT-13.
+- KS statistics are small (mostly **0.02–0.08**) despite extremely significant p-values driven by large sample sizes.
 - ANOVA across Tg mice yields a very significant p-value (p ≈ **3.6e−22**) but with trivial effect size and no monotone increase with age.
 
 Conclusion: the spatial-only model primarily learns conserved tissue geometry (e.g., cortical curvature and laminar structure), not plaque pathology. The apparent high R² is therefore driven by anatomical confounding rather than disease signal.
@@ -854,10 +854,10 @@ Overall, our findings demonstrate that clusters 6 and 15 undergo progressive cha
 
 Combining our analysis of cell type proportions, gene expression patterns, and plaque distance modeling, the results indicate that plaques play a central role in AD development; however, the presence of plaques and their impact significantly by cell type and brain region. Based on our findings, we can draw the following conclusions:
 
-1. **Plaque proximity changes cell-type composition**. Immune and vascular cells as well as astrocytes are enriched in the plaque viscinity whereas most neurons are depleted (RQ1).  
-2. **Gene expression patterns are strongly linked to cell type changes**. Immune enrichment and neuronal depletion explain a significant proportion of variation PIG expression. However, some distance-related effects still persist even after the cell type is taken into account (RQ2). 
-3. **All 16 PIGs are elevated around plaques**. Further, *Gfap* exhibits the strongest spatial changes, whereas *Cxcl10* expression remains mostly flat due to zero inflation (RQ3).  
-4. **Gene expression somewhat encodes distance from plaque**. When attempting to infer plaque distance from gene expression alone, we get non-trivial R^2; however, the residuals are strongly colocalized with plaques and appear heteroscedastic (RQ4).  
+1. **Plaque proximity changes cell-type composition**. Immune and vascular cells as well as astrocytes are enriched in the plaque viscinity whereas most neurons are depleted (RQ1).
+2. **Gene expression patterns are strongly linked to cell type changes**. Immune enrichment and neuronal depletion explain a significant proportion of variation PIG expression. However, some distance-related effects still persist even after the cell type is taken into account (RQ2).
+3. **All 16 PIGs are elevated around plaques**. Further, *Gfap* exhibits the strongest spatial changes, whereas *Cxcl10* expression remains mostly flat due to zero inflation (RQ3).
+4. **Gene expression somewhat encodes distance from plaque**. When attempting to infer plaque distance from gene expression alone, we get non-trivial R^2; however, the residuals are strongly colocalized with plaques and appear heteroscedastic (RQ4).
 5. **Coordinate-based distance models can be deceptively strong**. Applying the coordinate-based models to unseen mice reveals little cross-mouse variation; instead, the models output identical predictions grounded in brain anatomy as opposed to bone fide plaque pathology (RQ4). Even within a single mouse, spatial cross-validation (CV) with held-out slices of brain tissue, shows a significant drop in R^2 when compared to random CV covering the entire brain. Some genes show the generalization gap of hundreds (Ctsd) to thousands (Nrep) of percent.
 6. **Per age, per genotype average PIG expression reveals AD-specific, age-progressive transcriptional programs**. Two cell types (Hypothalamic Gnrh1, Glutaergic and vascular cells) show the strongest AD-specific activation (RQ5).
 7. **Plaque occurrence is brain region specific**. This is demonstrated by the brain segmentation inferred by the decision-tree. The model outputs a coarse-grained segmentation in homogeneous regions around the diencephalon. There, the plaques appear evenly spaced, encouraging the model to approximate the whole region with a simple average. Meanwile, the tree learned a fine-grained segmentation in heterogeneous regions, namely hippocampus and isocortex. This indicates a significant variability in plaque occurrence in these regions. The denser "super-plaque-clusters" in these heteregoneous parts of the brain can have an especially debilitating effect on AD patients.
@@ -872,18 +872,24 @@ We also acknowledge our limitations:
 ---
 
 ### 6.b Confounding and interpretation risks
- 
-- **Anatomical confounding:** plaque density varies by region; any model using coordinates (and, more broadly, any feature correlated with anatomy) must be treated as potentially learning anatomy rather than pathology. Section 4.c further shows that models can implicitly encode regional structure even when trained on biologically relevant targets (e.g., plaque-distance fields), emphasizing the need to separate “anatomy learning” from “pathology learning.”  
-- **Spatial leakage and evaluation dependence:** random cross-validation can substantially inflate performance because nearby cells share context (spatial autocorrelation). The tile-based spatial block CV (391 tiles with 78 held out, ~20%) provides a more stringent estimate, and the large gene-to-gene variability in leakage gaps (e.g., *Ctst*, *Nrep*) implies that any single pooled performance metric can obscure which genes are truly transferable out-of-region.  
-- **Neighborhood features can still encode location:** although neighborhood summaries are biologically motivated, they can act as proxies for local tissue identity. Ablations in Section 4.c partially address this by breaking neighborhood correspondence: within-tile permutation causes a 62.9% drop in spatial-block OOF performance (no overlap in 95% CIs), and substituting 100 nearest neighbors with 100 farthest neighbors causes an 86.4% drop. These results support a real dependence on local structure, but they do not eliminate the possibility that some neighborhood signal reflects regional identity rather than plaque-specific mechanisms.   
-- **Boundary artifacts and “break-away” cells:** detached or peripheral cells can be trivially far from plaques and can disproportionately influence segmentation, residual maps, and permutation behavior-especially when tiles mix “continental” (main tissue mass) and “island” (detached) cells.  
-- **Zero inflation and sparsity:** genes like *Cxcl10* illustrate that statistical significance can coexist with minimal practical effect size due to near-all-zero distributions; zero inflation also complicates interaction visualizations and can mask structured effects present in nonzero subsets.  
+
+- **Anatomical confounding:** plaque density varies by region; any model using coordinates (and, more broadly, any feature correlated with anatomy) must be treated as potentially learning anatomy rather than pathology. Section 4.c further shows that models can implicitly encode regional structure even when trained on biologically relevant targets (e.g., plaque-distance fields), emphasizing the need to separate “anatomy learning” from “pathology learning.”
+
+
+
+- **Spatial leakage and evaluation dependence:** random cross-validation can substantially inflate performance because nearby cells share context (spatial autocorrelation). The tile-based spatial block CV (391 tiles with 78 held out, ~20%) provides a more stringent estimate, and the large gene-to-gene variability in leakage gaps (e.g., *Ctst*, *Nrep*) implies that any single pooled performance metric can obscure which genes are truly transferable out-of-region.
+
+- **Neighborhood features can still encode location:** although neighborhood summaries are biologically motivated, they can act as proxies for local tissue identity. Ablations in Section 4.c partially address this by breaking neighborhood correspondence: within-tile permutation causes a 62.9% drop in spatial-block OOF performance (no overlap in 95% CIs), and substituting 100 nearest neighbors with 100 farthest neighbors causes an 86.4% drop. These results support a real dependence on local structure, but they do not eliminate the possibility that some neighborhood signal reflects regional identity rather than plaque-specific mechanisms.
+
+- **Boundary artifacts and “break-away” cells:** detached or peripheral cells can be trivially far from plaques and can disproportionately influence segmentation, residual maps, and permutation behavior-especially when tiles mix “continental” (main tissue mass) and “island” (detached) cells.
+
+- **Zero inflation and sparsity:** genes like *Cxcl10* illustrate that statistical significance can coexist with minimal practical effect size due to near-all-zero distributions; zero inflation also complicates interaction visualizations and can mask structured effects present in nonzero subsets.
 
 ---
 
 ### 6.c. Conclusions
 
-Our findings reveal that plaques are accumulated in a brain-region-specific way and radiate a multi-modal influence into the surrounding tissue. Plaques re-model cell types and result in niches dominated by vascular and immune cells while being devoid of neurons. Further, plaques activate distinct transcriptional programs, with different genes affected at different distances. 
+Our findings reveal that plaques are accumulated in a brain-region-specific way and radiate a multi-modal influence into the surrounding tissue. Plaques re-model cell types and result in niches dominated by vascular and immune cells while being devoid of neurons. Further, plaques activate distinct transcriptional programs, with different genes affected at different distances.
 
 When considering genes as AD therapy targets, it is crucial to ensure that plaque/gene association is specific to transgenic mice, is robust to spatial block cross validation, and persists across realistic distances from vasculature. In other words, the drug interventions should focus on near-plaque, cell-type-specific transcriptional programs that show a clear progression with age.
 
@@ -892,12 +898,12 @@ When considering genes as AD therapy targets, it is crucial to ensure that plaqu
 
 ## 7. Appendix
 
-### 7.a Multiple testing correction 
-- We used Bonferroni correction in RQ1 for per-cluster logistic regressions and in RQ3 for ANOVA across distance bins.  
+### 7.a Multiple testing correction
+- We used Bonferroni correction in RQ1 for per-cluster logistic regressions and in RQ3 for ANOVA across distance bins.
 - Additionally, we applied Benjamini–Hochberg FDR correction in RQ3 when building per-PIG distance regressions and nested model comparisons.
 
 ### 7.b Feature engineering
 - When discussing the features for linear regression, we use the following terms:
-- Nearest plaque geometry refers to plaque area, perimeter, major axis length, and orientation.  
+- Nearest plaque geometry refers to plaque area, perimeter, major axis length, and orientation.
 - Multi-plaque proximity refers to the plaque count and the average distance within R. In our case, we set R = 61 µm, which is the median cell-to-plaque distance.
 - Neighborhood context refers to the average expression of other PIGs in 100 nearest neighbors.
