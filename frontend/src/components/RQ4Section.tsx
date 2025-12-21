@@ -394,7 +394,7 @@ const RQ4Section = () => {
               <ResidualByClusterTable />
 
               <p className="text-lg text-muted-foreground leading-relaxed">
-                Top predictive genes are relatively consistent across modeling classes. Notably, <span className="font-medium text-foreground">Gfap</span> and
+                Top predictive genes are relatively consistent across modeling classes. Notably, <span className="font-medium text-foreground">Gfap</span> and 
                 <span className="font-medium text-foreground">Spag16</span> appear in the top 5 across all models, and three of four models rank <span className="font-medium text-foreground">Gfap</span> as
                 the single most important predictor-reinforcing earlier evidence that Gfap peaks near plaques
                 and decays with distance. Other highly ranked genes include <span className="font-medium text-foreground">Lyz2</span> (immune/glial
@@ -749,7 +749,7 @@ const RQ4Section = () => {
                 caption="Ground-truth plaque-distance field and decision-tree reconstruction on a 200×200 grid."
               />
 
-              <p className="text-lg text-muted-foreground leading-relaxed">
+              {/*<p className="text-lg text-muted-foreground leading-relaxed">
                 To assess whether our expression models genuinely generalize across space (rather than exploiting spatial autocorrelation), we adopt a tile-based cross-validation scheme that withholds contiguous tissue regions during training.
               </p>
 
@@ -765,7 +765,12 @@ const RQ4Section = () => {
 
               <p className="text-lg text-muted-foreground leading-relaxed">
                 Importantly, the assignment is random at the tile level (not the cell level), so the model is prevented from “seeing” large chunks of brain tissue. This is a substantially more stringent scenario than holding out 20% of cells at random, because random cell-level splits still expose the model to the full spatial extent of the brain and can therefore inflate performance via spatial leakage.
+              </p>*/}
+
+              <p className="text-lg text-muted-foreground leading-relaxed">
+                Random cell-level splits can leak spatial context, because nearby cells share local structure. We therefore evaluate models using tile-based spatial splits that hold out contiguous regions.
               </p>
+
 
               <PlotFrame
                 src={`${base}plots/spatial_tiles.html`}
@@ -817,7 +822,8 @@ const RQ4Section = () => {
                 Having established that spatial context matters and that its impact is highly gene-dependent, we next introduce a non-linear interaction between plaque distance and the local transcriptional context of surrounding PIGs.
               </p>
               <p className="text-lg text-muted-foreground leading-relaxed">
-                Specifically, we define the <span className="font-medium text-foreground">neighbor signature</span> (or <span className="font-medium text-foreground">signature</span> for short) as the average expression level of “Other PIGs” in the neighborhood, and we examine average target expression across joint bins of distance and signature. Distance is discretized into five bins (D1–D5 from closest to farthest), and the signature is discretized into five bins (S1–S5 from lowest to highest). Across these distance/signature groups, expression varies substantially, indicating that meaningful information is encoded jointly in proximity to plaques and local neighborhood state for essentially all genes-except <span className="font-medium italic text-foreground">Cxcl10</span>, where extreme zero inflation limits interpretability.
+                Specifically, we define the <span className="font-medium text-foreground">neighbor signature</span> (or <span className="font-medium text-foreground">signature</span> for short) as the average expression level of “Other PIGs” in the neighborhood, and we examine average target expression across joint bins of distance and signature. 
+                Distance is discretized into five bins (D1–D5 from closest to farthest), and the signature is discretized into five bins (S1–S5 from lowest to highest). Across these distance/signature groups, expression varies substantially, indicating that meaningful information is encoded jointly in proximity to plaques and local neighborhood state for essentially all genes-except <span className="font-medium italic text-foreground">Cxcl10</span>, where extreme zero inflation limits interpretability.
               </p>
 
               <p className="text-lg text-muted-foreground leading-relaxed">
