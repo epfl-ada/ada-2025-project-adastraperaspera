@@ -364,11 +364,6 @@ const RQ2Section = () => {
                 To quantify the contribution of cell-type composition to PIG expression gradients, we fit a joint linear regression model predicting PIG expression from <span className="font-medium text-foreground">broad cell type</span> (with vascular endothelial pericytes as the baseline) and distance to the nearest plaque. The model explains <span className="font-medium text-foreground">20.3%</span> of the variance in normalized transcript counts (<span className="font-medium text-foreground">R² = 0.203</span>). These results indicate that both cell identity and plaque proximity contribute substantially to PIG expression variation.
               </p>
 
-
-              <p className="text-lg text-muted-foreground leading-relaxed">
-                The model explains <span className="font-medium text-foreground">20.3% of the variance in normalized transcript counts (R² = 0.203)</span>, with a highly significant overall fit (F-test p &lt; 2.13 × 10⁻¹⁷⁴), rejecting the joint null hypothesis.
-              </p>
-
               <p className="text-lg text-muted-foreground leading-relaxed">
                 Coefficients:
               </p>
