@@ -239,11 +239,7 @@ const PreprocessingSection = () => {
               <GeneWeirdnessTable title="Weird genes (QC)" />
 
               <p className="text-lg text-muted-foreground leading-relaxed">
-                Two genes <em>Cxcl10</em> and <em>Cd74</em> are particularly sparse and show minimal dynamic range, despite statistical significance.
-              </p>
-
-              <p className="text-lg text-muted-foreground leading-relaxed">
-                This sparsity constrains downstream modeling and interpretation.
+                Two genes <em>Cxcl10</em> and <em>Cd74</em> are particularly sparse and show minimal dynamic range. This sparsity constrains downstream modeling and interpretation.
               </p>
 
             </div>

@@ -361,7 +361,7 @@ const RQ2Section = () => {
             <div id="rq2-linear" className="space-y-4">
               <h4 className="text-xl font-semibold text-foreground">Joint regression (Apoe) </h4>
               <p className="text-lg text-muted-foreground leading-relaxed">
-                To quantify the contribution of cell-type composition to PIG expression gradients, we fit a joint linear regression model predicting PIG expression from <span className="font-medium text-foreground">broad cell type</span> (with vascular endothelial pericytes as the baseline) and distance to the nearest plaque. The model explains <span className="font-medium text-foreground">20.3%</span> of the variance in normalized transcript counts (<span className="font-medium text-foreground">R² = 0.203</span>). The overall model fit is highly significant (<span className="font-medium text-foreground">F-test p &lt; 2.13 × 10⁻¹⁷⁴</span>), rejecting the joint null hypothesis. These results indicate that both cell identity and plaque proximity contribute substantially to PIG expression variation.
+                To quantify the contribution of cell-type composition to PIG expression gradients, we fit a joint linear regression model predicting PIG expression from <span className="font-medium text-foreground">broad cell type</span> (with vascular endothelial pericytes as the baseline) and distance to the nearest plaque. The model explains <span className="font-medium text-foreground">20.3%</span> of the variance in normalized transcript counts (<span className="font-medium text-foreground">R² = 0.203</span>). These results indicate that both cell identity and plaque proximity contribute substantially to PIG expression variation.
               </p>
 
 
@@ -385,7 +385,7 @@ const RQ2Section = () => {
               <h4 className="text-xl font-semibold text-foreground">Stratified mean expression by cell type and distance</h4>
 
               <p className="text-lg text-muted-foreground leading-relaxed">
-                We also visualize mean Apoe expression by distance bin and cell type, with 95% confidence intervals based on SEM.
+                We also visualize mean PIG expression by distance bin and cell type, with 95% confidence intervals based on SEM.
               </p>
 
               <PlotFrame
@@ -396,7 +396,7 @@ const RQ2Section = () => {
               />
 
               <p className="text-lg text-muted-foreground leading-relaxed">
-                The stratified plot corroborates the regression interpretation: astrocyte/ependymal cells show higher Apoe than vascular baseline, and glutamatergic neurons show markedly lower Apoe, with differences that remain meaningful relative to uncertainty.
+                The stratified plot corroborates the regression interpretation: astrocyte/ependymal cells show higher Apoe than vascular baseline, and glutamatergic neurons show markedly lower Apoe.
               </p>
 
             </div>

@@ -144,7 +144,7 @@ const RQ3Section = () => {
               </ul>
 
               <p className="text-lg text-muted-foreground leading-relaxed">
-                To summarize this continuously, we regress expression on distance for each PIG and convert slopes into a more interpretable metric: <span className="font-medium text-foreground">distance-to-half-expression</span>. This highlights gene-specific scales, with Gfap showing a relatively local decline and Cxcl10 appearing almost flat, consistent with its extreme zero inflation.
+                To summarize this continuously, we regress expression on distance for each PIG and convert slopes into a more interpretable metric: <span className="font-medium text-foreground">distance-to-halve-expression</span>. This highlights gene-specific scales, with Gfap showing a steep decline and Cxcl10 appearing almost flat throughout the brain, consistent with its extreme zero inflation.
               </p>
 
               <PlotFrame
@@ -160,7 +160,7 @@ const RQ3Section = () => {
                ========================= */}
             <div id="rq3-regression" className="space-y-4">
               <h4 className="text-xl font-semibold text-foreground">
-                Per-gene regression slopes and “distance-to-half-expression”
+                Per-gene regression slopes and “distance-to-halve-expression”
               </h4>
 
               <p className="text-lg text-muted-foreground leading-relaxed">
@@ -205,7 +205,7 @@ const RQ3Section = () => {
 
 
               <p className="text-lg text-muted-foreground leading-relaxed">
-                Plaque-associated transcriptional responses are not purely cell-autonomous and may reflect local microenvironmental context. To quantify this, we computed neighborhood expression summaries by averaging the expression of the other <span className="font-medium text-foreground">15 PIGs</span> across each cell’s <span className="font-medium text-foreground">100 nearest neighbors</span>. This neighborhood size balances locality with statistical stability, avoiding excessive noise from very small neighborhoods and oversmoothing from very large ones. Given typical cell diameters (~10 µm) and tissue density, this choice corresponds to an interaction scale on the order of <span className="font-medium text-foreground">~100 µm</span>, which is relevant for cell–cell signaling and coordinated glial responses. These neighborhood features allow us to model collective plaque-associated activation rather than isolated single-cell effects.
+                Plaque-associated transcriptional responses are not purely cell-autonomous and may reflect local microenvironmental context. To quantify this, we computed neighborhood expression summaries by averaging the expression of the other <span className="font-medium text-foreground">15 PIGs</span> across each cell’s <span className="font-medium text-foreground">100 nearest neighbors</span>. This neighborhood size balances locality with statistical stability, avoiding excessive noise from very small neighborhoods and oversmoothing from very large ones. Given typical cell diameters (~10 µm) and tissue density, this choice corresponds to an interaction scale on the order of <span className="font-medium text-foreground">~200 µm</span>, which is relevant for cell–cell signaling and coordinated glial responses. These neighborhood features allow us to model collective plaque-associated activation rather than isolated single-cell effects.
               </p>
 
               <PlotFrame
@@ -219,7 +219,7 @@ const RQ3Section = () => {
               <PigNeighborCorrTable />
 
               <p className="text-lg text-muted-foreground leading-relaxed">
-                To quantify the contribution of different spatial and contextual features to PIG prediction, we evaluated a series of <span className="font-medium text-foreground">nested linear models</span> separately for each PIG. The baseline model included <span className="font-medium text-foreground">distance to the nearest plaque</span> only, followed by successive additions of <span className="font-medium text-foreground">plaque geometry and local multi-plaque proximity </span>features. We then augmented this model with neighborhood transcriptional context, adding the top <span className="font-medium text-foreground">1, 2, 4, 8, or 15</span> correlated neighboring PIG features. Neighbor PIGs were ranked by their correlation strength with the target gene. This nested design allows direct assessment of the incremental explanatory value of each feature group.
+                To quantify the contribution of different spatial and contextual features to PIG prediction, we evaluated a series of <span className="font-medium text-foreground">nested linear models</span> separately for each PIG. The baseline model included <span className="font-medium text-foreground">distance to the nearest plaque</span> only, followed by successive additions of <span className="font-medium text-foreground">plaque geometry and local multi-plaque proximity </span>features. We then augmented this model with neighborhood transcriptional context, adding the top <span className="font-medium text-foreground">1, 2, 4, 8, or 15</span> most correlated neighboring PIG features. Neighbor PIGs were ranked by their correlation strength with the target gene. This nested design allows direct assessment of the incremental explanatory value of each new feature group.
               </p>
 
 

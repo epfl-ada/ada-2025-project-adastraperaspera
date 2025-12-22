@@ -33,7 +33,7 @@ const RQ5Section = () => {
                   <li className="flex items-start gap-2"><CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />Plaque-dependent gene expression changes vary by cell type. For instance, microglia, astrocytes, and oligodendrocytes show much stronger changes near plaques than other cell types.
                   </li>
                   <li className="flex items-start gap-2"><CircleChevronRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
-                    Aligning the morphology images across mice is complicated and introduces a significant mismatch due to the individual variations in anatomy and brain proportions. Thus, a coordinate-only model is unlikely to generalize well to unseen mice                  </li>
+                    Aligning the morphology images across mice is complicated and introduces a significant mismatch due to the individual variations in anatomy and brain proportions. Thus, a coordinate-only model is unlikely to generalize well to unseen mice.                  </li>
                 </ul>
               </div>
 
@@ -66,8 +66,8 @@ const RQ5Section = () => {
 
 
               <p className="text-lg text-muted-foreground leading-relaxed">
-                We will now analyze more closely how exactly the gene expression signature changes with genotype (Tg/Wt) and with age. This framework reveals plaque-induced changes in expression since it operates with general Wt aging as the baseline.
-                To this end, we will compute the difference in signatures between age-matched Tg/Wt mice and compute the correlation between this difference and age. We encode the absolute value of this relationship in oY while representing the sign as the circle radius. In other words, circles on the right half of the canvas represent cell types whose average PIG expression increases with age. Meanwhile, the height represents the strength of association with age. We can note that the cluster 18 (Pons Glutaergic neurons) is the right uppermost circle corresponding to the largest age-progressive relative increase of PIG expression. Meanwhile, on the other end of the spectrum, we have cluster 6 (vascular cells) with the largest age-progressive relative decrease in PIG expression. This result can be due to opposite effects plaques have on these cell types as plaque proximity is known to induce neural death but vascular enrichment.
+                We will now analyze more closely how exactly the gene expression signature changes with genotype (Tg/Wt) and with age. We will reveal plaque-induced changes in expression by using the general Wt aging as the baseline.
+                To this end, we will compute the difference in signatures between age-matched Tg/Wt mice and compute the correlation between this difference and age. We encode the absolute value of this relationship on the y axis while representing the sign as the circle radius. In other words, circles on the right half of the canvas represent cell types whose average PIG expression increases with age. Meanwhile, the height represents the strength of association with age. We can note that the cluster 18 (Pons Glutaergic neurons) is the right uppermost circle corresponding to the largest age-progressive relative increase of PIG expression. Meanwhile, on the other end of the spectrum, we have cluster 6 (vascular cells) with the largest age-progressive relative decrease in PIG expression. This result can be due to opposite effects plaques have on these cell types as plaque proximity is known to induce neural death but vascular enrichment.
               </p>
 
               <PlotFrame
@@ -108,7 +108,7 @@ const RQ5Section = () => {
               <h4 className="text-xl font-semibold text-foreground">Age trajectories: Tg (2→5→17 months) vs WT stability </h4>
 
               <p className="text-lg text-muted-foreground leading-relaxed">
-                We will now review the age trajectories in both mouse types. The following figure reveals that in transgenic mice, cluster 8 (immune cells) shows a monotone increase in average PIG expression from 2 to 5 to 17 months. The same cell type in the Wt mice remains stable.
+                We will now review the age trajectories in both mouse types. The following figure reveals that in transgenic mice, cluster 8 (immune cells) shows a monotone increase in average PIG expression from 2 to 5 to 17 months. The same cell type in the Wt mice shows a much more modest.
               </p>
 
               <PlotFrame

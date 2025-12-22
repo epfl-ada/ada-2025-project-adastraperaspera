@@ -19,7 +19,7 @@ const DiscussionSection2 = () => {
             Combining our analysis of cell type proportions, gene expression
             patterns, and plaque distance modeling, the results indicate that
             plaques play a central role in AD development; however, the presence
-            of plaques and their impact significantly by cell type and brain
+            of plaques and their impact vary significantly by cell type and brain
             region. Based on our findings, we can draw the following conclusions:
           </p>
 
@@ -36,7 +36,7 @@ const DiscussionSection2 = () => {
                 Gene expression patterns are strongly linked to cell type changes
               </span>
               . Immune enrichment and neuronal depletion explain a significant
-              proportion of variation PIG expression. However, some
+              proportion of variation in PIG expression. However, some
               distance-related effects still persist even after the cell type is
               taken into account (RQ2).
             </li>
@@ -63,7 +63,7 @@ const DiscussionSection2 = () => {
               </span>
               . Applying the coordinate-based models to unseen mice reveals
               little cross-mouse variation; instead, the models output identical
-              predictions grounded in brain anatomy as opposed to bone fide
+              predictions grounded in brain anatomy as opposed to bona fide
               plaque pathology (RQ4). Even within a single mouse, spatial
               cross-validation (CV) with held-out slices of brain tissue shows a
               significant drop in R² when compared to random CV covering the
@@ -75,7 +75,7 @@ const DiscussionSection2 = () => {
                 Per age, per genotype average PIG expression reveals AD-specific,
                 age-progressive transcriptional programs
               </span>
-              . Two cell types (Hypothalamic Gnrh1, Glutaergic and vascular cells)
+              . Two cell types (Hypothalamic Gnrh1 Glutaergic and vascular cells)
               show the strongest AD-specific activation (RQ5).
             </li>
             <li>
@@ -98,7 +98,7 @@ const DiscussionSection2 = () => {
                 Gene expression in neighboring cells is a strong predictor of PIG levels
               </span>
               . When comparing multiple regression models, those using even a
-              single "other" PIG level averaged across neighbors achieve strong
+              single "other" PIG level averaged across neighbors achieved strong
               performance which generalizes to unseen brain slices. This
               highlights the importance of the local microenvironment which can
               dictate the transcriptional program of its cells.
@@ -127,19 +127,19 @@ const DiscussionSection2 = () => {
                 The resolution of our analysis is limited by the quality of our alignment
               </span>
               . During the course of this study, we performed 2 types of
-              alingment: IF/morphology and inter-mouse morphology image alingment.
+              alingment: intra-mouse IF/morphology and inter-mouse morphology/morphology image alingment.
               Both come with significant errors that limit the resolution at
               which we operate.
             </li>
             <li>
               <span className="font-semibold text-foreground">
-                Homoscedasticity of advanced models is countered by sub-optimal R²
+                Homoscedasticity of advanced regression models is countered by sub-optimal R²
               </span>
               . Despite the uniform distribution of residual size at all plaque
-              distances, our predictive models fail to achieve a perfect R².
+              distances, our regression models fail to achieve a perfect R².
               This means that much of the gene expression variability is
               distance-agnostic and can be explained by unrelated pathology
-              mechanisms,
+              mechanisms.
             </li>
           </ol>
         </div>
@@ -162,15 +162,15 @@ const DiscussionSection2 = () => {
             </li>
             <li>
               <span className="font-semibold text-foreground">
-                Spatial leakage and evaluation dependence
+                Spatial leakage
               </span>
               . Random cross-validation (CV) can inflate performance because
               nearby cells share context. The tile-based spatial block
-              cross-validation (391 tiles with 78 held out) provides a more
+              cross-validation provides a more
               strict estimate of generalization capability since sizeable chunks
               of the brain are hidden at train time. The observed gene-to-gene
-              variability in the spatial block/random CV performance gap implies
-              that we may over-estimate our current generalization capabilities.
+              variability in the spatial block CV / random CV performance gap implies
+              that we may over-estimate our generalization capabilities.
             </li>
             <li>
               <span className="font-semibold text-foreground">
