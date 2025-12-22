@@ -216,8 +216,6 @@ const PreprocessingSection = () => {
                 cellSize={180}
               />
 
-              {
-
               <p className="text-lg text-muted-foreground leading-relaxed">
                 We focus on <span className="font-medium text-foreground">16 plaque-induced genes (PIGs)</span> curated from prior literature. Their expression distributions show a consistent pattern: <span className="font-medium text-foreground">13/16 PIGs have a mode at zero</span>, followed by long tails at higher expression. This indicates plaque-linked activation is strong in some microenvironments but absent in most cells.
               </p>
